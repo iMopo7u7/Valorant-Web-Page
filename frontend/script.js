@@ -1,6 +1,6 @@
 const tbody = document.getElementById("leaderboardBody");
 
-fetch("http://localhost:3000/leaderboard")
+fetch("https://valorant-10-mans.onrender.com/leaderboard")
   .then((res) => res.json())
   .then((players) => {
     tbody.innerHTML = "";
