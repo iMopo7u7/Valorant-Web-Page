@@ -16,7 +16,7 @@ fetch("https://valorant-10-mans.onrender.com/leaderboard")
         <td data-label="Jugador">${p.name}#${p.tag}</td>
         <td data-label="ACS Promedio">${p.avgACS.toFixed(2)}</td>
         <td data-label="KDA Promedio">${p.avgKDA.toFixed(2)}</td>
-        <td data-label="First Bloods Totales">${p.totalFirstBloods}</td>
+        <td data-label="First Bloods Promedio">${p.avgFirstBloods.toFixed(2)}</td>
         <td data-label="Score Compuesto">${p.score.toFixed(2)}</td>
       `;
       tbody.appendChild(tr);
