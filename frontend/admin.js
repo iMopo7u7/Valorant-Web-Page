@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000";
+const API_URL = "https://valorant-10-mans.onrender.com";
 
 const addPlayerForm = document.getElementById("addPlayerForm");
 const addMatchForm = document.getElementById("addMatchForm");
