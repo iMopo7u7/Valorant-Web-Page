@@ -133,20 +133,26 @@ app.post("/matches", async (req, res) => {
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
-
-    // Si no hay players, devolver vacío
-    if (players.length === 0) return res.json([]);
-
-    // Calcular promedios y scores sin normalizar
-    const playersWithAvg = players.map((p) => {
+    const withScores = players.map((p) => {
       const avgKills = p.matchesPlayed ? p.totalKills / p.matchesPlayed : 0;
+      const avgAssists = p.matchesPlayed ? p.totalAssists / p.matchesPlayed : 0;
       const avgDeaths = p.matchesPlayed ? p.totalDeaths / p.matchesPlayed : 1; // evitar div 0
       const avgACS = p.matchesPlayed ? p.totalACS / p.matchesPlayed : 0;
       const avgFirstBloods = p.matchesPlayed ? p.totalFirstBloods / p.matchesPlayed : 0;
-      const avgKDA = avgDeaths === 0 ? avgKills : avgKills / avgDeaths;
 
-      return { ...p, avgKills, avgDeaths, avgACS, avgFirstBloods, avgKDA };
+      const avgKDA = avgDeaths === 0 ? (avgKills + avgAssists) : (avgKills + avgAssists) / avgDeaths;
+
+      // Pesos: KDA 40%, First Blood 30%, ACS 30%
+      const score = avgKDA * 0.4 + avgFirstBloods * 0.3 + avgACS * 0.3;
+
+      return { ...p, avgKills, avgAssists, avgDeaths, avgACS, avgFirstBloods, avgKDA, score };
     });
+    withScores.sort((a, b) => b.score - a.score);
+    res.json(withScores);
+  } catch {
+    res.status(500).json({ error: "Error al generar leaderboard" });
+  }
+});
 
     // Extraer arrays de cada métrica para normalización
     const acsArray = playersWithAvg.map(p => p.avgACS);
