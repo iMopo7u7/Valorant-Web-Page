@@ -1,35 +1,28 @@
 import express from "express";
 import cors from "cors";
-import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
+import { MongoClient, ObjectId } from "mongodb";
+import dotenv from "dotenv";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const playersFile = path.join(__dirname, "players.json");
-const matchesFile = path.join(__dirname, "matches.json");
-
 app.use(cors());
 app.use(express.json());
 
-// Leer archivo JSON o devolver array vacío si no existe
-async function readJSON(file) {
-  try {
-    const data = await fs.readFile(file, "utf-8");
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-}
+// URL y cliente de MongoDB (pon tu URI en .env, ejemplo: MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/dbname)
+const mongoClient = new MongoClient(process.env.MONGODB_URI);
+let db, playersCollection, matchesCollection;
 
-// Guardar JSON
-async function writeJSON(file, data) {
-  await fs.writeFile(file, JSON.stringify(data, null, 2), "utf-8");
+async function connectDB() {
+  await mongoClient.connect();
+  db = mongoClient.db(); // base de datos default del URI
+  playersCollection = db.collection("players");
+  matchesCollection = db.collection("matches");
+  console.log("Conectado a MongoDB");
 }
+connectDB().catch(console.error);
 
 // POST /players Añadir jugador (nombre + tag únicos)
 app.post("/players", async (req, res) => {
@@ -45,35 +38,34 @@ app.post("/players", async (req, res) => {
     return res.status(400).json({ error: "Nombre y tag válidos son requeridos" });
   }
 
-  const players = await readJSON(playersFile);
-
-  const exists = players.find(
-    (p) => p.name.toLowerCase() === name.toLowerCase() && p.tag.toLowerCase() === tag.toLowerCase()
-  );
+  // Revisar si existe jugador con mismo nombre y tag
+  const exists = await playersCollection.findOne({
+    name: { $regex: `^${name.trim()}$`, $options: "i" },
+    tag: { $regex: `^${tag.trim()}$`, $options: "i" },
+  });
 
   if (exists) {
     return res.status(400).json({ error: "Jugador con ese nombre y tag ya existe" });
   }
 
-  // Añadir jugador con stats acumuladas en 0
-  players.push({
-    name,
-    tag,
+  const newPlayer = {
+    name: name.trim(),
+    tag: tag.trim(),
     totalKills: 0,
     totalDeaths: 0,
     totalAssists: 0,
     totalACS: 0,
     totalFirstBloods: 0,
     matchesPlayed: 0,
-  });
+  };
 
-  await writeJSON(playersFile, players);
+  await playersCollection.insertOne(newPlayer);
   res.json({ message: "Jugador añadido exitosamente" });
 });
 
 // GET /players Listar jugadores
 app.get("/players", async (req, res) => {
-  const players = await readJSON(playersFile);
+  const players = await playersCollection.find().toArray();
   res.json(players);
 });
 
@@ -84,9 +76,6 @@ app.post("/matches", async (req, res) => {
   if (!Array.isArray(match) || match.length !== 10) {
     return res.status(400).json({ error: "Debes enviar un array de 10 jugadores" });
   }
-
-  const players = await readJSON(playersFile);
-  const matches = await readJSON(matchesFile);
 
   // Validar jugadores existentes y sin repetidos
   const seenPlayers = new Set();
@@ -102,14 +91,16 @@ app.post("/matches", async (req, res) => {
     ) {
       return res.status(400).json({ error: "Cada jugador debe tener nombre y tag válidos" });
     }
-    const exists = players.find(
-      (pl) =>
-        pl.name.toLowerCase() === p.name.toLowerCase() &&
-        pl.tag.toLowerCase() === p.tag.toLowerCase()
-    );
+
+    const exists = await playersCollection.findOne({
+      name: { $regex: `^${p.name.trim()}$`, $options: "i" },
+      tag: { $regex: `^${p.tag.trim()}$`, $options: "i" },
+    });
+
     if (!exists) {
       return res.status(400).json({ error: `Jugador no encontrado: ${p.name}#${p.tag}` });
     }
+
     const key = `${p.name.toLowerCase()}#${p.tag.toLowerCase()}`;
     if (seenPlayers.has(key)) {
       return res.status(400).json({ error: `Jugador repetido en la partida: ${p.name}#${p.tag}` });
@@ -127,39 +118,35 @@ app.post("/matches", async (req, res) => {
     }
   }
 
-  // Guardar partida (match)
-  matches.push(match);
-  await writeJSON(matchesFile, matches);
+  // Guardar partida
+  await matchesCollection.insertOne({ match });
 
-  // Actualizar estadísticas acumuladas en players.json
-  // Buscamos cada jugador y sumamos kills, deaths, assists, ACS, firstBloods, incrementamos matchesPlayed
+  // Actualizar estadísticas acumuladas de cada jugador
   for (const p of match) {
-    const player = players.find(
-      (pl) =>
-        pl.name.toLowerCase() === p.name.toLowerCase() &&
-        pl.tag.toLowerCase() === p.tag.toLowerCase()
+    await playersCollection.updateOne(
+      {
+        name: { $regex: `^${p.name.trim()}$`, $options: "i" },
+        tag: { $regex: `^${p.tag.trim()}$`, $options: "i" },
+      },
+      {
+        $inc: {
+          totalKills: p.kills,
+          totalDeaths: p.deaths,
+          totalAssists: p.assists,
+          totalACS: p.acs,
+          totalFirstBloods: p.firstBloods,
+          matchesPlayed: 1,
+        },
+      }
     );
-    if (player) {
-      player.totalKills += p.kills;
-      player.totalDeaths += p.deaths;
-      player.totalAssists += p.assists;
-      player.totalACS += p.acs;
-      player.totalFirstBloods += p.firstBloods;
-      player.matchesPlayed += 1;
-    }
   }
-
-  await writeJSON(playersFile, players);
 
   res.json({ message: "Partida añadida exitosamente" });
 });
 
 // GET /leaderboard Devuelve lista ordenada por score compuesto
 app.get("/leaderboard", async (req, res) => {
-  const players = await readJSON(playersFile);
-
-  // Calcular promedios y score compuesto (puedes ajustar fórmula)
-  // Ejemplo fórmula score: promedio ACS + promedio KDA + promedio First Bloods * 10 (para ponderar)
+  const players = await playersCollection.find().toArray();
 
   const withScores = players.map((p) => {
     const avgKills = p.matchesPlayed ? p.totalKills / p.matchesPlayed : 0;
@@ -169,8 +156,6 @@ app.get("/leaderboard", async (req, res) => {
     const avgFirstBloods = p.matchesPlayed ? p.totalFirstBloods / p.matchesPlayed : 0;
     const avgKDA = avgDeaths === 0 ? avgKills : avgKills / avgDeaths;
 
-    // Fórmula ejemplo para score compuesto:
-    // Escalar First Bloods por 10 para darle peso (ajustable)
     const score = avgACS + avgKDA + avgFirstBloods * 10;
 
     return {
@@ -187,7 +172,6 @@ app.get("/leaderboard", async (req, res) => {
     };
   });
 
-  // Orden descendente por score
   withScores.sort((a, b) => b.score - a.score);
 
   res.json(withScores);
@@ -196,11 +180,10 @@ app.get("/leaderboard", async (req, res) => {
 // GET /matches/:name/:tag Obtener historial de partidas de un jugador
 app.get("/matches/:name/:tag", async (req, res) => {
   const { name, tag } = req.params;
-  const matches = await readJSON(matchesFile);
+  const matches = await matchesCollection.find().toArray();
 
-  // Filtrar partidas donde haya jugado ese jugador
-  const filteredMatches = matches.filter((match) =>
-    match.some(
+  const filteredMatches = matches.filter((m) =>
+    m.match.some(
       (p) =>
         p.name.toLowerCase() === name.toLowerCase() &&
         p.tag.toLowerCase() === tag.toLowerCase()
