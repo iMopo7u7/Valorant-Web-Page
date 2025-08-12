@@ -136,7 +136,7 @@ app.get("/leaderboard", async (req, res) => {
     const withScores = players.map((p) => {
       const avgKills = p.matchesPlayed ? p.totalKills / p.matchesPlayed : 0;
       const avgAssists = p.matchesPlayed ? p.totalAssists / p.matchesPlayed : 0;
-      const avgDeaths = p.matchesPlayed ? p.totalDeaths / p.matchesPlayed : 1; // evitar div 0
+      const avgDeaths = p.matchesPlayed ? p.totalDeaths / p.matchesPlayed : 1; // para evitar división por 0
       const avgACS = p.matchesPlayed ? p.totalACS / p.matchesPlayed : 0;
       const avgFirstBloods = p.matchesPlayed ? p.totalFirstBloods / p.matchesPlayed : 0;
 
@@ -153,40 +153,6 @@ app.get("/leaderboard", async (req, res) => {
     res.status(500).json({ error: "Error al generar leaderboard" });
   }
 });
-
-    // Extraer arrays de cada métrica para normalización
-    const acsArray = playersWithAvg.map(p => p.avgACS);
-    const kdaArray = playersWithAvg.map(p => p.avgKDA);
-    const fbArray = playersWithAvg.map(p => p.avgFirstBloods);
-
-    // Función para normalizar entre 0 y 1
-    const normalize = (arr, val) => {
-      const min = Math.min(...arr);
-      const max = Math.max(...arr);
-      if (max === min) return 1; // si todos iguales, evitar div 0
-      return (val - min) / (max - min);
-    };
-
-    // Calcular score normalizado
-    const playersWithScore = playersWithAvg.map(p => {
-      const normACS = normalize(acsArray, p.avgACS);
-      const normKDA = normalize(kdaArray, p.avgKDA);
-      const normFB = normalize(fbArray, p.avgFirstBloods);
-
-      // Puedes ajustar pesos aquí:
-      const score = normACS * 0.5 + normKDA * 0.3 + normFB * 0.2;
-
-      return { ...p, normACS, normKDA, normFB, score };
-    });
-
-    // Ordenar por score descendente
-    playersWithScore.sort((a, b) => b.score - a.score);
-
-    res.json(playersWithScore);
-  } catch {
-    res.status(500).json({ error: "Error al generar leaderboard" });
-  }
-})
 
 // Historial de partidas de un jugador
 app.get("/matches/:name/:tag", async (req, res) => {
