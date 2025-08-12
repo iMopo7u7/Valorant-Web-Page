@@ -44,8 +44,8 @@ app.post("/players", async (req, res) => {
     }
 
     const exists = await playersCollection.findOne({
-      name: { $regex: ^${name.trim()}$, $options: "i" },
-      tag: { $regex: ^${tag.trim()}$, $options: "i" },
+      name: { $regex: `^${name.trim()}$`, $options: "i" },
+      tag: { $regex: `^${tag.trim()}$`, $options: "i" },
     });
 
     if (exists) {
@@ -95,30 +95,30 @@ app.post("/matches", async (req, res) => {
       }
 
       const exists = await playersCollection.findOne({
-        name: { $regex: ^${p.name.trim()}$, $options: "i" },
-        tag: { $regex: ^${p.tag.trim()}$, $options: "i" },
+        name: { $regex: `^${p.name.trim()}$`, $options: "i" },
+        tag: { $regex: `^${p.tag.trim()}$`, $options: "i" },
       });
 
       if (!exists) {
-        return res.status(400).json({ error: Jugador no encontrado: ${p.name}#${p.tag} });
+        return res.status(400).json({ error: `Jugador no encontrado: ${p.name}#${p.tag}` });
       }
 
-      const key = ${p.name.toLowerCase()}#${p.tag.toLowerCase()};
+      const key = `${p.name.toLowerCase()}#${p.tag.toLowerCase()}`;
       if (seenPlayers.has(key)) {
-        return res.status(400).json({ error: Jugador repetido: ${p.name}#${p.tag} });
+        return res.status(400).json({ error: `Jugador repetido: ${p.name}#${p.tag}` });
       }
       seenPlayers.add(key);
 
       const { kills, deaths, assists, acs, firstBloods } = p;
       if ([kills, deaths, assists, acs, firstBloods].some(v => typeof v !== "number" || v < 0)) {
-        return res.status(400).json({ error: Stats inválidas para ${p.name}#${p.tag} });
+        return res.status(400).json({ error: `Stats inválidas para ${p.name}#${p.tag}` });
       }
     }
 
     await matchesCollection.insertOne({ match });
     for (const p of match) {
       await playersCollection.updateOne(
-        { name: { $regex: ^${p.name.trim()}$, $options: "i" }, tag: { $regex: ^${p.tag.trim()}$, $options: "i" } },
+        { name: { $regex: `^${p.name.trim()}$`, $options: "i" }, tag: { $regex: `^${p.tag.trim()}$`, $options: "i" } },
         { $inc: { totalKills: p.kills, totalDeaths: p.deaths, totalAssists: p.assists, totalACS: p.acs, totalFirstBloods: p.firstBloods, matchesPlayed: 1 } }
       );
     }
@@ -155,7 +155,7 @@ app.get("/matches/:name/:tag", async (req, res) => {
   try {
     const { name, tag } = req.params;
     const matches = await matchesCollection.find({
-      match: { $elemMatch: { name: { $regex: ^${name}$, $options: "i" }, tag: { $regex: ^${tag}$, $options: "i" } } }
+      match: { $elemMatch: { name: { $regex: `^${name}$`, $options: "i" }, tag: { $regex: `^${tag}$`, $options: "i" } } }
     }).toArray();
     res.json(matches);
   } catch {
@@ -165,5 +165,5 @@ app.get("/matches/:name/:tag", async (req, res) => {
 
 // -------------------- ARRANQUE --------------------
 connectDB().then(() => {
-  app.listen(PORT, () => console.log(🚀 Servidor corriendo en puerto ${PORT}));
+  app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 });
