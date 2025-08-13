@@ -162,22 +162,18 @@ app.get("/leaderboard", async (req, res) => {
       const cappedKills = Math.min(avgKills, 30);
       const impactKillsScore = (avgFirstBloods * 1.5) + (cappedKills - avgFirstBloods);
 
-      // Ponderación de cada estadística (ajustada)
+      // Ponderación de cada estadística
       const scoreRaw =
-        (avgACS * 1.5) +
-        (impactKillsScore * 1.2) +
+        (avgACS * 2.0) +
+        (impactKillsScore * 1.5) +
         (avgAssists * 0.8) +
-        (hsPercent * 1.0) +
+        (hsPercent * 1.2) +
         (winrate * 1.0) -
         (avgDeaths * 1.0);
 
-      // Factor de confiabilidad según número de partidas
-      const reliabilityFactor = Math.min(matches / 5, 1); // 0 a 1, 5 partidas o más = 1
-
-      // Bonus por consistencia limitado
+      // Bonus por consistencia (jugadores que jugaron más)
       const consistencyBonus = 1 + (Math.min(matches, 20) / 100); // max 20% extra
-
-      const finalScore = scoreRaw * consistencyBonus * reliabilityFactor;
+      const finalScore = scoreRaw * consistencyBonus;
 
       return {
         name: p.name,
@@ -196,16 +192,6 @@ app.get("/leaderboard", async (req, res) => {
         wins: p.wins,
       };
     });
-
-    // Ordenar de mayor a menor score
-    withScores.sort((a, b) => b.score - a.score);
-
-    res.json(withScores);
-  } catch (err) {
-    console.error("Error en leaderboard:", err);
-    res.status(500).json({ error: "Error al generar leaderboard" });
-  }
-});
 
     // Ordenar de mayor a menor score
     withScores.sort((a, b) => b.score - a.score);
