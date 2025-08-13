@@ -146,14 +146,34 @@ app.get("/leaderboard", async (req, res) => {
     const players = await playersCollection.find().toArray();
 
     const withScores = players.map((p) => {
-      const avgKills = p.matchesPlayed ? p.totalKills / p.matchesPlayed : 0;
-      const avgDeaths = p.matchesPlayed ? p.totalDeaths / p.matchesPlayed : 1;
-      const avgACS = p.matchesPlayed ? p.totalACS / p.matchesPlayed : 0;
-      const avgFirstBloods = p.matchesPlayed ? p.totalFirstBloods / p.matchesPlayed : 0;
+      const matches = p.matchesPlayed || 0;
+      const avgKills = matches ? p.totalKills / matches : 0;
+      const avgDeaths = matches ? p.totalDeaths / matches : 1;
+      const avgACS = matches ? p.totalACS / matches : 0;
+      const avgFirstBloods = matches ? p.totalFirstBloods / matches : 0;
+      const avgAssists = matches ? p.totalAssists / matches : 0;
+      const winrate = matches ? (p.wins / matches) * 100 : 0;
       const hsPercent = p.totalKills ? (p.totalHeadshotKills / p.totalKills) * 100 : 0;
-      const winrate = p.matchesPlayed ? (p.wins / p.matchesPlayed) * 100 : 0;
+
+      // KDA
       const avgKDA = avgDeaths === 0 ? avgKills : avgKills / avgDeaths;
-      const score = avgACS + avgKDA + avgFirstBloods * 10;
+
+      // Anti "farm kills": límite máximo de kills por partida para cálculo
+      const cappedKills = Math.min(avgKills, 30);
+      const impactKillsScore = (avgFirstBloods * 1.5) + (cappedKills - avgFirstBloods);
+
+      // Ponderación de cada estadística
+      const scoreRaw =
+        (avgACS * 2.0) +
+        (impactKillsScore * 1.5) +
+        (avgAssists * 0.8) +
+        (hsPercent * 1.2) +
+        (winrate * 1.0) -
+        (avgDeaths * 1.0);
+
+      // Bonus por consistencia (jugadores que jugaron más)
+      const consistencyBonus = 1 + (Math.min(matches, 20) / 100); // max 20% extra
+      const finalScore = scoreRaw * consistencyBonus;
 
       return {
         name: p.name,
@@ -162,20 +182,23 @@ app.get("/leaderboard", async (req, res) => {
         avgDeaths,
         avgACS,
         avgFirstBloods,
+        avgAssists,
         hsPercent,
         winrate,
         avgKDA,
-        score,
-        matchesPlayed: p.matchesPlayed,
+        score: finalScore,
+        matchesPlayed: matches,
         totalFirstBloods: p.totalFirstBloods,
         wins: p.wins,
       };
     });
 
+    // Ordenar de mayor a menor score
     withScores.sort((a, b) => b.score - a.score);
+
     res.json(withScores);
   } catch (err) {
-    console.error(err);
+    console.error("Error en leaderboard:", err);
     res.status(500).json({ error: "Error al generar leaderboard" });
   }
 });
