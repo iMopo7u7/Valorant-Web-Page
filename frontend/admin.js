@@ -5,7 +5,7 @@ const addMatchForm = document.getElementById("addMatchForm");
 const playersRows = document.getElementById("playersRows");
 const winnerSelect = document.getElementById("winnerSelect");
 
-// Carga los jugadores para dropdown y genera filas del formulario de partida
+// Carga los jugadores y genera filas para registrar partida
 async function loadPlayers() {
   try {
     const res = await fetch(`${API_URL}/players`);
@@ -27,12 +27,7 @@ async function loadPlayers() {
         <td>
           <select class="player-select" required>
             <option value="">-- Selecciona jugador --</option>
-            ${players
-              .map(
-                (p) =>
-                  `<option value="${p.name}#${p.tag}">${p.name}#${p.tag}</option>`
-              )
-              .join("")}
+            ${players.map(p => `<option value="${p.name}#${p.tag}">${p.name}#${p.tag}</option>`).join("")}
           </select>
         </td>
         <td><input type="number" class="kills-input" min="0" required /></td>
@@ -47,14 +42,14 @@ async function loadPlayers() {
 
     // Evitar jugadores repetidos
     const selects = document.querySelectorAll(".player-select");
-    selects.forEach((select) =>
+    selects.forEach(select =>
       select.addEventListener("change", () => {
         const selectedValues = Array.from(selects)
-          .map((s) => s.value)
-          .filter((v) => v !== "");
-        selects.forEach((s) => {
+          .map(s => s.value)
+          .filter(v => v !== "");
+        selects.forEach(s => {
           if (s.value === "") {
-            Array.from(s.options).forEach((opt) => {
+            Array.from(s.options).forEach(opt => {
               opt.disabled = selectedValues.includes(opt.value);
             });
           }
@@ -99,7 +94,6 @@ addMatchForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const rows = document.querySelectorAll("#playersRows tr");
-
   if (rows.length !== 10) {
     alert("Debe haber exactamente 10 jugadores.");
     return;
@@ -127,14 +121,10 @@ addMatchForm.addEventListener("submit", async (e) => {
     const assists = Number(row.querySelector(".assists-input").value);
     const acs = Number(row.querySelector(".acs-input").value);
     const firstBloods = Number(row.querySelector(".fb-input").value);
-    const headshotKills = Number(row.querySelector(".hs-input").value);
+    const hsPercent = Number(row.querySelector(".hs-input").value);
 
-    if (
-      [kills, deaths, assists, acs, firstBloods, headshotKills].some(
-        (v) => isNaN(v) || v < 0
-      )
-    ) {
-      alert("Completa todos los campos numéricos correctamente.");
+    if ([kills, deaths, assists, acs, firstBloods, hsPercent].some(v => isNaN(v) || v < 0 || (hsPercent > 100))) {
+      alert("Completa todos los campos numéricos correctamente y HS% entre 0 y 100.");
       return;
     }
 
@@ -146,11 +136,10 @@ addMatchForm.addEventListener("submit", async (e) => {
       assists,
       acs,
       firstBloods,
-      headshotKills,
+      hsPercent,
     });
   }
 
-  // Validar ganador seleccionado
   const winnerTeam = winnerSelect.value;
   if (!["A", "B"].includes(winnerTeam)) {
     alert("Selecciona el equipo ganador (Team A o Team B).");
