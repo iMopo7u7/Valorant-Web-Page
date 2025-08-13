@@ -6,7 +6,7 @@ fetch("https://valorant-10-mans.onrender.com/leaderboard")
     tbody.innerHTML = "";
     if (players.length === 0) {
       tbody.innerHTML =
-        '<tr><td colspan="6" style="color:#ff4655;">No hay datos para mostrar</td></tr>';
+        '<tr><td colspan="8" style="color:#ff4655;">No hay datos para mostrar</td></tr>';
       return;
     }
     players.forEach((p, i) => {
@@ -16,7 +16,9 @@ fetch("https://valorant-10-mans.onrender.com/leaderboard")
         <td data-label="Jugador">${p.name}#${p.tag}</td>
         <td data-label="ACS Promedio">${p.avgACS.toFixed(2)}</td>
         <td data-label="KDA Promedio">${p.avgKDA.toFixed(2)}</td>
+        <td data-label="HS%">${p.hsPercent.toFixed(2)}%</td>
         <td data-label="First Bloods Promedio">${p.avgFirstBloods.toFixed(2)}</td>
+        <td data-label="Winrate %">${p.winrate.toFixed(2)}%</td>
         <td data-label="Score Compuesto">${p.score.toFixed(2)}</td>
       `;
       tbody.appendChild(tr);
@@ -24,5 +26,5 @@ fetch("https://valorant-10-mans.onrender.com/leaderboard")
   })
   .catch(() => {
     tbody.innerHTML =
-      '<tr><td colspan="6" style="color:#ff4655;">Error cargando leaderboard</td></tr>';
+      '<tr><td colspan="8" style="color:#ff4655;">Error cargando leaderboard</td></tr>';
   });
