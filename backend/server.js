@@ -162,18 +162,22 @@ app.get("/leaderboard", async (req, res) => {
       const cappedKills = Math.min(avgKills, 30);
       const impactKillsScore = (avgFirstBloods * 1.5) + (cappedKills - avgFirstBloods);
 
-      // Ponderación de cada estadística
+      // Ponderación de cada estadística (ajustada)
       const scoreRaw =
-        (avgACS * 2.0) +
-        (impactKillsScore * 1.5) +
+        (avgACS * 1.5) +
+        (impactKillsScore * 1.2) +
         (avgAssists * 0.8) +
-        (hsPercent * 1.2) +
+        (hsPercent * 1.0) +
         (winrate * 1.0) -
         (avgDeaths * 1.0);
 
-      // Bonus por consistencia (jugadores que jugaron más)
+      // Factor de confiabilidad según número de partidas
+      const reliabilityFactor = Math.min(matches / 5, 1); // 0 a 1, 5 partidas o más = 1
+
+      // Bonus por consistencia limitado
       const consistencyBonus = 1 + (Math.min(matches, 20) / 100); // max 20% extra
-      const finalScore = scoreRaw * consistencyBonus;
+
+      const finalScore = scoreRaw * consistencyBonus * reliabilityFactor;
 
       return {
         name: p.name,
