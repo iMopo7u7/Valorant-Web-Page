@@ -30,7 +30,7 @@
       margin-top: 15px;
       font-weight: 600;
     }
-    select, input[type="number"] {
+    select, input[type="number"], input[type="text"] {
       width: 100%;
       padding: 8px;
       border-radius: 8px;
@@ -111,7 +111,7 @@
 <body>
   <h1>Panel Administración Valorant</h1>
 
-  <!-- Formulario para añadir jugadores (igual que antes) -->
+  <!-- Formulario para añadir jugadores -->
   <form id="addPlayerForm">
     <label for="playerName">Nombre del jugador</label>
     <input id="playerName" name="playerName" type="text" placeholder="Ejemplo: Player1" required />
@@ -122,9 +122,19 @@
     <button type="submit">Añadir jugador</button>
   </form>
 
-  <!-- Formulario mejorado para registrar partidas -->
+  <!-- Formulario para registrar partidas -->
   <form id="addMatchForm">
     <h2>Registrar Partida (10 jugadores, 5 por equipo)</h2>
+
+    <label for="winnerSelect" style="margin-top:15px; font-weight:700; color:#ff4655;">
+      Equipo ganador:
+    </label>
+    <select id="winnerSelect" required style="width: 100px; padding: 6px; border-radius: 8px; border:none; background:#2a2a2a; color:#eee; box-shadow: inset 0 0 6px #ff4655aa; margin-bottom: 15px;">
+      <option value="">-- Selecciona --</option>
+      <option value="A">Team A</option>
+      <option value="B">Team B</option>
+    </select>
+
     <table aria-label="Tabla para añadir estadísticas de jugadores">
       <thead>
         <tr>
@@ -136,12 +146,14 @@
           <th>Assists</th>
           <th>ACS</th>
           <th>First Bloods</th>
+          <th>Headshot Kills</th>
         </tr>
       </thead>
       <tbody id="playersRows">
-        <!-- Aquí se generan filas dinámicamente con JS -->
+        <!-- Filas generadas por JS -->
       </tbody>
     </table>
+
     <button type="submit">Registrar Partida</button>
   </form>
 
