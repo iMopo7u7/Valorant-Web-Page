@@ -22,7 +22,6 @@ async function connectDB() {
   try {
     const client = new MongoClient(process.env.MONGODB_URI);
     await client.connect();
-    // Si tu URI no trae base de datos, cámbiala aquí
     db = client.db("valorantDB");
     playersCollection = db.collection("players");
     matchesCollection = db.collection("matches");
@@ -32,8 +31,6 @@ async function connectDB() {
     process.exit(1);
   }
 }
-
-// -------------------- RUTAS --------------------
 
 // Añadir jugador
 app.post("/players", async (req, res) => {
@@ -60,7 +57,9 @@ app.post("/players", async (req, res) => {
       totalAssists: 0,
       totalACS: 0,
       totalFirstBloods: 0,
+      totalHeadshotKills: 0,
       matchesPlayed: 0,
+      wins: 0,
     };
 
     await playersCollection.insertOne(newPlayer);
@@ -83,15 +82,29 @@ app.get("/players", async (req, res) => {
 // Añadir partida
 app.post("/matches", async (req, res) => {
   try {
-    const { match } = req.body;
+    const { match, winnerTeam } = req.body;
+
     if (!Array.isArray(match) || match.length !== 10) {
       return res.status(400).json({ error: "Debes enviar un array de 10 jugadores" });
     }
 
+    if (!["A", "B"].includes(winnerTeam)) {
+      return res.status(400).json({ error: "Debe indicar equipo ganador válido (A o B)" });
+    }
+
     const seenPlayers = new Set();
+
     for (const p of match) {
-      if (!p.name || !p.tag) {
-        return res.status(400).json({ error: "Cada jugador debe tener nombre y tag" });
+      if (
+        !p.name || !p.tag ||
+        typeof p.kills !== "number" || p.kills < 0 ||
+        typeof p.deaths !== "number" || p.deaths < 0 ||
+        typeof p.assists !== "number" || p.assists < 0 ||
+        typeof p.acs !== "number" || p.acs < 0 ||
+        typeof p.firstBloods !== "number" || p.firstBloods < 0 ||
+        typeof p.headshotKills !== "number" || p.headshotKills < 0
+      ) {
+        return res.status(400).json({ error: `Datos inválidos para jugador ${p.name}#${p.tag}` });
       }
 
       const exists = await playersCollection.findOne({
@@ -108,23 +121,35 @@ app.post("/matches", async (req, res) => {
         return res.status(400).json({ error: `Jugador repetido: ${p.name}#${p.tag}` });
       }
       seenPlayers.add(key);
-
-      const { kills, deaths, assists, acs, firstBloods } = p;
-      if ([kills, deaths, assists, acs, firstBloods].some(v => typeof v !== "number" || v < 0)) {
-        return res.status(400).json({ error: `Stats inválidas para ${p.name}#${p.tag}` });
-      }
     }
 
-    await matchesCollection.insertOne({ match });
+    // Guardar la partida
+    await matchesCollection.insertOne({ match, winnerTeam, date: new Date() });
+
+    // Actualizar estadísticas
     for (const p of match) {
+      const playerTeam = match.indexOf(p) < 5 ? "A" : "B"; // asumiendo orden
+
       await playersCollection.updateOne(
         { name: { $regex: `^${p.name.trim()}$`, $options: "i" }, tag: { $regex: `^${p.tag.trim()}$`, $options: "i" } },
-        { $inc: { totalKills: p.kills, totalDeaths: p.deaths, totalAssists: p.assists, totalACS: p.acs, totalFirstBloods: p.firstBloods, matchesPlayed: 1 } }
+        {
+          $inc: {
+            totalKills: p.kills,
+            totalDeaths: p.deaths,
+            totalAssists: p.assists,
+            totalACS: p.acs,
+            totalFirstBloods: p.firstBloods,
+            totalHeadshotKills: p.headshotKills,
+            matchesPlayed: 1,
+            wins: playerTeam === winnerTeam ? 1 : 0,
+          },
+        }
       );
     }
 
     res.json({ message: "Partida añadida exitosamente" });
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Error interno al añadir partida" });
   }
 });
@@ -133,19 +158,39 @@ app.post("/matches", async (req, res) => {
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
+
     const withScores = players.map((p) => {
       const avgKills = p.matchesPlayed ? p.totalKills / p.matchesPlayed : 0;
       const avgDeaths = p.matchesPlayed ? p.totalDeaths / p.matchesPlayed : 1;
       const avgACS = p.matchesPlayed ? p.totalACS / p.matchesPlayed : 0;
       const avgFirstBloods = p.matchesPlayed ? p.totalFirstBloods / p.matchesPlayed : 0;
+      const hsPercent = p.totalKills ? (p.totalHeadshotKills / p.totalKills) * 100 : 0;
+      const winrate = p.matchesPlayed ? (p.wins / p.matchesPlayed) * 100 : 0;
+
       const avgKDA = avgDeaths === 0 ? avgKills : avgKills / avgDeaths;
       const score = avgACS + avgKDA + avgFirstBloods * 10;
 
-      return { ...p, avgKills, avgDeaths, avgACS, avgFirstBloods, avgKDA, score };
+      return {
+        name: p.name,
+        tag: p.tag,
+        avgKills,
+        avgDeaths,
+        avgACS,
+        avgFirstBloods,
+        hsPercent,
+        winrate,
+        avgKDA,
+        score,
+        matchesPlayed: p.matchesPlayed,
+        totalFirstBloods: p.totalFirstBloods,
+        wins: p.wins,
+      };
     });
+
     withScores.sort((a, b) => b.score - a.score);
     res.json(withScores);
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Error al generar leaderboard" });
   }
 });
@@ -154,16 +199,22 @@ app.get("/leaderboard", async (req, res) => {
 app.get("/matches/:name/:tag", async (req, res) => {
   try {
     const { name, tag } = req.params;
-    const matches = await matchesCollection.find({
-      match: { $elemMatch: { name: { $regex: `^${name}$`, $options: "i" }, tag: { $regex: `^${tag}$`, $options: "i" } } }
-    }).toArray();
+    const matches = await matchesCollection
+      .find({
+        match: {
+          $elemMatch: {
+            name: { $regex: `^${name}$`, $options: "i" },
+            tag: { $regex: `^${tag}$`, $options: "i" },
+          },
+        },
+      })
+      .toArray();
     res.json(matches);
   } catch {
     res.status(500).json({ error: "Error al obtener historial" });
   }
 });
 
-// -------------------- ARRANQUE --------------------
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 });
