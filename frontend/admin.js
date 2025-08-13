@@ -3,6 +3,7 @@ const API_URL = "https://valorant-10-mans.onrender.com";
 const addPlayerForm = document.getElementById("addPlayerForm");
 const addMatchForm = document.getElementById("addMatchForm");
 const playersRows = document.getElementById("playersRows");
+const winnerSelect = document.getElementById("winnerSelect");
 
 // Carga los jugadores para dropdown y genera filas del formulario de partida
 async function loadPlayers() {
@@ -11,12 +12,9 @@ async function loadPlayers() {
     const players = await res.json();
 
     if (players.length < 10) {
-      playersRows.innerHTML = `<tr><td colspan="8" style="color:#ff4655;">Necesitas al menos 10 jugadores registrados para añadir partidas.</td></tr>`;
+      playersRows.innerHTML = `<tr><td colspan="9" style="color:#ff4655;">Necesitas al menos 10 jugadores registrados para añadir partidas.</td></tr>`;
       return;
     }
-
-    // Generar select para jugadores (sin repetir)
-    // Dividimos en 5 filas para Team A y 5 para Team B
 
     let html = "";
     for (let i = 0; i < 10; i++) {
@@ -42,11 +40,12 @@ async function loadPlayers() {
         <td><input type="number" class="assists-input" min="0" required /></td>
         <td><input type="number" class="acs-input" min="0" required /></td>
         <td><input type="number" class="fb-input" min="0" required /></td>
+        <td><input type="number" class="hs-input" min="0" max="100" required /></td>
       </tr>`;
     }
     playersRows.innerHTML = html;
 
-    // Añadir control para evitar seleccionar jugadores repetidos
+    // Evitar jugadores repetidos
     const selects = document.querySelectorAll(".player-select");
     selects.forEach((select) =>
       select.addEventListener("change", () => {
@@ -55,7 +54,6 @@ async function loadPlayers() {
           .filter((v) => v !== "");
         selects.forEach((s) => {
           if (s.value === "") {
-            // disable opciones que ya fueron seleccionadas en otro select
             Array.from(s.options).forEach((opt) => {
               opt.disabled = selectedValues.includes(opt.value);
             });
@@ -63,8 +61,8 @@ async function loadPlayers() {
         });
       })
     );
-  } catch (err) {
-    playersRows.innerHTML = `<tr><td colspan="8" style="color:#ff4655;">Error cargando jugadores</td></tr>`;
+  } catch {
+    playersRows.innerHTML = `<tr><td colspan="9" style="color:#ff4655;">Error cargando jugadores</td></tr>`;
   }
 }
 
@@ -129,9 +127,10 @@ addMatchForm.addEventListener("submit", async (e) => {
     const assists = Number(row.querySelector(".assists-input").value);
     const acs = Number(row.querySelector(".acs-input").value);
     const firstBloods = Number(row.querySelector(".fb-input").value);
+    const headshotKills = Number(row.querySelector(".hs-input").value);
 
     if (
-      [kills, deaths, assists, acs, firstBloods].some(
+      [kills, deaths, assists, acs, firstBloods, headshotKills].some(
         (v) => isNaN(v) || v < 0
       )
     ) {
@@ -145,17 +144,24 @@ addMatchForm.addEventListener("submit", async (e) => {
       kills,
       deaths,
       assists,
-      kda: deaths === 0 ? kills + assists : (kills + assists) / deaths,
       acs,
       firstBloods,
+      headshotKills,
     });
+  }
+
+  // Validar ganador seleccionado
+  const winnerTeam = winnerSelect.value;
+  if (!["A", "B"].includes(winnerTeam)) {
+    alert("Selecciona el equipo ganador (Team A o Team B).");
+    return;
   }
 
   try {
     const res = await fetch(`${API_URL}/matches`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ match: matchData }),
+      body: JSON.stringify({ match: matchData, winnerTeam }),
     });
     const data = await res.json();
     alert(data.message || data.error);
