@@ -45,9 +45,7 @@ app.post("/players", async (req, res) => {
       tag: { $regex: `^${tag.trim()}$`, $options: "i" },
     });
 
-    if (exists) {
-      return res.status(400).json({ error: "Jugador con ese nombre y tag ya existe" });
-    }
+    if (exists) return res.status(400).json({ error: "Jugador con ese nombre y tag ya existe" });
 
     const newPlayer = {
       name: name.trim(),
@@ -57,7 +55,7 @@ app.post("/players", async (req, res) => {
       totalAssists: 0,
       totalACS: 0,
       totalFirstBloods: 0,
-      totalHeadshotKills: 0,
+      totalHeadshotKills: 0, // se sigue acumulando internamente
       matchesPlayed: 0,
       wins: 0,
     };
@@ -79,31 +77,22 @@ app.get("/players", async (req, res) => {
   }
 });
 
-// Añadir partida
+// Añadir partida con HS% en lugar de headshotKills
 app.post("/matches", async (req, res) => {
   try {
     const { match, winnerTeam } = req.body;
 
-    if (!Array.isArray(match) || match.length !== 10) {
+    if (!Array.isArray(match) || match.length !== 10)
       return res.status(400).json({ error: "Debes enviar un array de 10 jugadores" });
-    }
 
-    if (!["A", "B"].includes(winnerTeam)) {
+    if (!["A", "B"].includes(winnerTeam))
       return res.status(400).json({ error: "Debe indicar equipo ganador válido (A o B)" });
-    }
 
     const seenPlayers = new Set();
 
     for (const p of match) {
-      if (
-        !p.name || !p.tag ||
-        typeof p.kills !== "number" || p.kills < 0 ||
-        typeof p.deaths !== "number" || p.deaths < 0 ||
-        typeof p.assists !== "number" || p.assists < 0 ||
-        typeof p.acs !== "number" || p.acs < 0 ||
-        typeof p.firstBloods !== "number" || p.firstBloods < 0 ||
-        typeof p.headshotKills !== "number" || p.headshotKills < 0
-      ) {
+      const requiredNumbers = ["kills","deaths","assists","acs","firstBloods","hsPercent"];
+      if (!p.name || !p.tag || requiredNumbers.some(n => typeof p[n] !== "number" || p[n] < 0) || p.hsPercent > 100) {
         return res.status(400).json({ error: `Datos inválidos para jugador ${p.name}#${p.tag}` });
       }
 
@@ -112,14 +101,10 @@ app.post("/matches", async (req, res) => {
         tag: { $regex: `^${p.tag.trim()}$`, $options: "i" },
       });
 
-      if (!exists) {
-        return res.status(400).json({ error: `Jugador no encontrado: ${p.name}#${p.tag}` });
-      }
+      if (!exists) return res.status(400).json({ error: `Jugador no encontrado: ${p.name}#${p.tag}` });
 
       const key = `${p.name.toLowerCase()}#${p.tag.toLowerCase()}`;
-      if (seenPlayers.has(key)) {
-        return res.status(400).json({ error: `Jugador repetido: ${p.name}#${p.tag}` });
-      }
+      if (seenPlayers.has(key)) return res.status(400).json({ error: `Jugador repetido: ${p.name}#${p.tag}` });
       seenPlayers.add(key);
     }
 
@@ -129,6 +114,7 @@ app.post("/matches", async (req, res) => {
     // Actualizar estadísticas
     for (const p of match) {
       const playerTeam = match.indexOf(p) < 5 ? "A" : "B"; // asumiendo orden
+      const headshotKills = Math.round((p.hsPercent / 100) * p.kills);
 
       await playersCollection.updateOne(
         { name: { $regex: `^${p.name.trim()}$`, $options: "i" }, tag: { $regex: `^${p.tag.trim()}$`, $options: "i" } },
@@ -139,7 +125,7 @@ app.post("/matches", async (req, res) => {
             totalAssists: p.assists,
             totalACS: p.acs,
             totalFirstBloods: p.firstBloods,
-            totalHeadshotKills: p.headshotKills,
+            totalHeadshotKills: headshotKills,
             matchesPlayed: 1,
             wins: playerTeam === winnerTeam ? 1 : 0,
           },
@@ -166,7 +152,6 @@ app.get("/leaderboard", async (req, res) => {
       const avgFirstBloods = p.matchesPlayed ? p.totalFirstBloods / p.matchesPlayed : 0;
       const hsPercent = p.totalKills ? (p.totalHeadshotKills / p.totalKills) * 100 : 0;
       const winrate = p.matchesPlayed ? (p.wins / p.matchesPlayed) * 100 : 0;
-
       const avgKDA = avgDeaths === 0 ? avgKills : avgKills / avgDeaths;
       const score = avgACS + avgKDA + avgFirstBloods * 10;
 
