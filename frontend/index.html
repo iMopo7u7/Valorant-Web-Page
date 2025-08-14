@@ -4,93 +4,636 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Leaderboard Valorant - 10 Mans</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
-    body {
-      background-color: #121212;
-      color: #eee;
-      font-family: 'Poppins', sans-serif;
-      padding: 20px;
+    :root {
+      --neon-red: #ff4655;
+      --neon-red-glow: rgba(255, 70, 85, 0.5);
+      --neon-red-bright: #ff6b7a;
+      --dark-bg: #0a0a0f;
+      --dark-surface: #111118;
+      --dark-card: #1a1a24;
+      --dark-border: #2a2a35;
+      --text-primary: #ffffff;
+      --text-secondary: #b4b4c7;
+      --text-muted: #7a7a8a;
+      --accent-blue: #4a9eff;
+      --accent-purple: #8b5cf6;
+      --gold: #ffd700;
+      --silver: #c0c0c0;
+      --bronze: #cd7f32;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
     }
-    h1 {
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: 
+        radial-gradient(ellipse at 20% 50%, rgba(255, 70, 85, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+        linear-gradient(135deg, var(--dark-bg) 0%, var(--dark-surface) 100%);
+      color: var(--text-primary);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 25% 25%, rgba(255, 70, 85, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(74, 158, 255, 0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .header {
       text-align: center;
-      color: #ff4655;
-      text-shadow: 0 0 8px #ff4655aa;
-      margin-bottom: 30px;
+      margin-bottom: 3rem;
+      padding: 0 1rem;
     }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, var(--neon-red), var(--neon-red-bright));
+      color: var(--text-primary);
+      padding: 0.75rem 1.5rem;
+      border-radius: 2rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--neon-red);
+      box-shadow: 
+        0 0 20px var(--neon-red-glow),
+        inset 0 0 20px rgba(255, 70, 85, 0.1);
+      animation: badgeGlow 3s ease-in-out infinite alternate;
+    }
+
+    .header-badge::before {
+      content: '●';
+      color: var(--text-primary);
+      animation: pulse 2s infinite;
+      text-shadow: 0 0 10px currentColor;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    @keyframes badgeGlow {
+      0% { box-shadow: 0 0 20px var(--neon-red-glow), inset 0 0 20px rgba(255, 70, 85, 0.1); }
+      100% { box-shadow: 0 0 30px var(--neon-red-glow), inset 0 0 30px rgba(255, 70, 85, 0.2); }
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--text-primary), var(--neon-red-bright), var(--accent-blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.025em;
+      text-shadow: 0 0 30px var(--neon-red-glow);
+      position: relative;
+    }
+
+    h1::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--neon-red), transparent);
+      box-shadow: 0 0 10px var(--neon-red);
+    }
+
+    .subtitle {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .leaderboard-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: var(--dark-card);
+      border-radius: 1.5rem;
+      border: 1px solid var(--dark-border);
+      box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        0 0 40px rgba(255, 70, 85, 0.1),
+        inset 0 0 40px rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .leaderboard-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--neon-red), var(--accent-purple), var(--accent-blue), var(--neon-red));
+      animation: borderFlow 4s ease-in-out infinite;
+    }
+
+    @keyframes borderFlow {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    .table-header {
+      background: linear-gradient(135deg, var(--dark-surface) 0%, var(--dark-card) 100%);
+      color: var(--text-primary);
+      padding: 2rem;
+      border-bottom: 1px solid var(--dark-border);
+      position: relative;
+    }
+
+    .table-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--neon-red), transparent);
+      box-shadow: 0 0 10px var(--neon-red-glow);
+    }
+
+    .table-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .table-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
     table {
       width: 100%;
-      max-width: 900px;
-      margin: 0 auto;
       border-collapse: collapse;
-      box-shadow: 0 0 20px #ff4655aa;
-      border-radius: 12px;
-      overflow: hidden;
+      font-size: 0.95rem;
     }
-    th, td {
-      padding: 15px;
-      text-align: center;
-      border-bottom: 1px solid #333;
+
+    thead {
+      background: var(--dark-surface);
+      border-bottom: 2px solid var(--dark-border);
     }
+
     th {
-      background-color: #2a2a2a;
-      color: #ff4655;
+      padding: 1.25rem 1.5rem;
+      text-align: left;
+      font-weight: 600;
+      color: var(--neon-red);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.8rem;
+      border-bottom: 1px solid var(--dark-border);
+      position: relative;
+    }
+
+    th::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--neon-red), transparent);
+      opacity: 0.3;
+    }
+
+    th:first-child {
+      text-align: center;
+      width: 80px;
+    }
+
+    th:not(:first-child):not(:nth-child(2)) {
+      text-align: center;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--dark-border);
+      transition: all 0.3s ease;
+      background: rgba(26, 26, 36, 0.3);
+      position: relative;
+    }
+
+    tbody tr::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--neon-red-glow), transparent);
+      transition: width 0.3s ease;
+      z-index: 1;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 70, 85, 0.05);
+      transform: translateY(-2px);
+      box-shadow: 
+        0 10px 25px rgba(0, 0, 0, 0.3),
+        0 0 20px rgba(255, 70, 85, 0.1);
+    }
+
+    tbody tr:hover::before {
+      width: 4px;
+    }
+
+    td {
+      padding: 1.5rem 1.5rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      position: relative;
+      z-index: 2;
+    }
+
+    td:first-child {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    td:not(:first-child):not(:nth-child(2)) {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+
+    /* Ranking badges */
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 1rem;
+      position: relative;
+    }
+
+    tbody tr:nth-child(1) .rank-badge {
+      background: linear-gradient(135deg, var(--gold), #fbbf24);
+      color: var(--dark-bg);
+      box-shadow: 
+        0 0 20px rgba(255, 215, 0, 0.4),
+        0 0 0 3px rgba(255, 215, 0, 0.2);
+      animation: goldGlow 3s ease-in-out infinite alternate;
+    }
+
+    tbody tr:nth-child(2) .rank-badge {
+      background: linear-gradient(135deg, var(--silver), #9ca3af);
+      color: var(--dark-bg);
+      box-shadow: 
+        0 0 15px rgba(192, 192, 192, 0.3),
+        0 0 0 3px rgba(192, 192, 192, 0.2);
+    }
+
+    tbody tr:nth-child(3) .rank-badge {
+      background: linear-gradient(135deg, var(--bronze), #f97316);
+      color: var(--text-primary);
+      box-shadow: 
+        0 0 15px rgba(205, 127, 50, 0.3),
+        0 0 0 3px rgba(205, 127, 50, 0.2);
+    }
+
+    tbody tr:nth-child(n+4) .rank-badge {
+      background: var(--dark-surface);
+      color: var(--text-secondary);
+      border: 2px solid var(--dark-border);
+      box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+    }
+
+    @keyframes goldGlow {
+      0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4), 0 0 0 3px rgba(255, 215, 0, 0.2); }
+      100% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.6), 0 0 0 3px rgba(255, 215, 0, 0.3); }
+    }
+
+    /* Player names */
+    .player-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 1rem;
+    }
+
+    /* Stat highlighting */
+    .stat-excellent {
+      color: var(--success);
+      font-weight: 600;
+      text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+    }
+
+    .stat-good {
+      color: var(--accent-blue);
+      font-weight: 600;
+      text-shadow: 0 0 10px rgba(74, 158, 255, 0.3);
+    }
+
+    .stat-average {
+      color: var(--text-secondary);
+    }
+
+    .stat-poor {
+      color: var(--danger);
+      font-weight: 600;
+      text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+    }
+
+    /* Special highlighting for important stats */
+    td:nth-child(3), /* ACS */
+    td:nth-child(8) { /* Score */
+      color: var(--neon-red-bright);
       font-weight: 700;
     }
-    tbody tr:hover {
-      background-color: #222;
-      transition: background-color 0.3s ease;
+
+    td:nth-child(4) { /* KDA */
+      color: var(--accent-blue);
+      font-weight: 700;
     }
-    @media (max-width: 600px) {
+
+    td:nth-child(7) { /* Winrate */
+      color: var(--accent-purple);
+      font-weight: 700;
+    }
+
+    /* Performance indicators */
+    .performance-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--surface-tertiary);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 0.25rem;
+    }
+
+    .performance-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    .performance-excellent { background: #10b981; }
+    .performance-good { background: #0891b2; }
+    .performance-average { background: #f59e0b; }
+    .performance-poor { background: #ef4444; }
+
+    /* Loading state */
+    .loading-cell {
+      text-align: center;
+      padding: 4rem;
+      color: var(--neon-red);
+      font-style: italic;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 1.5rem;
+      height: 1.5rem;
+      border: 3px solid var(--dark-border);
+      border-top: 3px solid var(--neon-red);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 0.75rem;
+      box-shadow: 0 0 10px var(--neon-red-glow);
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .leaderboard-container {
+        margin: 0 0.5rem;
+      }
+      
+      th, td {
+        padding: 1rem 0.75rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem 0.5rem;
+      }
+
+      .header {
+        margin-bottom: 2rem;
+      }
+
+      .table-header {
+        padding: 1.5rem;
+      }
+
       table, thead, tbody, th, td, tr {
         display: block;
       }
+
       thead tr {
         display: none;
       }
+
       tbody tr {
-        margin-bottom: 15px;
-        border-radius: 10px;
-        background: #222;
-        padding: 10px;
-      }
-      tbody td {
-        padding: 10px;
-        text-align: right;
+        margin-bottom: 1.5rem;
+        border-radius: 1rem;
+        border: 1px solid var(--dark-border);
+        box-shadow: 
+          0 10px 25px rgba(0, 0, 0, 0.3),
+          0 0 20px rgba(255, 70, 85, 0.05);
+        padding: 1.5rem;
+        background: var(--dark-card);
         position: relative;
       }
+
+      tbody tr::before {
+        width: 0;
+      }
+
+      tbody tr:hover {
+        transform: none;
+        box-shadow: 
+          0 15px 35px rgba(0, 0, 0, 0.4),
+          0 0 30px rgba(255, 70, 85, 0.1);
+      }
+
+      tbody td {
+        padding: 1rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--dark-border);
+        text-align: left;
+      }
+
+      tbody td:last-child {
+        border-bottom: none;
+      }
+
       tbody td::before {
         content: attr(data-label);
-        position: absolute;
-        left: 10px;
-        font-weight: 700;
+        font-weight: 600;
+        color: var(--neon-red);
         text-transform: uppercase;
-        color: #ff4655;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+      }
+
+      .rank-badge {
+        width: 2rem;
+        height: 2rem;
+        font-size: 0.9rem;
+      }
+
+      .player-name {
+        font-size: 1.1rem;
+      }
+
+      /* Mobile stat highlighting */
+      tbody td:nth-child(3), /* ACS */
+      tbody td:nth-child(8) { /* Score */
+        color: var(--neon-red-bright);
+      }
+
+      tbody td:nth-child(4) { /* KDA */
+        color: var(--accent-blue);
+      }
+
+      tbody td:nth-child(7) { /* Winrate */
+        color: var(--accent-purple);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .leaderboard-container {
+        border-radius: 1rem;
+        margin: 0 0.25rem;
+      }
+
+      tbody tr {
+        padding: 1rem;
+      }
+
+      tbody td {
+        padding: 0.75rem 0;
+      }
+
+      .table-header {
+        padding: 1rem;
+      }
+    }
+
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Focus states */
+    tbody tr:focus-within {
+      outline: 2px solid var(--primary-red);
+      outline-offset: -2px;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+      
+      .leaderboard-container {
+        box-shadow: none;
+        border: 1px solid #ccc;
+      }
+      
+      tbody tr:hover {
+        background: transparent;
+        transform: none;
+        box-shadow: none;
       }
     }
   </style>
 </head>
 <body>
-  <h1>Leaderboard Valorant - 10 Mans</h1>
-  <table aria-label="Tabla del leaderboard">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Jugador</th>
-        <th>ACS Promedio</th>
-        <th>KDA Promedio</th>
-        <th>HS%</th>
-        <th>First Bloods Promedio</th>
-        <th>Winrate %</th>
-        <th>Score Compuesto</th>
-      </tr>
-    </thead>
-    <tbody id="leaderboardBody">
-      <tr><td colspan="8" style="color:#ff4655;">Cargando datos...</td></tr>
-    </tbody>
-  </table>
+  <div class="header">
+    <div class="header-badge">
+      Live Tournament
+    </div>
+    <h1>Valorant Competitive Leaderboard</h1>
+    <p class="subtitle">10 Mans Championship Series</p>
+  </div>
+
+  <div class="leaderboard-container">
+    <div class="table-header">
+      <div class="table-title">Performance Rankings</div>
+      <div class="table-subtitle">Updated in real-time • Season 2024</div>
+    </div>
+    
+    <table aria-label="Tabla del leaderboard">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Player</th>
+          <th>ACS Avg</th>
+          <th>KDA Avg</th>
+          <th>HS%</th>
+          <th>FB Avg</th>
+          <th>Win Rate</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboardBody">
+        <tr>
+          <td colspan="8" class="loading-cell">
+            <span class="loading-spinner"></span>
+            Loading tournament data...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
   <script src="script.js"></script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ec531d87339e2d',t:'MTc1NTEzMTIyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
