@@ -12,8 +12,8 @@ fetch("https://valorant-10-mans.onrender.com/leaderboard")
     players.forEach((p, i) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td data-label="Posición">${i + 1}</td>
-        <td data-label="Jugador">${p.name}#${p.tag}</td>
+        <td data-label="Posición"><span class="rank-badge">${i + 1}</span></td>
+        <td data-label="Jugador" class="player-name">${p.name}#${p.tag}</td>
         <td data-label="ACS Promedio">${p.avgACS.toFixed(2)}</td>
         <td data-label="KDA Promedio">${p.avgKDA.toFixed(2)}</td>
         <td data-label="HS%">${p.hsPercent.toFixed(2)}%</td>
