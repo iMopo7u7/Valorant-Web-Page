@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Leaderboard Valorant - 10 Mans</title>
+  <title>Leaderboard Valorant - 10 Mans (Alineado)</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
@@ -117,18 +117,6 @@
       position: relative;
     }
 
-    h1::after {
-      content: '';
-      position: absolute;
-      bottom: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 120px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--neon-red), transparent);
-      box-shadow: 0 0 10px var(--neon-red);
-    }
-
     .subtitle {
       font-size: 1.125rem;
       color: var(--text-secondary);
@@ -198,10 +186,26 @@
       font-weight: 400;
     }
 
+    /* ---------- TABLE & ALIGNMENT FIXES ---------- */
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.95rem;
+      /* fixed layout + explicit columns -> consistent alignment */
+      table-layout: fixed;
+    }
+
+    /* Truncate overflow so long names/stats don't push columns */
+    th, td {
+      padding: 1.25rem 1.5rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* small-screen: allow wrapping for mobile cards */
+    @media (max-width: 768px) {
+      th, td { white-space: normal; overflow: visible; text-overflow: initial; }
     }
 
     thead {
@@ -210,7 +214,6 @@
     }
 
     th {
-      padding: 1.25rem 1.5rem;
       text-align: left;
       font-weight: 600;
       color: var(--neon-red);
@@ -233,14 +236,8 @@
       opacity: 0.3;
     }
 
-    th:first-child {
-      text-align: center;
-      width: 80px;
-    }
-
-    th:not(:first-child):not(:nth-child(2)) {
-      text-align: center;
-    }
+    th:first-child { text-align: center; }
+    th:not(:first-child):not(:nth-child(2)) { text-align: center; }
 
     tbody tr {
       border-bottom: 1px solid var(--dark-border);
@@ -261,25 +258,8 @@
       z-index: 1;
     }
 
-    tbody tr:hover {
-      background: rgba(255, 70, 85, 0.05);
-      transform: translateY(-2px);
-      box-shadow: 
-        0 10px 25px rgba(0, 0, 0, 0.3),
-        0 0 20px rgba(255, 70, 85, 0.1);
-    }
-
-    tbody tr:hover::before {
-      width: 4px;
-    }
-
-    td {
-      padding: 1.5rem 1.5rem;
-      font-weight: 500;
-      color: var(--text-primary);
-      position: relative;
-      z-index: 2;
-    }
+    tbody tr:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    tbody tr:hover::before { width: 4px; }
 
     /* Rank column (first column) */
     td:first-child {
@@ -287,6 +267,9 @@
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
       font-size: 1.1rem;
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+      width: 80px; /* match the <col> width */
     }
 
     /* Player column (second column) */
@@ -303,317 +286,58 @@
       font-weight: 600;
     }
 
-    /* Ranking styles for dynamic content */
-    tbody tr:nth-child(1) {
-      background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
-      border-left: 4px solid var(--gold);
-    }
+    /* Safe truncation for player names */
+    .player-name { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    tbody tr:nth-child(1) td:first-child {
-      color: var(--gold);
-      font-weight: 900;
-      font-size: 1.3rem;
-      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-      position: relative;
-    }
-
-    tbody tr:nth-child(1) td:first-child::after {
-      content: '👑';
-      position: absolute;
-      right: -20px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 1rem;
-    }
-
-    tbody tr:nth-child(2) {
-      background: linear-gradient(135deg, rgba(192, 192, 192, 0.1), rgba(192, 192, 192, 0.05));
-      border-left: 4px solid var(--silver);
-    }
-
-    tbody tr:nth-child(2) td:first-child {
-      color: var(--silver);
-      font-weight: 900;
-      font-size: 1.2rem;
-      text-shadow: 0 0 10px rgba(192, 192, 192, 0.5);
-    }
-
-    tbody tr:nth-child(3) {
-      background: linear-gradient(135deg, rgba(205, 127, 50, 0.1), rgba(205, 127, 50, 0.05));
-      border-left: 4px solid var(--bronze);
-    }
-
-    tbody tr:nth-child(3) td:first-child {
-      color: var(--bronze);
-      font-weight: 900;
-      font-size: 1.1rem;
-      text-shadow: 0 0 10px rgba(205, 127, 50, 0.5);
-    }
-
-
-
-    /* Player names */
-    .player-name {
-      font-weight: 600;
-      color: var(--text-primary);
-      font-size: 1rem;
-    }
+    /* Ranking visuals */
+    tbody tr:nth-child(1) { background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 215, 0, 0.03)); border-left: 4px solid var(--gold); }
+    tbody tr:nth-child(1) td:first-child { color: var(--gold); font-weight: 900; font-size: 1.3rem; }
+    tbody tr:nth-child(1) td:first-child::after { content: '👑'; position: absolute; right: -20px; top: 50%; transform: translateY(-50%); font-size: 1rem; }
+    tbody tr:nth-child(2) { background: linear-gradient(135deg, rgba(192,192,192,0.06), rgba(192,192,192,0.02)); border-left: 4px solid var(--silver); }
+    tbody tr:nth-child(3) { background: linear-gradient(135deg, rgba(205,127,50,0.06), rgba(205,127,50,0.02)); border-left: 4px solid var(--bronze); }
 
     /* Stat highlighting */
-    .stat-excellent {
-      color: var(--success);
-      font-weight: 600;
-      text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
-    }
+    .stat-excellent { color: var(--success); font-weight: 600; }
+    .stat-good { color: var(--accent-blue); font-weight: 600; }
+    .stat-average { color: var(--text-secondary); }
+    .stat-poor { color: var(--danger); font-weight: 600; }
 
-    .stat-good {
-      color: var(--accent-blue);
-      font-weight: 600;
-      text-shadow: 0 0 10px rgba(74, 158, 255, 0.3);
-    }
+    td:nth-child(3), td:nth-child(8) { color: var(--neon-red-bright) !important; font-weight: 700; }
+    td:nth-child(4) { color: var(--accent-blue) !important; font-weight: 700; }
+    td:nth-child(7) { color: var(--accent-purple) !important; font-weight: 700; }
 
-    .stat-average {
-      color: var(--text-secondary);
-    }
+    .loading-cell { text-align: center; padding: 4rem; color: var(--neon-red); font-style: italic; font-weight: 600; font-size: 1.1rem; }
+    .loading-spinner { display: inline-block; width: 1.5rem; height: 1.5rem; border: 3px solid var(--dark-border); border-top: 3px solid var(--neon-red); border-radius: 50%; animation: spin 1s linear infinite; margin-right: 0.75rem; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    .stat-poor {
-      color: var(--danger);
-      font-weight: 600;
-      text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
-    }
-
-    /* Special highlighting for important stats */
-    td:nth-child(3), /* ACS */
-    td:nth-child(8) { /* Score */
-      color: var(--neon-red-bright) !important;
-      font-weight: 700;
-    }
-
-    td:nth-child(4) { /* KDA */
-      color: var(--accent-blue) !important;
-      font-weight: 700;
-    }
-
-    td:nth-child(7) { /* Winrate */
-      color: var(--accent-purple) !important;
-      font-weight: 700;
-    }
-
-    /* Performance indicators */
-    .performance-bar {
-      width: 100%;
-      height: 4px;
-      background: var(--surface-tertiary);
-      border-radius: 2px;
-      overflow: hidden;
-      margin-top: 0.25rem;
-    }
-
-    .performance-fill {
-      height: 100%;
-      border-radius: 2px;
-      transition: width 0.3s ease;
-    }
-
-    .performance-excellent { background: #10b981; }
-    .performance-good { background: #0891b2; }
-    .performance-average { background: #f59e0b; }
-    .performance-poor { background: #ef4444; }
-
-    /* Loading state */
-    .loading-cell {
-      text-align: center;
-      padding: 4rem;
-      color: var(--neon-red);
-      font-style: italic;
-      font-weight: 600;
-      font-size: 1.1rem;
-    }
-
-    .loading-spinner {
-      display: inline-block;
-      width: 1.5rem;
-      height: 1.5rem;
-      border: 3px solid var(--dark-border);
-      border-top: 3px solid var(--neon-red);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-right: 0.75rem;
-      box-shadow: 0 0 10px var(--neon-red-glow);
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Responsive Design */
-    @media (max-width: 1024px) {
-      .leaderboard-container {
-        margin: 0 0.5rem;
-      }
-      
-      th, td {
-        padding: 1rem 0.75rem;
-      }
-    }
+    /* Responsive tweaks (keep mobile layout intact) */
+    @media (max-width: 1024px) { .leaderboard-container { margin: 0 0.5rem; } th, td { padding: 1rem 0.75rem; } }
 
     @media (max-width: 768px) {
-      body {
-        padding: 1rem 0.5rem;
-      }
-
-      .header {
-        margin-bottom: 2rem;
-      }
-
-      .table-header {
-        padding: 1.5rem;
-      }
-
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-
-      thead tr {
-        display: none;
-      }
-
-      tbody tr {
-        margin-bottom: 1.5rem;
-        border-radius: 1rem;
-        border: 1px solid var(--dark-border);
-        box-shadow: 
-          0 10px 25px rgba(0, 0, 0, 0.3),
-          0 0 20px rgba(255, 70, 85, 0.05);
-        padding: 1.5rem;
-        background: var(--dark-card);
-        position: relative;
-      }
-
-      tbody tr::before {
-        width: 0;
-      }
-
-      tbody tr:hover {
-        transform: none;
-        box-shadow: 
-          0 15px 35px rgba(0, 0, 0, 0.4),
-          0 0 30px rgba(255, 70, 85, 0.1);
-      }
-
-      tbody td {
-        padding: 1rem 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid var(--dark-border);
-        text-align: left;
-      }
-
-      tbody td:last-child {
-        border-bottom: none;
-      }
-
-      tbody td::before {
-        content: attr(data-label);
-        font-weight: 600;
-        color: var(--neon-red);
-        text-transform: uppercase;
-        font-size: 0.8rem;
-        letter-spacing: 0.05em;
-      }
-
-      /* Mobile ranking styles */
-      tbody tr:nth-child(1) td:first-child::after {
-        right: -15px;
-        font-size: 0.9rem;
-      }
-
-      .player-name {
-        font-size: 1.1rem;
-      }
-
-      /* Mobile stat highlighting */
-      tbody td:nth-child(3), /* ACS */
-      tbody td:nth-child(8) { /* Score */
-        color: var(--neon-red-bright) !important;
-      }
-
-      tbody td:nth-child(4) { /* KDA */
-        color: var(--accent-blue) !important;
-      }
-
-      tbody td:nth-child(7) { /* Winrate */
-        color: var(--accent-purple) !important;
-      }
-
-      /* Mobile player column */
-      tbody td:nth-child(2) {
-        color: var(--text-primary) !important;
-        font-family: 'Inter', sans-serif !important;
-      }
+      body { padding: 1rem 0.5rem; }
+      .table-header { padding: 1.5rem; }
+      table, thead, tbody, th, td, tr { display: block; }
+      thead tr { display: none; }
+      tbody tr { margin-bottom: 1.5rem; border-radius: 1rem; border: 1px solid var(--dark-border); padding: 1.5rem; background: var(--dark-card); position: relative; }
+      tbody td { padding: 1rem 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dark-border); text-align: left; }
+      tbody td::before { content: attr(data-label); font-weight: 600; color: var(--neon-red); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em; }
+      .player-name { font-size: 1.1rem; white-space: normal; }
     }
 
     @media (max-width: 480px) {
-      .leaderboard-container {
-        border-radius: 1rem;
-        margin: 0 0.25rem;
-      }
-
-      tbody tr {
-        padding: 1rem;
-      }
-
-      tbody td {
-        padding: 0.75rem 0;
-      }
-
-      .table-header {
-        padding: 1rem;
-      }
+      .leaderboard-container { border-radius: 1rem; margin: 0 0.25rem; }
+      tbody tr { padding: 1rem; }
+      tbody td { padding: 0.75rem 0; }
+      .table-header { padding: 1rem; }
     }
 
-    /* Accessibility */
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
 
-    /* Focus states */
-    tbody tr:focus-within {
-      outline: 2px solid var(--primary-red);
-      outline-offset: -2px;
-    }
-
-    /* Print styles */
-    @media print {
-      body {
-        background: white;
-        color: black;
-      }
-      
-      .leaderboard-container {
-        box-shadow: none;
-        border: 1px solid #ccc;
-      }
-      
-      tbody tr:hover {
-        background: transparent;
-        transform: none;
-        box-shadow: none;
-      }
-    }
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="header-badge">
-      Live Tournament
-    </div>
+    <div class="header-badge">Live Tournament</div>
     <h1>Valorant Competitive Leaderboard</h1>
     <p class="subtitle">10 Mans Championship Series</p>
   </div>
@@ -623,8 +347,19 @@
       <div class="table-title">Performance Rankings</div>
       <div class="table-subtitle">Updated in real-time • Season 2024</div>
     </div>
-    
+
+    <!-- Colgroup: explicit widths to keep columns aligned -->
     <table aria-label="Tabla del leaderboard">
+      <colgroup>
+        <col style="width:80px;" />
+        <col style="width:40%;" />
+        <col style="width:10%;" />
+        <col style="width:10%;" />
+        <col style="width:6%;" />
+        <col style="width:6%;" />
+        <col style="width:10%;" />
+        <col style="width:8%;" />
+      </colgroup>
       <thead>
         <tr>
           <th>Rank</th>
@@ -649,5 +384,5 @@
   </div>
 
   <script src="script.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ec6ccda2f55235',t:'MTc1NTEzMjI4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
