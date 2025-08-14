@@ -16,15 +16,11 @@
       --dark-border: #2a2a35;
       --text-primary: #ffffff;
       --text-secondary: #b4b4c7;
-      --text-muted: #7a7a8a;
       --accent-blue: #4a9eff;
       --accent-purple: #8b5cf6;
       --gold: #ffd700;
       --silver: #c0c0c0;
       --bronze: #cd7f32;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
     }
 
     * {
@@ -40,8 +36,8 @@
         radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
         linear-gradient(135deg, var(--dark-bg) 0%, var(--dark-surface) 100%);
       color: var(--text-primary);
-      line-height: 1.6;
       padding: 2rem 1rem;
+      margin: 0;
       min-height: 100vh;
       position: relative;
       overflow-x: hidden;
@@ -55,65 +51,28 @@
       width: 100%;
       height: 100%;
       background: 
-        radial-gradient(circle at 25% 25%, rgba(255, 70, 85, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 75% 75%, rgba(74, 158, 255, 0.08) 0%, transparent 50%);
+        radial-gradient(circle at 25% 25%, rgba(255, 70, 85, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(74, 158, 255, 0.06) 0%, transparent 50%);
       pointer-events: none;
       z-index: -1;
+      animation: ambientGlow 8s ease-in-out infinite alternate;
     }
 
-    .header {
-      text-align: center;
-      margin-bottom: 3rem;
-      padding: 0 1rem;
-    }
-
-    .header-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: linear-gradient(135deg, var(--neon-red), var(--neon-red-bright));
-      color: var(--text-primary);
-      padding: 0.75rem 1.5rem;
-      border-radius: 2rem;
-      font-size: 0.875rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 1.5rem;
-      border: 1px solid var(--neon-red);
-      box-shadow: 
-        0 0 20px var(--neon-red-glow),
-        inset 0 0 20px rgba(255, 70, 85, 0.1);
-      animation: badgeGlow 3s ease-in-out infinite alternate;
-    }
-
-    .header-badge::before {
-      content: '●';
-      color: var(--text-primary);
-      animation: pulse 2s infinite;
-      text-shadow: 0 0 10px currentColor;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
-
-    @keyframes badgeGlow {
-      0% { box-shadow: 0 0 20px var(--neon-red-glow), inset 0 0 20px rgba(255, 70, 85, 0.1); }
-      100% { box-shadow: 0 0 30px var(--neon-red-glow), inset 0 0 30px rgba(255, 70, 85, 0.2); }
+    @keyframes ambientGlow {
+      0% { opacity: 0.8; }
+      100% { opacity: 1; }
     }
 
     h1 {
+      text-align: center;
       font-size: clamp(2.5rem, 6vw, 4rem);
       font-weight: 800;
       background: linear-gradient(135deg, var(--text-primary), var(--neon-red-bright), var(--accent-blue));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 0.5rem;
+      margin-bottom: 2rem;
       letter-spacing: -0.025em;
-      text-shadow: 0 0 30px var(--neon-red-glow);
       position: relative;
     }
 
@@ -127,30 +86,32 @@
       height: 2px;
       background: linear-gradient(90deg, transparent, var(--neon-red), transparent);
       box-shadow: 0 0 10px var(--neon-red);
+      animation: lineGlow 3s ease-in-out infinite alternate;
     }
 
-    .subtitle {
-      font-size: 1.125rem;
-      color: var(--text-secondary);
-      font-weight: 400;
+    @keyframes lineGlow {
+      0% { box-shadow: 0 0 10px var(--neon-red); }
+      100% { box-shadow: 0 0 20px var(--neon-red), 0 0 30px var(--neon-red-glow); }
     }
 
-    .leaderboard-container {
-      max-width: 1400px;
+    table {
+      width: 100%;
+      max-width: 1200px;
       margin: 0 auto;
-      background: var(--dark-card);
+      border-collapse: collapse;
+      background: rgba(26, 26, 36, 0.8);
       border-radius: 1.5rem;
       border: 1px solid var(--dark-border);
       box-shadow: 
-        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        0 25px 50px -12px rgba(0, 0, 0, 0.6),
         0 0 40px rgba(255, 70, 85, 0.1),
         inset 0 0 40px rgba(255, 255, 255, 0.02);
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(20px);
       overflow: hidden;
       position: relative;
     }
 
-    .leaderboard-container::before {
+    table::before {
       content: '';
       position: absolute;
       top: 0;
@@ -158,70 +119,30 @@
       right: 0;
       height: 3px;
       background: linear-gradient(90deg, var(--neon-red), var(--accent-purple), var(--accent-blue), var(--neon-red));
+      background-size: 200% 100%;
       animation: borderFlow 4s ease-in-out infinite;
     }
 
     @keyframes borderFlow {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
-    .table-header {
-      background: linear-gradient(135deg, var(--dark-surface) 0%, var(--dark-card) 100%);
-      color: var(--text-primary);
-      padding: 2rem;
+    th, td {
+      padding: 1.25rem 1rem;
+      text-align: center;
       border-bottom: 1px solid var(--dark-border);
       position: relative;
-    }
-
-    .table-header::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--neon-red), transparent);
-      box-shadow: 0 0 10px var(--neon-red-glow);
-    }
-
-    .table-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-      color: var(--text-primary);
-    }
-
-    .table-subtitle {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      font-weight: 400;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.95rem;
-      table-layout: fixed;
-    }
-
-    thead {
-      background: var(--dark-surface);
-      border-bottom: 2px solid var(--dark-border);
     }
 
     th {
-      padding: 1.25rem 1rem;
-      font-weight: 600;
+      background: var(--dark-surface);
       color: var(--neon-red);
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      font-size: 0.8rem;
-      border-bottom: 1px solid var(--dark-border);
-      position: relative;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 0.85rem;
     }
 
     th::after {
@@ -236,18 +157,43 @@
       opacity: 0.3;
     }
 
-    /* Column widths */
-    th:nth-child(1) { width: 8%; text-align: center; } /* Rank */
-    th:nth-child(2) { width: 20%; text-align: left; } /* Player */
-    th:nth-child(3) { width: 12%; text-align: center; } /* ACS */
-    th:nth-child(4) { width: 12%; text-align: center; } /* KDA */
-    th:nth-child(5) { width: 10%; text-align: center; } /* HS% */
-    th:nth-child(6) { width: 12%; text-align: center; } /* FB */
-    th:nth-child(7) { width: 12%; text-align: center; } /* Win Rate */
-    th:nth-child(8) { width: 14%; text-align: center; } /* Score */
+    th:first-child {
+      text-align: center;
+      width: 60px;
+    }
+
+    th:nth-child(2) {
+      text-align: left;
+    }
+
+    td {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    /* Rank column */
+    td:first-child {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    /* Player column */
+    td:nth-child(2) {
+      text-align: left;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Stats columns */
+    td:nth-child(n+3) {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
 
     tbody tr {
-      border-bottom: 1px solid var(--dark-border);
       transition: all 0.3s ease;
       background: rgba(26, 26, 36, 0.3);
       position: relative;
@@ -277,95 +223,44 @@
       width: 4px;
     }
 
-    td {
-      padding: 1.5rem 1rem;
-      font-weight: 500;
-      color: var(--text-primary);
+    tbody td {
       position: relative;
       z-index: 2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
-    /* Column-specific styling */
-    td:nth-child(1) {
-      text-align: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      font-size: 1.1rem;
-    }
-
-    td:nth-child(2) {
-      text-align: left;
-      font-weight: 600;
-      color: var(--text-primary);
-      font-family: 'Inter', sans-serif;
-    }
-
-    td:nth-child(3) {
-      text-align: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      color: var(--neon-red-bright);
-    }
-
-    td:nth-child(4) {
-      text-align: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      color: var(--accent-blue);
-    }
-
-    td:nth-child(5) {
-      text-align: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 600;
-      color: var(--text-secondary);
-    }
-
-    td:nth-child(6) {
-      text-align: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 600;
-      color: var(--text-secondary);
-    }
-
-    td:nth-child(7) {
-      text-align: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      color: var(--accent-purple);
-    }
-
-    td:nth-child(8) {
-      text-align: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      color: var(--neon-red-bright);
-    }
-
-    /* Ranking styles for top 3 */
+    /* Ranking styles */
     tbody tr:nth-child(1) {
       background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
       border-left: 4px solid var(--gold);
     }
 
-    tbody tr:nth-child(1) td:nth-child(1) {
+    tbody tr:nth-child(1) td:first-child {
       color: var(--gold);
       font-weight: 900;
       font-size: 1.3rem;
       text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
       position: relative;
+      animation: goldShimmer 3s ease-in-out infinite alternate;
     }
 
-    tbody tr:nth-child(1) td:nth-child(1)::after {
+    tbody tr:nth-child(1) td:first-child::after {
       content: '👑';
       position: absolute;
       right: -15px;
       top: 50%;
       transform: translateY(-50%);
       font-size: 1rem;
+      animation: crownFloat 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes goldShimmer {
+      0% { text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+      100% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.4); }
+    }
+
+    @keyframes crownFloat {
+      0% { transform: translateY(-50%) scale(1); }
+      100% { transform: translateY(-60%) scale(1.1); }
     }
 
     tbody tr:nth-child(2) {
@@ -373,7 +268,7 @@
       border-left: 4px solid var(--silver);
     }
 
-    tbody tr:nth-child(2) td:nth-child(1) {
+    tbody tr:nth-child(2) td:first-child {
       color: var(--silver);
       font-weight: 900;
       font-size: 1.2rem;
@@ -385,68 +280,44 @@
       border-left: 4px solid var(--bronze);
     }
 
-    tbody tr:nth-child(3) td:nth-child(1) {
+    tbody tr:nth-child(3) td:first-child {
       color: var(--bronze);
       font-weight: 900;
       font-size: 1.1rem;
       text-shadow: 0 0 10px rgba(205, 127, 50, 0.5);
     }
 
-    /* Loading state */
-    .loading-cell {
-      text-align: center;
-      padding: 4rem;
-      color: var(--neon-red);
-      font-style: italic;
-      font-weight: 600;
-      font-size: 1.1rem;
+    /* Stat highlighting */
+    td:nth-child(3), /* ACS */
+    td:nth-child(8) { /* Score */
+      color: var(--neon-red-bright) !important;
+      font-weight: 700;
+      text-shadow: 0 0 8px rgba(255, 70, 85, 0.3);
     }
 
-    .loading-spinner {
-      display: inline-block;
-      width: 1.5rem;
-      height: 1.5rem;
-      border: 3px solid var(--dark-border);
-      border-top: 3px solid var(--neon-red);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-right: 0.75rem;
-      box-shadow: 0 0 10px var(--neon-red-glow);
+    td:nth-child(4) { /* KDA */
+      color: var(--accent-blue) !important;
+      font-weight: 700;
+      text-shadow: 0 0 8px rgba(74, 158, 255, 0.3);
     }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    td:nth-child(7) { /* Winrate */
+      color: var(--accent-purple) !important;
+      font-weight: 700;
+      text-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
     }
 
-    /* Responsive Design */
-    @media (max-width: 1024px) {
-      .leaderboard-container {
-        margin: 0 0.5rem;
-      }
-      
-      th, td {
-        padding: 1rem 0.5rem;
-        font-size: 0.85rem;
-      }
-    }
-
-    @media (max-width: 768px) {
+    @media (max-width: 600px) {
       body {
         padding: 1rem 0.5rem;
       }
 
-      .header {
-        margin-bottom: 2rem;
-      }
-
-      .table-header {
-        padding: 1.5rem;
-      }
-
       table, thead, tbody, th, td, tr {
         display: block;
-        width: 100%;
+      }
+
+      table::before {
+        display: none;
       }
 
       thead tr {
@@ -458,11 +329,11 @@
         border-radius: 1rem;
         border: 1px solid var(--dark-border);
         box-shadow: 
-          0 10px 25px rgba(0, 0, 0, 0.3),
+          0 10px 25px rgba(0, 0, 0, 0.4),
           0 0 20px rgba(255, 70, 85, 0.05);
         padding: 1.5rem;
-        background: var(--dark-card);
-        position: relative;
+        background: rgba(26, 26, 36, 0.8);
+        backdrop-filter: blur(10px);
       }
 
       tbody tr::before {
@@ -472,19 +343,18 @@
       tbody tr:hover {
         transform: none;
         box-shadow: 
-          0 15px 35px rgba(0, 0, 0, 0.4),
+          0 15px 35px rgba(0, 0, 0, 0.5),
           0 0 30px rgba(255, 70, 85, 0.1);
       }
 
       tbody td {
         padding: 1rem 0;
+        text-align: right;
+        position: relative;
         display: flex;
         justify-content: space-between;
         align-items: center;
         border-bottom: 1px solid var(--dark-border);
-        text-align: left;
-        white-space: normal;
-        overflow: visible;
       }
 
       tbody td:last-child {
@@ -493,98 +363,42 @@
 
       tbody td::before {
         content: attr(data-label);
+        position: static;
+        left: auto;
         font-weight: 600;
-        color: var(--neon-red);
         text-transform: uppercase;
+        color: var(--neon-red);
         font-size: 0.8rem;
         letter-spacing: 0.05em;
+        text-shadow: 0 0 5px rgba(255, 70, 85, 0.3);
         flex-shrink: 0;
-        margin-right: 1rem;
       }
 
-      /* Mobile specific column styling */
-      tbody td:nth-child(1)::before { content: "Posición"; }
-      tbody td:nth-child(2)::before { content: "Jugador"; }
-      tbody td:nth-child(3)::before { content: "ACS Promedio"; }
-      tbody td:nth-child(4)::before { content: "KDA Promedio"; }
-      tbody td:nth-child(5)::before { content: "HS%"; }
-      tbody td:nth-child(6)::before { content: "First Bloods Promedio"; }
-      tbody td:nth-child(7)::before { content: "Winrate %"; }
-      tbody td:nth-child(8)::before { content: "Score Compuesto"; }
-
       /* Mobile ranking styles */
-      tbody tr:nth-child(1) td:nth-child(1)::after {
+      tbody tr:nth-child(1) td:first-child::after {
         right: 0;
         position: static;
         margin-left: 0.5rem;
       }
 
-      /* Mobile colors */
-      tbody td:nth-child(1) {
-        color: var(--text-primary);
+      /* Mobile stat colors */
+      tbody td:nth-child(3), /* ACS */
+      tbody td:nth-child(8) { /* Score */
+        color: var(--neon-red-bright) !important;
         font-family: 'JetBrains Mono', monospace;
         font-weight: 700;
       }
 
-      tbody td:nth-child(2) {
-        color: var(--text-primary);
-        font-family: 'Inter', sans-serif;
-        font-weight: 600;
-      }
-
-      tbody td:nth-child(3) {
-        color: var(--neon-red-bright);
+      tbody td:nth-child(4) { /* KDA */
+        color: var(--accent-blue) !important;
         font-family: 'JetBrains Mono', monospace;
         font-weight: 700;
       }
 
-      tbody td:nth-child(4) {
-        color: var(--accent-blue);
+      tbody td:nth-child(7) { /* Winrate */
+        color: var(--accent-purple) !important;
         font-family: 'JetBrains Mono', monospace;
         font-weight: 700;
-      }
-
-      tbody td:nth-child(5) {
-        color: var(--text-secondary);
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 600;
-      }
-
-      tbody td:nth-child(6) {
-        color: var(--text-secondary);
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 600;
-      }
-
-      tbody td:nth-child(7) {
-        color: var(--accent-purple);
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 700;
-      }
-
-      tbody td:nth-child(8) {
-        color: var(--neon-red-bright);
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 700;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .leaderboard-container {
-        border-radius: 1rem;
-        margin: 0 0.25rem;
-      }
-
-      tbody tr {
-        padding: 1rem;
-      }
-
-      tbody td {
-        padding: 0.75rem 0;
-      }
-
-      .table-header {
-        padding: 1rem;
       }
     }
 
@@ -596,72 +410,28 @@
         transition-duration: 0.01ms !important;
       }
     }
-
-    /* Focus states */
-    tbody tr:focus-within {
-      outline: 2px solid var(--neon-red);
-      outline-offset: -2px;
-    }
-
-    /* Print styles */
-    @media print {
-      body {
-        background: white;
-        color: black;
-      }
-      
-      .leaderboard-container {
-        box-shadow: none;
-        border: 1px solid #ccc;
-      }
-      
-      tbody tr:hover {
-        background: transparent;
-        transform: none;
-        box-shadow: none;
-      }
-    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="header-badge">
-      Live Tournament
-    </div>
-    <h1>Valorant Competitive Leaderboard</h1>
-    <p class="subtitle">10 Mans Championship Series</p>
-  </div>
-
-  <div class="leaderboard-container">
-    <div class="table-header">
-      <div class="table-title">Performance Rankings</div>
-      <div class="table-subtitle">Updated in real-time • Season 2024</div>
-    </div>
-    
-    <table aria-label="Tabla del leaderboard">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Player</th>
-          <th>ACS Avg</th>
-          <th>KDA Avg</th>
-          <th>HS%</th>
-          <th>FB Avg</th>
-          <th>Win Rate</th>
-          <th>Score</th>
-        </tr>
-      </thead>
-      <tbody id="leaderboardBody">
-        <tr>
-          <td colspan="8" class="loading-cell">
-            <span class="loading-spinner"></span>
-            Loading tournament data...
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <h1>Leaderboard Valorant - 10 Mans</h1>
+  <table aria-label="Tabla del leaderboard">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Jugador</th>
+        <th>ACS Promedio</th>
+        <th>KDA Promedio</th>
+        <th>HS%</th>
+        <th>First Bloods Promedio</th>
+        <th>Winrate %</th>
+        <th>Score Compuesto</th>
+      </tr>
+    </thead>
+    <tbody id="leaderboardBody">
+      <tr><td colspan="8" style="color:#ff4655;">Cargando datos...</td></tr>
+    </tbody>
+  </table>
 
   <script src="script.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ec792b3615a0a0',t:'MTc1NTEzMjc4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ec837dc5d5a0a0',t:'MTc1NTEzMzIwOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
