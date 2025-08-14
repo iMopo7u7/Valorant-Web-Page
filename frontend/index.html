@@ -1,25 +1,34 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Leaderboard Valorant - 10 Mans</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Valorant Leaderboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --neon-red: #ff0040;
-      --neon-red-bright: #ff4080;
+      /* Colores neón sutiles */
+      --neon-red: #ff4655;
+      --neon-red-glow: rgba(255, 70, 85, 0.4);
       --neon-blue: #00d4ff;
-      --neon-purple: #b040ff;
-      --neon-green: #40ff80;
-      --dark-bg: #0a0a0a;
-      --dark-surface: #111111;
-      --dark-card: #1a1a1a;
+      --neon-purple: #a855f7;
+      --neon-green: #10b981;
+      
+      /* Colores de fondo */
+      --bg-dark: #0a0e1a;
+      --bg-surface: #1a1f2e;
+      --bg-card: #252b3d;
+      --border-color: #374151;
+      
+      /* Colores de texto */
       --text-primary: #ffffff;
-      --text-secondary: #cccccc;
-      --gold: #ffd700;
-      --silver: #c0c0c0;
-      --bronze: #cd7f32;
+      --text-secondary: #d1d5db;
+      --text-muted: #9ca3af;
+      
+      /* Colores de ranking */
+      --gold: #fbbf24;
+      --silver: #e5e7eb;
+      --bronze: #f59e0b;
     }
 
     * {
@@ -30,15 +39,14 @@
 
     body {
       font-family: 'Rajdhani', sans-serif;
-      background: var(--dark-bg);
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #0f172a 100%);
       color: var(--text-primary);
       min-height: 100vh;
       padding: 2rem 1rem;
-      position: relative;
       overflow-x: hidden;
     }
 
-    /* Animated background particles */
+    /* Fondo animado sutil */
     body::before {
       content: '';
       position: fixed;
@@ -47,26 +55,15 @@
       width: 100%;
       height: 100%;
       background: 
-        radial-gradient(2px 2px at 20px 30px, var(--neon-red), transparent),
-        radial-gradient(2px 2px at 40px 70px, var(--neon-blue), transparent),
-        radial-gradient(1px 1px at 90px 40px, var(--neon-purple), transparent),
-        radial-gradient(1px 1px at 130px 80px, var(--neon-green), transparent),
-        radial-gradient(2px 2px at 160px 30px, var(--neon-red), transparent);
-      background-repeat: repeat;
-      background-size: 200px 100px;
-      animation: sparkle 20s linear infinite;
-      opacity: 0.1;
+        radial-gradient(circle at 20% 80%, rgba(255, 70, 85, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.02) 0%, transparent 50%);
       pointer-events: none;
       z-index: -1;
     }
 
-    @keyframes sparkle {
-      0% { transform: translateY(0px); }
-      100% { transform: translateY(-100px); }
-    }
-
-    /* Neon title with authentic flickering */
-    h1 {
+    /* Título principal con efecto neón */
+    .title {
       font-family: 'Orbitron', monospace;
       font-size: clamp(2rem, 5vw, 3.5rem);
       font-weight: 900;
@@ -74,365 +71,421 @@
       margin-bottom: 3rem;
       color: var(--neon-red);
       text-shadow: 
-        0 0 5px var(--neon-red),
-        0 0 10px var(--neon-red),
-        0 0 15px var(--neon-red),
-        0 0 20px var(--neon-red);
-      animation: neonFlicker 3s infinite alternate;
+        0 0 10px var(--neon-red-glow),
+        0 0 20px var(--neon-red-glow),
+        0 0 40px var(--neon-red-glow);
+      animation: titleFlicker 4s ease-in-out infinite alternate;
       position: relative;
       letter-spacing: 2px;
     }
 
-    @keyframes neonFlicker {
-      0%, 18%, 22%, 25%, 53%, 57%, 100% {
+    /* Animación de flicker sutil */
+    @keyframes titleFlicker {
+      0%, 100% {
         text-shadow: 
-          0 0 5px var(--neon-red),
-          0 0 10px var(--neon-red),
-          0 0 15px var(--neon-red),
-          0 0 20px var(--neon-red),
-          0 0 35px var(--neon-red);
+          0 0 10px var(--neon-red-glow),
+          0 0 20px var(--neon-red-glow),
+          0 0 40px var(--neon-red-glow);
       }
-      20%, 24%, 55% {
+      50% {
         text-shadow: 
-          0 0 2px var(--neon-red),
-          0 0 5px var(--neon-red);
+          0 0 5px var(--neon-red-glow),
+          0 0 15px var(--neon-red-glow),
+          0 0 25px var(--neon-red-glow);
       }
     }
 
-    /* Neon underline */
-    h1::after {
+    /* Línea decorativa bajo el título */
+    .title::after {
       content: '';
       position: absolute;
-      bottom: -10px;
+      bottom: -15px;
       left: 50%;
       transform: translateX(-50%);
-      width: 200px;
+      width: 100px;
       height: 2px;
-      background: var(--neon-red);
-      box-shadow: 
-        0 0 5px var(--neon-red),
-        0 0 10px var(--neon-red);
-      animation: lineGlow 2s ease-in-out infinite alternate;
+      background: linear-gradient(90deg, transparent, var(--neon-red), transparent);
+      box-shadow: 0 0 10px var(--neon-red-glow);
     }
 
-    @keyframes lineGlow {
-      0% { 
-        box-shadow: 
-          0 0 5px var(--neon-red),
-          0 0 10px var(--neon-red);
-      }
-      100% { 
-        box-shadow: 
-          0 0 10px var(--neon-red),
-          0 0 20px var(--neon-red),
-          0 0 30px var(--neon-red);
-      }
-    }
-
-    /* Main table container */
-    .table-container {
-      max-width: 1200px;
+    /* Contenedor principal */
+    .container {
+      max-width: 1400px;
       margin: 0 auto;
-      background: rgba(17, 17, 17, 0.9);
-      border-radius: 20px;
-      border: 2px solid var(--neon-red);
-      box-shadow: 
-        0 0 20px rgba(255, 0, 64, 0.3),
-        inset 0 0 20px rgba(255, 255, 255, 0.05);
+    }
+
+    /* Wrapper de la tabla con efectos */
+    .table-wrapper {
+      background: rgba(26, 31, 46, 0.8);
       backdrop-filter: blur(10px);
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      box-shadow: 
+        0 20px 25px -5px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 70, 85, 0.1);
       overflow: hidden;
       position: relative;
     }
 
-    /* Animated border */
-    .table-container::before {
+    /* Borde animado */
+    .table-wrapper::before {
       content: '';
       position: absolute;
-      top: -2px;
-      left: -2px;
-      right: -2px;
-      bottom: -2px;
-      background: linear-gradient(45deg, var(--neon-red), var(--neon-blue), var(--neon-purple), var(--neon-red));
-      background-size: 400% 400%;
-      border-radius: 20px;
-      z-index: -1;
-      animation: borderPulse 4s ease-in-out infinite;
-    }
-
-    @keyframes borderPulse {
-      0%, 100% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 1rem;
-    }
-
-    /* Header styling */
-    thead {
-      background: linear-gradient(135deg, var(--dark-surface), var(--dark-card));
-    }
-
-    th {
-      padding: 1.5rem 1rem;
-      text-align: center;
-      font-family: 'Orbitron', monospace;
-      font-weight: 700;
-      font-size: 0.9rem;
-      color: var(--neon-red);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      border-bottom: 2px solid var(--neon-red);
-      text-shadow: 0 0 10px var(--neon-red);
-      position: relative;
-    }
-
-    th:first-child { text-align: center; width: 80px; }
-    th:nth-child(2) { text-align: left; }
-
-    /* Neon glow effect for headers */
-    th::after {
-      content: '';
-      position: absolute;
-      bottom: -2px;
+      top: 0;
       left: 0;
       right: 0;
       height: 2px;
-      background: var(--neon-red);
-      box-shadow: 0 0 10px var(--neon-red);
-      animation: headerGlow 3s ease-in-out infinite alternate;
+      background: linear-gradient(
+        90deg, 
+        var(--neon-red), 
+        var(--neon-blue), 
+        var(--neon-purple), 
+        var(--neon-red)
+      );
+      background-size: 200% 100%;
+      animation: borderFlow 8s linear infinite;
+      opacity: 0.6;
     }
 
-    @keyframes headerGlow {
-      0% { opacity: 0.5; }
-      100% { opacity: 1; }
+    @keyframes borderFlow {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 200% 0%; }
     }
 
-    /* Row styling */
-    tbody tr {
-      background: rgba(26, 26, 26, 0.8);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    /* Grid de la tabla */
+    .leaderboard-grid {
+      display: grid;
+      grid-template-columns: 
+        60px          /* # */
+        1fr           /* Jugador */
+        120px         /* ACS */
+        120px         /* KDA */
+        100px         /* HS% */
+        140px         /* First Bloods */
+        120px         /* Winrate */
+        140px;        /* Score */
+      gap: 0;
+      font-size: 1rem;
+    }
+
+    /* Header de la tabla */
+    .grid-header {
+      background: linear-gradient(135deg, var(--bg-card), var(--bg-surface));
+      border-bottom: 2px solid var(--border-color);
+      display: contents;
+    }
+
+    .header-cell {
+      padding: 15px 10px;
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--neon-red);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-align: center;
+      border-right: 1px solid var(--border-color);
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-shadow: 0 0 8px rgba(255, 70, 85, 0.3);
+    }
+
+    .header-cell:first-child {
+      border-top-left-radius: 20px;
+    }
+
+    .header-cell:last-child {
+      border-right: none;
+      border-top-right-radius: 20px;
+    }
+
+    .header-cell:nth-child(2) {
+      justify-content: flex-start;
+      padding-left: 20px;
+    }
+
+    /* Filas de datos */
+    .grid-row {
+      display: contents;
+    }
+
+    .data-cell {
+      padding: 15px 10px;
+      background: var(--bg-surface);
+      border-right: 1px solid rgba(55, 65, 81, 0.3);
+      border-bottom: 1px solid rgba(55, 65, 81, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+      color: var(--text-primary);
       transition: all 0.3s ease;
+    }
+
+    .data-cell:last-child {
+      border-right: none;
+    }
+
+    /* Alineaciones específicas */
+    .data-cell:first-child {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .data-cell:nth-child(2) {
+      justify-content: flex-start;
+      padding-left: 20px;
+      font-weight: 600;
+    }
+
+    /* Efectos hover en filas */
+    .grid-row:hover .data-cell {
+      background: rgba(255, 70, 85, 0.05);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Indicador lateral en hover */
+    .grid-row .data-cell:first-child {
       position: relative;
     }
 
-    tbody tr:hover {
-      background: rgba(255, 0, 64, 0.1);
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(255, 0, 64, 0.2);
-    }
-
-    /* Neon side bar on hover */
-    tbody tr::before {
+    .grid-row:hover .data-cell:first-child::before {
       content: '';
       position: absolute;
       left: 0;
       top: 0;
-      width: 0;
-      height: 100%;
+      bottom: 0;
+      width: 3px;
       background: var(--neon-red);
-      box-shadow: 0 0 10px var(--neon-red);
-      transition: width 0.3s ease;
+      box-shadow: 0 0 8px var(--neon-red-glow);
     }
 
-    tbody tr:hover::before {
-      width: 4px;
+    /* Estilos para top 3 */
+    .rank-1 .data-cell {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), var(--bg-surface));
+      border-left: 3px solid var(--gold);
     }
 
-    /* Cell styling */
-    td {
-      padding: 1.25rem 1rem;
-      font-weight: 500;
-      color: var(--text-primary);
-      font-size: 1rem;
-    }
-
-    /* Rank column (#) - centered */
-    td:first-child {
-      text-align: center;
-      font-family: 'Orbitron', monospace;
-      font-weight: 700;
-      font-size: 1.2rem;
-    }
-
-    /* Player column - left aligned */
-    td:nth-child(2) {
-      text-align: left;
-      font-weight: 600;
-    }
-
-    /* All stat columns - centered */
-    td:nth-child(3),
-    td:nth-child(4),
-    td:nth-child(5),
-    td:nth-child(6),
-    td:nth-child(7),
-    td:nth-child(8) {
-      text-align: center;
-    }
-
-    /* Top 3 ranking styles */
-    tbody tr:nth-child(1) {
-      background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
-      border-left: 4px solid var(--gold);
-    }
-
-    tbody tr:nth-child(1) td:first-child {
+    .rank-1 .data-cell:first-child {
       color: var(--gold);
-      text-shadow: 0 0 15px var(--gold);
-      animation: goldPulse 2s ease-in-out infinite alternate;
+      text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+      animation: goldPulse 3s ease-in-out infinite alternate;
       position: relative;
     }
 
-    tbody tr:nth-child(1) td:first-child::after {
+    .rank-1 .data-cell:first-child::after {
       content: '👑';
       position: absolute;
-      right: -20px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 1.2rem;
-      animation: crownBounce 3s ease-in-out infinite;
+      right: -8px;
+      font-size: 0.9rem;
+      animation: crownBounce 2s ease-in-out infinite;
     }
 
     @keyframes goldPulse {
-      0% { text-shadow: 0 0 15px var(--gold); }
-      100% { text-shadow: 0 0 25px var(--gold), 0 0 35px var(--gold); }
+      0% { text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+      100% { text-shadow: 0 0 20px rgba(251, 191, 36, 0.8); }
     }
 
     @keyframes crownBounce {
-      0%, 100% { transform: translateY(-50%) scale(1); }
-      50% { transform: translateY(-60%) scale(1.1); }
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-2px); }
     }
 
-    tbody tr:nth-child(2) {
-      background: linear-gradient(135deg, rgba(192, 192, 192, 0.2), rgba(192, 192, 192, 0.1));
-      border-left: 4px solid var(--silver);
+    .rank-2 .data-cell {
+      background: linear-gradient(135deg, rgba(229, 231, 235, 0.1), var(--bg-surface));
+      border-left: 3px solid var(--silver);
     }
 
-    tbody tr:nth-child(2) td:first-child {
+    .rank-2 .data-cell:first-child {
       color: var(--silver);
-      text-shadow: 0 0 15px var(--silver);
+      text-shadow: 0 0 8px rgba(229, 231, 235, 0.4);
     }
 
-    tbody tr:nth-child(3) {
-      background: linear-gradient(135deg, rgba(205, 127, 50, 0.2), rgba(205, 127, 50, 0.1));
-      border-left: 4px solid var(--bronze);
+    .rank-3 .data-cell {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), var(--bg-surface));
+      border-left: 3px solid var(--bronze);
     }
 
-    tbody tr:nth-child(3) td:first-child {
+    .rank-3 .data-cell:first-child {
       color: var(--bronze);
-      text-shadow: 0 0 15px var(--bronze);
+      text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
     }
 
-    /* Stat highlighting with neon colors */
-    td:nth-child(3), /* ACS */
-    td:nth-child(8) { /* Score */
-      color: var(--neon-red-bright);
-      font-weight: 700;
-      text-shadow: 0 0 8px var(--neon-red);
-      animation: statFlicker 4s ease-in-out infinite alternate;
+    /* Colores para estadísticas importantes */
+    .stat-acs, .stat-score {
+      color: var(--neon-red) !important;
+      font-weight: 600;
+      text-shadow: 0 0 6px rgba(255, 70, 85, 0.3);
     }
 
-    td:nth-child(4) { /* KDA */
-      color: var(--neon-blue);
-      font-weight: 700;
-      text-shadow: 0 0 8px var(--neon-blue);
-      animation: statFlicker 4s ease-in-out infinite alternate;
+    .stat-kda {
+      color: var(--neon-blue) !important;
+      font-weight: 600;
+      text-shadow: 0 0 6px rgba(0, 212, 255, 0.3);
     }
 
-    td:nth-child(7) { /* Winrate */
-      color: var(--neon-purple);
-      font-weight: 700;
-      text-shadow: 0 0 8px var(--neon-purple);
-      animation: statFlicker 4s ease-in-out infinite alternate;
+    .stat-winrate {
+      color: var(--neon-purple) !important;
+      font-weight: 600;
+      text-shadow: 0 0 6px rgba(168, 85, 247, 0.3);
     }
 
-    @keyframes statFlicker {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.8; }
-    }
-
-    /* Loading state */
-    .loading {
+    /* Estado de carga */
+    .loading-state {
+      grid-column: 1 / -1;
+      padding: 3rem 2rem;
       text-align: center;
-      padding: 3rem;
       color: var(--neon-red);
       font-size: 1.2rem;
       font-weight: 600;
+      background: var(--bg-surface);
+      animation: loadingPulse 2s ease-in-out infinite alternate;
     }
 
-    /* Responsive design */
-    @media (max-width: 768px) {
-      body { padding: 1rem 0.5rem; }
-      
-      h1 { font-size: 2rem; margin-bottom: 2rem; }
-      
-      .table-container { margin: 0 0.5rem; }
+    @keyframes loadingPulse {
+      0% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
 
-      table, thead, tbody, th, td, tr {
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .leaderboard-grid {
+        grid-template-columns: 50px 1fr 100px 100px 80px 120px 100px 120px;
+      }
+      
+      .header-cell, .data-cell {
+        padding: 12px 8px;
+        font-size: 0.9rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem 0.5rem;
+      }
+
+      .title {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .table-wrapper {
+        border-radius: 15px;
+        margin: 0 -0.5rem;
+      }
+
+      /* Layout de cards para móvil */
+      .leaderboard-grid {
         display: block;
       }
 
-      thead tr { display: none; }
+      .grid-header {
+        display: none;
+      }
 
-      tbody tr {
-        margin-bottom: 1.5rem;
-        border-radius: 15px;
-        border: 1px solid var(--neon-red);
+      .grid-row {
+        display: block;
+        margin-bottom: 1rem;
+        background: var(--bg-surface);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
         padding: 1.5rem;
-        box-shadow: 0 0 15px rgba(255, 0, 64, 0.2);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       }
 
-      tbody tr::before { display: none; }
-
-      tbody tr:hover {
-        transform: none;
-        box-shadow: 0 0 25px rgba(255, 0, 64, 0.3);
+      .grid-row:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
       }
 
-      td {
-        padding: 0.75rem 0;
+      .data-cell {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        text-align: left;
+        padding: 0.75rem 0;
+        border: none;
+        border-bottom: 1px solid rgba(55, 65, 81, 0.2);
+        background: transparent;
       }
 
-      td:last-child { border-bottom: none; }
+      .data-cell:last-child {
+        border-bottom: none;
+      }
 
-      td::before {
+      .data-cell::before {
         content: attr(data-label);
         font-weight: 600;
         color: var(--neon-red);
         text-transform: uppercase;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         letter-spacing: 0.5px;
-        text-shadow: 0 0 5px var(--neon-red);
+        opacity: 0.8;
       }
 
-      /* Mobile crown positioning */
-      tbody tr:nth-child(1) td:first-child::after {
-        right: 0;
+      .data-cell:first-child::before {
+        content: 'Posición';
+      }
+
+      .data-cell:nth-child(2)::before {
+        content: 'Jugador';
+      }
+
+      .data-cell:nth-child(3)::before {
+        content: 'ACS Promedio';
+      }
+
+      .data-cell:nth-child(4)::before {
+        content: 'KDA Promedio';
+      }
+
+      .data-cell:nth-child(5)::before {
+        content: 'HS%';
+      }
+
+      .data-cell:nth-child(6)::before {
+        content: 'First Bloods';
+      }
+
+      .data-cell:nth-child(7)::before {
+        content: 'Winrate %';
+      }
+
+      .data-cell:nth-child(8)::before {
+        content: 'Score';
+      }
+
+      /* Ajustes para top 3 en móvil */
+      .rank-1, .rank-2, .rank-3 {
+        border-left: 4px solid;
+      }
+
+      .rank-1 { border-left-color: var(--gold); }
+      .rank-2 { border-left-color: var(--silver); }
+      .rank-3 { border-left-color: var(--bronze); }
+
+      .rank-1 .data-cell:first-child::after {
         position: static;
         margin-left: 0.5rem;
       }
     }
 
     @media (max-width: 480px) {
-      .table-container { 
-        border-radius: 15px;
-        margin: 0 0.25rem;
+      .grid-row {
+        padding: 1rem;
+        margin-bottom: 0.75rem;
       }
-      
-      tbody tr { padding: 1rem; }
-      
-      td { padding: 0.5rem 0; }
+
+      .data-cell {
+        padding: 0.5rem 0;
+        font-size: 0.9rem;
+      }
     }
 
-    /* Accessibility */
+    /* Accesibilidad */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -441,61 +494,41 @@
       }
     }
 
-    /* Custom classes from JavaScript */
-    .rank-cell {
-      text-align: center !important;
-    }
-
-    .rank-badge {
-      display: inline-block;
-      font-family: 'Orbitron', monospace;
-      font-weight: 700;
-      font-size: 1.2rem;
-    }
-
-    .player-name {
-      text-align: left !important;
-      font-weight: 600;
-    }
-
-    .centered {
-      text-align: center !important;
-    }
-
-    /* Focus states */
-    tbody tr:focus-within {
+    /* Focus states para accesibilidad */
+    .grid-row:focus-within .data-cell {
       outline: 2px solid var(--neon-red);
       outline-offset: 2px;
     }
   </style>
 </head>
 <body>
-  <h1>VALORANT LEADERBOARD</h1>
-  
-  <div class="table-container">
-    <table aria-label="Tabla del leaderboard de Valorant">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Jugador</th>
-          <th>ACS Promedio</th>
-          <th>KDA Promedio</th>
-          <th>HS%</th>
-          <th>First Bloods Promedio</th>
-          <th>Winrate %</th>
-          <th>Score Compuesto</th>
-        </tr>
-      </thead>
-      <tbody id="leaderboardBody">
-        <tr>
-          <td colspan="8" class="loading">
-            ⚡ Cargando datos del torneo...
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <div class="container">
+    <!-- Título principal -->
+    <h1 class="title">VALORANT LEADERBOARD</h1>
+    
+    <!-- Wrapper de la tabla -->
+    <div class="table-wrapper">
+      <div class="leaderboard-grid" id="leaderboardGrid">
+        
+        <!-- Header de la tabla -->
+        <div class="grid-header">
+          <div class="header-cell">#</div>
+          <div class="header-cell">Jugador</div>
+          <div class="header-cell">ACS Promedio</div>
+          <div class="header-cell">KDA Promedio</div>
+          <div class="header-cell">HS%</div>
+          <div class="header-cell">First Bloods Promedio</div>
+          <div class="header-cell">Winrate %</div>
+          <div class="header-cell">Score Compuesto</div>
+        </div>
 
-  <script src="script.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ec9fec505eac47',t:'MTc1NTEzNDM3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+        <!-- Estado de carga inicial -->
+        <div class="loading-state">
+          ⚡ Cargando datos del torneo...
+        </div>
+
+      </div>
+    </div>
+  </div>
+</body>
 </html>
