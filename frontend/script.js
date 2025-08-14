@@ -1,30 +1,50 @@
-const tbody = document.getElementById("leaderboardBody");
+const grid = document.getElementById("leaderboardGrid");
 
+// Función para cargar los datos en el grid
 fetch("https://valorant-10-mans.onrender.com/leaderboard")
   .then((res) => res.json())
   .then((players) => {
-    tbody.innerHTML = "";
+    // Limpiar grid
+    grid.innerHTML = `
+      <div class="grid-header">
+        <div class="header-cell">#</div>
+        <div class="header-cell">Jugador</div>
+        <div class="header-cell">ACS Promedio</div>
+        <div class="header-cell">KDA Promedio</div>
+        <div class="header-cell">HS%</div>
+        <div class="header-cell">First Bloods Promedio</div>
+        <div class="header-cell">Winrate %</div>
+        <div class="header-cell">Score Compuesto</div>
+      </div>
+    `;
+
     if (players.length === 0) {
-      tbody.innerHTML =
-        '<tr><td colspan="8" style="color:#ff4655; text-align:center;">No hay datos para mostrar</td></tr>';
+      const emptyDiv = document.createElement("div");
+      emptyDiv.className = "loading-state";
+      emptyDiv.textContent = "No hay datos para mostrar";
+      grid.appendChild(emptyDiv);
       return;
     }
+
+    // Crear filas
     players.forEach((p, i) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td data-label="Posición" class="rank-cell"><span class="rank-badge">${i + 1}</span></td>
-        <td data-label="Jugador" class="player-name">${p.name}#${p.tag}</td>
-        <td data-label="ACS Promedio" class="centered">${p.avgACS.toFixed(2)}</td>
-        <td data-label="KDA Promedio" class="centered">${p.avgKDA.toFixed(2)}</td>
-        <td data-label="HS%" class="centered">${p.hsPercent.toFixed(2)}%</td>
-        <td data-label="First Bloods Promedio" class="centered">${p.avgFirstBloods.toFixed(2)}</td>
-        <td data-label="Winrate %" class="centered">${p.winrate.toFixed(2)}%</td>
-        <td data-label="Score Compuesto" class="centered">${p.score.toFixed(2)}</td>
+      const row = document.createElement("div");
+      row.className = `grid-row rank-${i + 1}`;
+      row.innerHTML = `
+        <div class="data-cell" data-label="Posición">${i + 1}</div>
+        <div class="data-cell" data-label="Jugador">${p.name}#${p.tag}</div>
+        <div class="data-cell stat-acs" data-label="ACS Promedio">${p.avgACS.toFixed(2)}</div>
+        <div class="data-cell stat-kda" data-label="KDA Promedio">${p.avgKDA.toFixed(2)}</div>
+        <div class="data-cell" data-label="HS%">${p.hsPercent.toFixed(2)}%</div>
+        <div class="data-cell" data-label="First Bloods">${p.avgFirstBloods.toFixed(2)}</div>
+        <div class="data-cell stat-winrate" data-label="Winrate %">${p.winrate.toFixed(2)}%</div>
+        <div class="data-cell stat-score" data-label="Score">${p.score.toFixed(2)}</div>
       `;
-      tbody.appendChild(tr);
+      grid.appendChild(row);
     });
   })
   .catch(() => {
-    tbody.innerHTML =
-      '<tr><td colspan="8" style="color:#ff4655; text-align:center;">Error cargando leaderboard</td></tr>';
+    grid.innerHTML = `
+      <div class="loading-state">Error cargando leaderboard</div>
+    `;
   });
