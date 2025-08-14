@@ -294,55 +294,54 @@
       font-weight: 600;
     }
 
-    /* Ranking badges */
-    .rank-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 2.5rem;
-      height: 2.5rem;
-      border-radius: 50%;
-      font-weight: 700;
-      font-size: 1rem;
+    /* Ranking styles for dynamic content */
+    tbody tr:nth-child(1) {
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+      border-left: 4px solid var(--gold);
+    }
+
+    tbody tr:nth-child(1) td:first-child {
+      color: var(--gold);
+      font-weight: 900;
+      font-size: 1.3rem;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
       position: relative;
     }
 
-    tbody tr:nth-child(1) .rank-badge {
-      background: linear-gradient(135deg, var(--gold), #fbbf24);
-      color: var(--dark-bg);
-      box-shadow: 
-        0 0 20px rgba(255, 215, 0, 0.4),
-        0 0 0 3px rgba(255, 215, 0, 0.2);
-      animation: goldGlow 3s ease-in-out infinite alternate;
+    tbody tr:nth-child(1) td:first-child::after {
+      content: '👑';
+      position: absolute;
+      right: -20px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1rem;
     }
 
-    tbody tr:nth-child(2) .rank-badge {
-      background: linear-gradient(135deg, var(--silver), #9ca3af);
-      color: var(--dark-bg);
-      box-shadow: 
-        0 0 15px rgba(192, 192, 192, 0.3),
-        0 0 0 3px rgba(192, 192, 192, 0.2);
+    tbody tr:nth-child(2) {
+      background: linear-gradient(135deg, rgba(192, 192, 192, 0.1), rgba(192, 192, 192, 0.05));
+      border-left: 4px solid var(--silver);
     }
 
-    tbody tr:nth-child(3) .rank-badge {
-      background: linear-gradient(135deg, var(--bronze), #f97316);
-      color: var(--text-primary);
-      box-shadow: 
-        0 0 15px rgba(205, 127, 50, 0.3),
-        0 0 0 3px rgba(205, 127, 50, 0.2);
+    tbody tr:nth-child(2) td:first-child {
+      color: var(--silver);
+      font-weight: 900;
+      font-size: 1.2rem;
+      text-shadow: 0 0 10px rgba(192, 192, 192, 0.5);
     }
 
-    tbody tr:nth-child(n+4) .rank-badge {
-      background: var(--dark-surface);
-      color: var(--text-secondary);
-      border: 2px solid var(--dark-border);
-      box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+    tbody tr:nth-child(3) {
+      background: linear-gradient(135deg, rgba(205, 127, 50, 0.1), rgba(205, 127, 50, 0.05));
+      border-left: 4px solid var(--bronze);
     }
 
-    @keyframes goldGlow {
-      0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4), 0 0 0 3px rgba(255, 215, 0, 0.2); }
-      100% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.6), 0 0 0 3px rgba(255, 215, 0, 0.3); }
+    tbody tr:nth-child(3) td:first-child {
+      color: var(--bronze);
+      font-weight: 900;
+      font-size: 1.1rem;
+      text-shadow: 0 0 10px rgba(205, 127, 50, 0.5);
     }
+
+
 
     /* Player names */
     .player-name {
@@ -516,9 +515,9 @@
         letter-spacing: 0.05em;
       }
 
-      .rank-badge {
-        width: 2rem;
-        height: 2rem;
+      /* Mobile ranking styles */
+      tbody tr:nth-child(1) td:first-child::after {
+        right: -15px;
         font-size: 0.9rem;
       }
 
@@ -635,5 +634,5 @@
   </div>
 
   <script src="script.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ec531d87339e2d',t:'MTc1NTEzMTIyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ec64c9f00c46e8',t:'MTc1NTEzMTk1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
