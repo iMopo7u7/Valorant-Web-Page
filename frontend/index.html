@@ -281,6 +281,7 @@
       z-index: 2;
     }
 
+    /* Rank column (first column) */
     td:first-child {
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
@@ -288,7 +289,15 @@
       font-size: 1.1rem;
     }
 
-    td:not(:first-child):not(:nth-child(2)) {
+    /* Player column (second column) */
+    td:nth-child(2) {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Stats columns (3rd to 8th) */
+    td:nth-child(n+3) {
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 600;
@@ -376,17 +385,17 @@
     /* Special highlighting for important stats */
     td:nth-child(3), /* ACS */
     td:nth-child(8) { /* Score */
-      color: var(--neon-red-bright);
+      color: var(--neon-red-bright) !important;
       font-weight: 700;
     }
 
     td:nth-child(4) { /* KDA */
-      color: var(--accent-blue);
+      color: var(--accent-blue) !important;
       font-weight: 700;
     }
 
     td:nth-child(7) { /* Winrate */
-      color: var(--accent-purple);
+      color: var(--accent-purple) !important;
       font-weight: 700;
     }
 
@@ -528,15 +537,21 @@
       /* Mobile stat highlighting */
       tbody td:nth-child(3), /* ACS */
       tbody td:nth-child(8) { /* Score */
-        color: var(--neon-red-bright);
+        color: var(--neon-red-bright) !important;
       }
 
       tbody td:nth-child(4) { /* KDA */
-        color: var(--accent-blue);
+        color: var(--accent-blue) !important;
       }
 
       tbody td:nth-child(7) { /* Winrate */
-        color: var(--accent-purple);
+        color: var(--accent-purple) !important;
+      }
+
+      /* Mobile player column */
+      tbody td:nth-child(2) {
+        color: var(--text-primary) !important;
+        font-family: 'Inter', sans-serif !important;
       }
     }
 
@@ -634,5 +649,5 @@
   </div>
 
   <script src="script.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ec64c9f00c46e8',t:'MTc1NTEzMTk1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ec6ccda2f55235',t:'MTc1NTEzMjI4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
