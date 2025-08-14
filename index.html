@@ -1,748 +1,1184 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Preparar Partida - Valorant</title>
-<style>
-  :root {
-    --bg-color: #0f1923;
-    --card-color: #1a1a1a;
-    --text-color: #e0e0e0;
-    --primary-color: #ff4655;
-    --secondary-color: #0f1923;
-    --accent-color: #7688a8;
-    --border-color: #2e2e2e;
-    --team-a-color: #ff4655;
-    --team-b-color: #0f8cff;
-    --team-c-color: #4caf50;
-    --team-d-color: #ff9800;
-    --team-e-color: #9c27b0;
-    --highlight-color: #ffcc00;
-    --success-color: #4caf50;
-    --error-color: #f44336;
-    --eliminated-color: #ff465566;
-    --winner-color: #4caf50;
-  }
-  * {
-    margin: 0; padding: 0; box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-  body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    min-height: 100vh;
-    display: flex; flex-direction: column; align-items: center;
-    padding: 20px;
-  }
-  h1 {
-    text-align: center;
-    margin-bottom: 20px;
-    font-size: 2.5rem;
-    background: linear-gradient(90deg, var(--team-a-color), var(--team-b-color));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .container {
-    max-width: 1200px;
-    width: 100%;
-  }
-  nav {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 25px;
-    gap: 20px;
-  }
-  nav button {
-    background: var(--primary-color);
-    border: none;
-    padding: 10px 25px;
-    font-weight: 600;
-    font-size: 1rem;
-    color: white;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  nav button[disabled] {
-    background: var(--accent-color);
-    cursor: default;
-  }
-  nav button.active {
-    background: var(--highlight-color);
-    color: #333;
-  }
-  section {
-    display: none;
-  }
-  section.active {
-    display: block;
-  }
-  /* --- EQUIPOS --- */
-  .config-section {
-    background-color: var(--card-color);
-    padding: 20px;
-    border-radius: 10px;
-  }
-  .config-row {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-  .config-group {
-    flex: 1;
-    min-width: 200px;
-  }
-  .config-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-  }
-  select, input[type=number], input[type=text] {
-    width: 100%;
-    padding: 10px 15px;
-    background-color: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
-    color: var(--text-color);
-    font-size: 16px;
-  }
-  .players-input {
-    display: grid;
-    grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
-    gap: 15px;
-    margin-bottom: 20px;
-  }
-  .input-group label {
-    margin-bottom: 5px;
-    display: block;
-    font-weight: 600;
-  }
-  .input-group input {
-    background-color: var(--bg-color);
-  }
-  .controls {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-  }
-  button.action-btn {
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 12px 25px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  button.action-btn:disabled {
-    background-color: var(--accent-color);
-    cursor: not-allowed;
-  }
-  button.action-btn:hover:not(:disabled) {
-    background-color: #e03a48;
-  }
-  .teams-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit,minmax(280px,1fr));
-    gap: 30px;
-    margin-top: 20px;
-  }
-  .team {
-    background-color: var(--card-color);
-    border-radius: 10px;
-    padding: 20px;
-    min-height: 200px;
-  }
-  .team-header {
-    text-align: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border-color);
-  }
-  .team-a .team-header { color: var(--team-a-color); }
-  .team-b .team-header { color: var(--team-b-color); }
-  .team-c .team-header { color: var(--team-c-color); }
-  .team-d .team-header { color: var(--team-d-color); }
-  .team-e .team-header { color: var(--team-e-color); }
-  .team-header h2 {
-    font-size: 1.8rem;
-    margin-bottom: 5px;
-  }
-  .players-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .player-card {
-    background-color: var(--bg-color);
-    padding: 12px 15px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .team-a .player-card { border-left: 4px solid var(--team-a-color); }
-  .team-b .player-card { border-left: 4px solid var(--team-b-color); }
-  .team-c .player-card { border-left: 4px solid var(--team-c-color); }
-  .team-d .player-card { border-left: 4px solid var(--team-d-color); }
-  .team-e .player-card { border-left: 4px solid var(--team-e-color); }
-  .player-avatar {
-    width: 30px; height: 30px;
-    border-radius: 50%;
-    background-color: var(--secondary-color);
-    display: flex; justify-content: center; align-items: center;
-    font-weight: bold;
-  }
-  .player-name { flex-grow: 1; }
-  .status {
-    text-align: center;
-    margin: 15px 0 30px;
-    min-height: 24px;
-    font-size: 1.1rem;
-    color: var(--accent-color);
-  }
-  .summary {
-    background-color: var(--card-color);
-    padding: 15px 20px;
-    border-radius: 10px;
-    margin-top: 20px;
-    white-space: pre-line;
-    font-size: 1.2rem;
-    text-align: center;
-    color: var(--text-color);
-  }
-  .summary .team-label {
-    font-weight: 700;
-    font-size: 1.3rem;
-    margin: 10px 0 5px;
-  }
-  /* --- MAPAS --- */
-  .maps-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
-    justify-items: center; /* <-- centrado de las cards dentro de la grid */
-  }
-  .map-card {
-    background-color: var(--card-color);
-    border-radius: 8px;
-    padding: 20px;
-    text-align: center;
-    transition: all 0.3s;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100px;
-    width: 100%;
-    max-width: 220px;
-  }
-  .map-card.eliminated {
-    transform: scale(0.9);
-    opacity: 0.5;
-    background-color: var(--eliminated-color);
-  }
-  .map-card.winner {
-    background-color: var(--winner-color);
-    transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(76,175,80,0.5);
-    animation: pulse 1.5s infinite;
-  }
-  .map-card.highlight {
-    background-color: var(--highlight-color);
-    box-shadow: 0 0 20px rgba(255,70,85,0.5);
-    transform: scale(1.05);
-  }
-  @keyframes pulse {
-    0% { transform: scale(1); box-shadow: 0 0 20px rgba(76,175,80,0.5); }
-    50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(76,175,80,0.8); }
-    100% { transform: scale(1); box-shadow: 0 0 20px rgba(76,175,80,0.5); }
-  }
-  @keyframes ruleta {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-  }
-  .ruleta-animation {
-    animation: ruleta 0.3s ease-out;
-  }
-  /* Responsive */
-  @media (max-width: 600px) {
-    .players-input {
-      grid-template-columns: 1fr !important;
-    }
-    .maps-container {
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    }
-    h1 { font-size: 2rem; }
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valorant Match Organizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(ellipse at center, #0a0e1a 0%, #000510 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 70, 85, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(77, 171, 247, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(81, 207, 102, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+            animation: backgroundPulse 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes backgroundPulse {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Particle system */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ff4655;
+            border-radius: 50%;
+            animation: float 6s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ff4655, #4dabf7, #51cf66, #ffd43b);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(255, 70, 85, 0.5);
+            animation: titleGlow 3s ease-in-out infinite, gradientShift 4s ease-in-out infinite;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { 
+                filter: drop-shadow(0 0 20px rgba(255, 70, 85, 0.8));
+                transform: scale(1);
+            }
+            50% { 
+                filter: drop-shadow(0 0 40px rgba(77, 171, 247, 1));
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 1.2rem;
+            animation: subtitlePulse 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes subtitlePulse {
+            0% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .main-content {
+            background: rgba(30, 42, 56, 0.4);
+            border-radius: 25px;
+            padding: 40px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                inset 0 0 50px rgba(255, 70, 85, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 70, 85, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .main-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ff4655, #4dabf7, #51cf66, transparent);
+            animation: borderScan 3s linear infinite;
+        }
+
+        @keyframes borderScan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #ff4655;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255, 70, 85, 0.3);
+            border-radius: 12px;
+            background: rgba(15, 25, 35, 0.8);
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-group select:focus, .form-group input:focus {
+            outline: none;
+            border-color: #ff4655;
+            box-shadow: 0 0 20px rgba(255, 70, 85, 0.5);
+            transform: scale(1.02);
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .player-input {
+            padding: 12px;
+            border: 2px solid rgba(77, 171, 247, 0.3);
+            border-radius: 8px;
+            background: rgba(15, 25, 35, 0.9);
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .player-input:focus {
+            border-color: #4dabf7;
+            outline: none;
+            box-shadow: 0 0 15px rgba(77, 171, 247, 0.4);
+            transform: scale(1.02);
+        }
+
+        .epic-button {
+            background: linear-gradient(135deg, #ff4655, #e63946, #ff6b7a);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 1.3rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 15px 10px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 0 30px rgba(255, 70, 85, 0.4),
+                0 10px 20px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 70, 85, 0.6);
+        }
+
+        .epic-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s;
+        }
+
+        .epic-button:hover::before {
+            left: 100%;
+        }
+
+        .epic-button:hover {
+            background: linear-gradient(135deg, #e63946, #ff4655, #ff6b7a);
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 
+                0 0 50px rgba(255, 70, 85, 0.8),
+                0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .epic-button:active {
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        .epic-button:disabled {
+            background: rgba(85, 85, 85, 0.5);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            border-color: rgba(85, 85, 85, 0.3);
+        }
+
+        .secondary-button {
+            background: linear-gradient(135deg, rgba(77, 171, 247, 0.8), rgba(58, 69, 81, 0.8));
+            box-shadow: 0 0 25px rgba(77, 171, 247, 0.3);
+            border-color: rgba(77, 171, 247, 0.5);
+        }
+
+        .secondary-button:hover {
+            background: linear-gradient(135deg, rgba(77, 171, 247, 0.9), rgba(58, 69, 81, 0.9));
+            box-shadow: 0 0 40px rgba(77, 171, 247, 0.6);
+        }
+
+        /* Loading and animation states */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(15px);
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(255, 70, 85, 0.3);
+            border-top: 4px solid #ff4655;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .countdown {
+            font-size: 4rem;
+            font-weight: 900;
+            color: #ff4655;
+            text-shadow: 0 0 30px rgba(255, 70, 85, 0.8);
+            animation: countdownPulse 1s ease-in-out;
+        }
+
+        @keyframes countdownPulse {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Map elimination system */
+        .map-elimination {
+            text-align: center;
+            margin: 30px 0;
+            max-width: 800px;
+            margin: 30px auto;
+        }
+
+        .maps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .map-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .map-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .map-card:hover::before {
+            left: 100%;
+        }
+
+        .map-card.eliminated {
+            background: linear-gradient(135deg, rgba(255, 70, 85, 0.3), rgba(255, 70, 85, 0.1));
+            border-color: #ff4655;
+            color: #ff4655;
+            transform: scale(0.9);
+            opacity: 0.5;
+            box-shadow: 0 0 20px rgba(255, 70, 85, 0.3);
+        }
+
+        .map-card.eliminated::after {
+            content: '❌';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            animation: eliminateEffect 0.5s ease-out;
+        }
+
+        @keyframes eliminateEffect {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .map-card.winner {
+            background: linear-gradient(135deg, rgba(81, 207, 102, 0.4), rgba(81, 207, 102, 0.2));
+            border: 3px solid #51cf66;
+            color: #51cf66;
+            transform: scale(1.1);
+            box-shadow: 0 0 40px rgba(81, 207, 102, 0.6);
+            animation: winnerPulse 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes winnerPulse {
+            0% { box-shadow: 0 0 30px rgba(81, 207, 102, 0.6); }
+            100% { box-shadow: 0 0 60px rgba(81, 207, 102, 0.9); }
+        }
+
+        .map-card.winner::after {
+            content: '🏆';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 1.5rem;
+            animation: winnerBounce 0.6s ease-out;
+        }
+
+        @keyframes winnerBounce {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.3) rotate(180deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) rotate(360deg);
+                opacity: 1;
+            }
+        }
+
+        .elimination-status {
+            font-size: 1.3rem;
+            margin: 20px 0;
+            color: #ffd43b;
+            font-weight: bold;
+        }
+
+        /* Results section */
+        .results-container {
+            display: none;
+            margin-top: 40px;
+        }
+
+        .selected-map-section {
+            text-align: center;
+            margin: 40px 0;
+            animation: mapReveal 1s ease-out;
+        }
+
+        @keyframes mapReveal {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) rotateY(180deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotateY(0deg);
+            }
+        }
+
+        .selected-map-display {
+            background: linear-gradient(135deg, rgba(81, 207, 102, 0.3), rgba(81, 207, 102, 0.1));
+            border: 3px solid #51cf66;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 400px;
+            box-shadow: 
+                0 0 50px rgba(81, 207, 102, 0.6),
+                inset 0 0 30px rgba(81, 207, 102, 0.1);
+            animation: mapGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes mapGlow {
+            0% { box-shadow: 0 0 30px rgba(81, 207, 102, 0.4); }
+            100% { box-shadow: 0 0 60px rgba(81, 207, 102, 0.8); }
+        }
+
+        .teams-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .team-card {
+            background: rgba(42, 52, 65, 0.4);
+            border-radius: 20px;
+            padding: 30px;
+            border: 3px solid transparent;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(15px);
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(50px);
+        }
+
+        .team-card.animate-in {
+            animation: teamCardEntry 0.8s ease-out forwards;
+        }
+
+        @keyframes teamCardEntry {
+            0% {
+                opacity: 0;
+                transform: translateY(50px) scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .team-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 20px;
+            padding: 3px;
+            background: linear-gradient(45deg, transparent, var(--team-color), transparent);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .team-card:hover::before {
+            opacity: 1;
+        }
+
+        .team-card.team-a {
+            --team-color: #ff4655;
+            border-color: rgba(255, 70, 85, 0.6);
+            box-shadow: 0 0 40px rgba(255, 70, 85, 0.3);
+        }
+
+        .team-card.team-a:hover {
+            box-shadow: 0 0 60px rgba(255, 70, 85, 0.6), inset 0 0 30px rgba(255, 70, 85, 0.1);
+            transform: translateY(-8px) scale(1.02);
+        }
+
+        .team-card.team-b {
+            --team-color: #4dabf7;
+            border-color: rgba(77, 171, 247, 0.6);
+            box-shadow: 0 0 40px rgba(77, 171, 247, 0.3);
+        }
+
+        .team-card.team-b:hover {
+            box-shadow: 0 0 60px rgba(77, 171, 247, 0.6), inset 0 0 30px rgba(77, 171, 247, 0.1);
+            transform: translateY(-8px) scale(1.02);
+        }
+
+        .team-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .team-name {
+            font-size: 1.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .team-role {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .team-players {
+            list-style: none;
+        }
+
+        .team-players li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 1.1rem;
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        .team-players li.animate-in {
+            animation: playerReveal 0.5s ease-out forwards;
+        }
+
+        @keyframes playerReveal {
+            0% {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .team-players li:last-child {
+            border-bottom: none;
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .status-success {
+            background: rgba(81, 207, 102, 0.2);
+            border: 2px solid #51cf66;
+            color: #51cf66;
+            box-shadow: 0 0 20px rgba(81, 207, 102, 0.3);
+        }
+
+        .status-error {
+            background: rgba(255, 70, 85, 0.2);
+            border: 2px solid #ff4655;
+            color: #ff4655;
+            box-shadow: 0 0 20px rgba(255, 70, 85, 0.3);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .teams-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .maps-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="container">
-  <h1>Preparar Partida - Valorant</h1>
-  <nav>
-    <button id="tab-teams" class="active">Equipos</button>
-    <button id="tab-map" disabled>Mapa</button>
-  </nav>
-
-  <!-- SECCION EQUIPOS -->
-  <section id="section-teams" class="active">
-    <div class="config-section">
-      <div class="config-row">
-        <div class="config-group">
-          <label for="total-players">Total de Jugadores</label>
-          <select id="total-players">
-            <option value="10" selected>10 (2 equipos)</option>
-            <option value="15">15 (3 equipos)</option>
-            <option value="20">20 (4 equipos)</option>
-            <option value="25">25 (5 equipos)</option>
-          </select>
+    <div class="particles" id="particles"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Valorant Match Organizer</h1>
+            <p class="subtitle">Organizador profesional de partidas personalizadas</p>
         </div>
-        <div class="config-group">
-          <label for="players-per-team">Jugadores por Equipo</label>
-          <input type="number" id="players-per-team" value="5" min="1" readonly />
+
+        <div class="main-content">
+            <div class="form-group">
+                <label for="total-players">Cantidad total de jugadores:</label>
+                <select id="total-players" onchange="updatePlayersPerTeam()">
+                    <option value="10">10 jugadores (1 partida)</option>
+                    <option value="20">20 jugadores (2 partidas)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Equipos: <span id="teams-count">2</span> (5 jugadores por equipo)</label>
+            </div>
+
+            <div id="players-container">
+                <h3 style="color: #ff4655; margin-bottom: 20px; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 1px;">Nombres de los jugadores:</h3>
+                <div id="players-grid" class="players-grid"></div>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="epic-button" onclick="startEpicRandomization()">
+                    GENERAR PARTIDA
+                </button>
+                <button class="epic-button secondary-button" onclick="resetEverything()">
+                    REINICIAR
+                </button>
+            </div>
+
+            <div id="status-message" class="status-message" style="display: none;"></div>
+
+            <!-- Results -->
+            <div id="results-container" class="results-container">
+                <div id="selected-map-section" class="selected-map-section">
+                    <h2 style="color: #51cf66; margin-bottom: 25px; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 2px;">MAPA SELECCIONADO</h2>
+                    <div id="selected-map-display" class="selected-map-display"></div>
+                </div>
+
+                <div id="teams-section">
+                    <h2 style="color: #ff4655; margin: 40px 0 30px 0; text-align: center; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 2px;">EQUIPOS FORMADOS</h2>
+                    <div id="teams-container" class="teams-container"></div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="players-input" id="players-input"></div>
-      <div class="controls">
-        <button id="randomize-teams-btn" class="action-btn">
-          <i class="fas fa-random"></i> Sortear Equipos y Lados
-        </button>
-        <button id="reset-teams-btn" class="action-btn" style="background-color: var(--accent-color); color: #333;">
-          <i class="fas fa-redo"></i> Reiniciar
-        </button>
-      </div>
-      <div class="status" id="status-teams"></div>
-      <div class="teams-container" id="teams-container"></div>
-      <div class="summary" id="matchup-summary" style="display:none;"></div>
     </div>
-  </section>
 
-  <!-- SECCION MAPA -->
-  <section id="section-map">
-    <div class="config-section">
-      <div class="controls" style="justify-content: center; margin-bottom: 20px;">
-        <button id="randomize-map-btn" class="action-btn" disabled>
-          <i class="fas fa-random"></i> Sortear Mapa
-        </button>
-      </div>
-      <div class="status" id="status-map"></div>
-      <div class="maps-container" id="maps-container"></div>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2 id="loading-text">Preparando sorteo...</h2>
+            <div id="countdown" class="countdown" style="display: none;"></div>
+            
+            <!-- Map Elimination -->
+            <div id="map-elimination" class="map-elimination" style="display: none;">
+                <h2 style="color: #ffd43b; margin-bottom: 20px; font-size: 2rem;">SELECCIÓN DE MAPA</h2>
+                <div id="elimination-status" class="elimination-status">Eliminando mapas...</div>
+                <div id="maps-grid" class="maps-grid"></div>
+            </div>
+        </div>
     </div>
-  </section>
-</div>
 
-<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    // Variables DOM
-    const tabTeams = document.getElementById('tab-teams');
-    const tabMap = document.getElementById('tab-map');
-    const sectionTeams = document.getElementById('section-teams');
-    const sectionMap = document.getElementById('section-map');
+    <script>
+        // Variables globales
+        let currentTeams = [];
+        let selectedMaps = [];
+        let isRandomizing = false;
 
-    // Equipos
-    const totalPlayersSelect = document.getElementById('total-players');
-    const playersPerTeamInput = document.getElementById('players-per-team');
-    const playersInputContainer = document.getElementById('players-input');
-    const teamsContainer = document.getElementById('teams-container');
-    const randomizeTeamsBtn = document.getElementById('randomize-teams-btn');
-    const resetTeamsBtn = document.getElementById('reset-teams-btn');
-    const statusTeams = document.getElementById('status-teams');
-    const matchupSummary = document.getElementById('matchup-summary');
+        // Mapas de Valorant
+        const valorantMaps = [
+            'Ascent', 'Bind', 'Breeze', 'Fracture', 
+            'Haven', 'Icebox', 'Lotus', 'Pearl', 
+            'Split', 'Sunset', 'Abyss'
+        ];
 
-    // Mapa
-    const mapsContainer = document.getElementById('maps-container');
-    const randomizeMapBtn = document.getElementById('randomize-map-btn');
-    const statusMap = document.getElementById('status-map');
+        // Audio context removed for cleaner experience
 
-    // Datos
-    const teamColors = ['A', 'B', 'C', 'D', 'E'];
-    const teamColorValues = {
-      'A': getComputedStyle(document.documentElement).getPropertyValue('--team-a-color').trim(),
-      'B': getComputedStyle(document.documentElement).getPropertyValue('--team-b-color').trim(),
-      'C': getComputedStyle(document.documentElement).getPropertyValue('--team-c-color').trim(),
-      'D': getComputedStyle(document.documentElement).getPropertyValue('--team-d-color').trim(),
-      'E': getComputedStyle(document.documentElement).getPropertyValue('--team-e-color').trim()
-    };
-
-    const valorantMaps = [
-      { id: 'ascent', name: 'Ascent' },
-      { id: 'bind', name: 'Bind' },
-      { id: 'breeze', name: 'Breeze' },
-      { id: 'fracture', name: 'Fracture' },
-      { id: 'haven', name: 'Haven' },
-      { id: 'icebox', name: 'Icebox' },
-      { id: 'lotus', name: 'Lotus' },
-      { id: 'pearl', name: 'Pearl' },
-      { id: 'split', name: 'Split' },
-      { id: 'sunset', name: 'Sunset' },
-      { id: 'abyss', name: 'Abyss' },
-      { id: 'corrode', name: 'Corrode' }
-    ];
-
-    // Estado
-    let players = [];
-    let activeMaps = [...valorantMaps];
-    let winnerMap = null;
-    let isRandomizingMaps = false;
-
-    // Navegación tabs
-    tabTeams.addEventListener('click', () => {
-      tabTeams.classList.add('active');
-      tabMap.classList.remove('active');
-      sectionTeams.classList.add('active');
-      sectionMap.classList.remove('active');
-    });
-    tabMap.addEventListener('click', () => {
-      if(randomizeMapBtn.disabled) return; // no avanzar si no habilitado
-      tabMap.classList.add('active');
-      tabTeams.classList.remove('active');
-      sectionMap.classList.add('active');
-      sectionTeams.classList.remove('active');
-    });
-
-    // Inicializar inputs y equipos
-    function generatePlayerInputs(count) {
-      playersInputContainer.innerHTML = '';
-      for(let i=1; i<=count; i++) {
-        const div = document.createElement('div');
-        div.className = 'input-group';
-        div.innerHTML = `
-          <label for="player${i}">Jugador ${i}</label>
-          <input type="text" id="player${i}" placeholder="Nombre del jugador" autocomplete="off" />
-        `;
-        playersInputContainer.appendChild(div);
-      }
-    }
-    function generateTeamsDisplay(teamCount) {
-      teamsContainer.innerHTML = '';
-      for(let i=0; i<teamCount; i++) {
-        const t = teamColors[i];
-        const div = document.createElement('div');
-        div.className = `team team-${t.toLowerCase()}`;
-        div.innerHTML = `
-          <div class="team-header">
-            <h2>TEAM ${t}</h2>
-            <p>0 jugadores</p>
-          </div>
-          <div class="players-list" id="team-${t.toLowerCase()}"></div>
-        `;
-        teamsContainer.appendChild(div);
-      }
-    }
-    function updateTeamCounters() {
-      const headers = document.querySelectorAll('.team-header p');
-      headers.forEach(header => {
-        const match = header.closest('.team').className.match(/team-([a-e])/);
-        if (!match) return;
-        const teamId = match[1].toUpperCase();
-        const count = document.getElementById(`team-${teamId.toLowerCase()}`)?.children.length || 0;
-        header.textContent = `${count} jugadores`;
-      });
-    }
-    function clearTeams() {
-      const lists = document.querySelectorAll('.players-list');
-      lists.forEach(l => (l.innerHTML = ''));
-      updateTeamCounters();
-    }
-    function renderTeams() {
-      clearTeams();
-      players.forEach(p => {
-        const list = document.getElementById(`team-${p.team.toLowerCase()}`);
-        if(list) {
-          const div = document.createElement('div');
-          div.className = 'player-card';
-          div.innerHTML = `
-            <div class="player-avatar">${p.id}</div>
-            <div class="player-name">${p.name}</div>
-          `;
-          list.appendChild(div);
-        }
-      });
-      updateTeamCounters();
-    }
-
-    // Inicial
-    totalPlayersSelect.addEventListener('change', () => {
-      const total = parseInt(totalPlayersSelect.value);
-      const perTeam = 5;
-      playersPerTeamInput.value = perTeam;
-      generatePlayerInputs(total);
-      generateTeamsDisplay(total / perTeam);
-      players = [];
-      statusTeams.textContent = '';
-      matchupSummary.style.display = 'none';
-      randomizeMapBtn.disabled = true;
-      resetButtons();
-    });
-    totalPlayersSelect.dispatchEvent(new Event('change'));
-
-    // Shuffle Fisher-Yates
-    function shuffleArray(arr) {
-      for(let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-    }
-
-    // Botón sortear equipos y lados
-    randomizeTeamsBtn.addEventListener('click', () => {
-      statusTeams.textContent = '';
-      const totalPlayers = parseInt(totalPlayersSelect.value);
-      const playersPerTeam = parseInt(playersPerTeamInput.value);
-      const teamsCount = totalPlayers / playersPerTeam;
-      const teamsList = teamColors.slice(0, teamsCount);
-
-      // Validar nombres
-      players = [];
-      for(let i=1; i<=totalPlayers; i++) {
-        const inp = document.getElementById(`player${i}`);
-        const val = inp.value.trim();
-        if(val === '') {
-          inp.focus();
-          statusTeams.textContent = `Por favor ingresa el nombre de todos los jugadores. Falta jugador #${i}`;
-          return;
-        }
-        players.push({id: i, name: val, team: null});
-      }
-
-      if(teamsCount < 2) {
-        statusTeams.textContent = 'Debe haber al menos 2 equipos.';
-        randomizeMapBtn.disabled = true;
-        matchupSummary.style.display = 'none';
-        return;
-      }
-
-      shuffleArray(players);
-
-      for(let i=0; i<players.length; i++) {
-        const teamIndex = Math.floor(i / playersPerTeam);
-        players[i].team = teamColors[teamIndex];
-      }
-
-      renderTeams();
-
-      // Helper para etiqueta de equipo con color
-      function teamLabel(t) {
-        return `<span class="team-label" style="color:${teamColorValues[t]}">TEAM ${t}</span>`;
-      }
-
-      let summaryHTML = '';
-
-      if(teamsCount === 2) {
-        // Elegir atacantes y defensores
-        const attackerIndex = Math.floor(Math.random()*2);
-        const defenderIndex = 1 - attackerIndex;
-        const tA = teamsList[0];
-        const tB = teamsList[1];
-
-        summaryHTML += `<div>${teamLabel(tA)} vs ${teamLabel(tB)}</div>`;
-        summaryHTML += `<div style="margin-top:8px;"><strong style="color:${teamColorValues[teamsList[attackerIndex]]}">Atacante:</strong> ${teamLabel(teamsList[attackerIndex])}</div>`;
-        summaryHTML += `<div><strong style="color:${teamColorValues[teamsList[defenderIndex]]}">Defensor:</strong> ${teamLabel(teamsList[defenderIndex])}</div>`;
-      } else if (teamsCount === 3) {
-        // Primer enfrentamiento entre 2 equipos, tercero espera y jugará contra el ganador
-        const shuffledTeams = [...teamsList];
-        shuffleArray(shuffledTeams);
-        const t1 = shuffledTeams[0], t2 = shuffledTeams[1], waiting = shuffledTeams[2];
-
-        const attackerIndex = Math.floor(Math.random()*2);
-        const attacker = attackerIndex === 0 ? t1 : t2;
-        const defender = attacker === t1 ? t2 : t1;
-
-        summaryHTML += `<div><strong>Primer enfrentamiento:</strong></div>`;
-        summaryHTML += `<div style="margin-top:6px;">${teamLabel(t1)} vs ${teamLabel(t2)}</div>`;
-        summaryHTML += `<div style="margin-top:8px;"><strong style="color:${teamColorValues[attacker]}">Atacante:</strong> ${teamLabel(attacker)}</div>`;
-        summaryHTML += `<div><strong style="color:${teamColorValues[defender]}">Defensor:</strong> ${teamLabel(defender)}</div>`;
-
-        // Info del equipo sobrante
-        const waitingIsAttacker = Math.random() < 0.5;
-        summaryHTML += `<div style="margin-top:12px;"><strong>En espera:</strong> ${teamLabel(waiting)} jugará contra <span class="team-label" style="color:var(--winner-color)">GANADOR</span></div>`;
-        summaryHTML += `<div style="margin-top:6px;"><strong style="color:${waitingIsAttacker ? teamColorValues[waiting] : 'var(--winner-color)'}">Atacante:</strong> ${waitingIsAttacker ? teamLabel(waiting) : '<span style="color:var(--winner-color)">GANADOR</span>'}</div>`;
-        summaryHTML += `<div><strong style="color:${!waitingIsAttacker ? teamColorValues[waiting] : 'var(--winner-color)'}">Defensor:</strong> ${!waitingIsAttacker ? teamLabel(waiting) : '<span style="color:var(--winner-color)">GANADOR</span>'}</div>`;
-      } else if (teamsCount === 4) {
-        // 2 partidos simultáneos
-        const shuffledTeams = [...teamsList];
-        shuffleArray(shuffledTeams);
-        const m1a = shuffledTeams[0], m1b = shuffledTeams[1];
-        const m2a = shuffledTeams[2], m2b = shuffledTeams[3];
-
-        const attacker1 = Math.random() < 0.5 ? m1a : m1b;
-        const defender1 = attacker1 === m1a ? m1b : m1a;
-        const attacker2 = Math.random() < 0.5 ? m2a : m2b;
-        const defender2 = attacker2 === m2a ? m2b : m2a;
-
-        summaryHTML += `<div><strong>Enfrentamientos simultáneos:</strong></div>`;
-
-        summaryHTML += `<div style="margin-top:8px;">${teamLabel(m1a)} vs ${teamLabel(m1b)}</div>`;
-        summaryHTML += `<div style="margin-top:6px;"><strong style="color:${teamColorValues[attacker1]}">Atacante:</strong> ${teamLabel(attacker1)}</div>`;
-        summaryHTML += `<div><strong style="color:${teamColorValues[defender1]}">Defensor:</strong> ${teamLabel(defender1)}</div>`;
-
-        summaryHTML += `<div style="margin-top:12px;">${teamLabel(m2a)} vs ${teamLabel(m2b)}</div>`;
-        summaryHTML += `<div style="margin-top:6px;"><strong style="color:${teamColorValues[attacker2]}">Atacante:</strong> ${teamLabel(attacker2)}</div>`;
-        summaryHTML += `<div><strong style="color:${teamColorValues[defender2]}">Defensor:</strong> ${teamLabel(defender2)}</div>`;
-      } else if (teamsCount === 5) {
-        // 2 partidos y 1 equipo en espera para jugar contra el ganador
-        const shuffledTeams = [...teamsList];
-        shuffleArray(shuffledTeams);
-        const m1a = shuffledTeams[0], m1b = shuffledTeams[1];
-        const m2a = shuffledTeams[2], m2b = shuffledTeams[3];
-        const waiting = shuffledTeams[4];
-
-        const attacker1 = Math.random() < 0.5 ? m1a : m1b;
-        const defender1 = attacker1 === m1a ? m1b : m1a;
-        const attacker2 = Math.random() < 0.5 ? m2a : m2b;
-        const defender2 = attacker2 === m2a ? m2b : m2a;
-
-        summaryHTML += `<div><strong>Enfrentamientos:</strong></div>`;
-
-        summaryHTML += `<div style="margin-top:8px;">${teamLabel(m1a)} vs ${teamLabel(m1b)}</div>`;
-        summaryHTML += `<div style="margin-top:6px;"><strong style="color:${teamColorValues[attacker1]}">Atacante:</strong> ${teamLabel(attacker1)}</div>`;
-        summaryHTML += `<div><strong style="color:${teamColorValues[defender1]}">Defensor:</strong> ${teamLabel(defender1)}</div>`;
-
-        summaryHTML += `<div style="margin-top:12px;">${teamLabel(m2a)} vs ${teamLabel(m2b)}</div>`;
-        summaryHTML += `<div style="margin-top:6px;"><strong style="color:${teamColorValues[attacker2]}">Atacante:</strong> ${teamLabel(attacker2)}</div>`;
-        summaryHTML += `<div><strong style="color:${teamColorValues[defender2]}">Defensor:</strong> ${teamLabel(defender2)}</div>`;
-
-        // Equipo en espera
-        const waitingIsAttacker = Math.random() < 0.5;
-        summaryHTML += `<div style="margin-top:12px; color: var(--accent-color);"><strong>Equipo en espera:</strong> ${teamLabel(waiting)} jugará contra <span class="team-label" style="color:var(--winner-color)">GANADOR</span></div>`;
-        summaryHTML += `<div style="margin-top:6px;"><strong style="color:${waitingIsAttacker ? teamColorValues[waiting] : 'var(--winner-color)'}">Atacante:</strong> ${waitingIsAttacker ? teamLabel(waiting) : '<span style="color:var(--winner-color)">GANADOR</span>'}</div>`;
-        summaryHTML += `<div><strong style="color:${!waitingIsAttacker ? teamColorValues[waiting] : 'var(--winner-color)'}">Defensor:</strong> ${!waitingIsAttacker ? teamLabel(waiting) : '<span style="color:var(--winner-color)">GANADOR</span>'}</div>`;
-      } else {
-        // fallback (no debería ocurrir con los select actuales)
-        summaryHTML = 'No se pudo generar el resumen de enfrentamientos.';
-      }
-
-      matchupSummary.innerHTML = summaryHTML;
-      matchupSummary.style.display = 'block';
-
-      statusTeams.textContent = 'Equipos y lados sorteados correctamente.';
-
-      // Bloquear botón de sorteo equipos y habilitar botón de mapa
-      randomizeTeamsBtn.disabled = true;
-      randomizeMapBtn.disabled = false;
-      tabMap.disabled = false;
-    });
-
-    // Resetear equipos
-    resetTeamsBtn.addEventListener('click', () => {
-      totalPlayersSelect.dispatchEvent(new Event('change'));
-      statusTeams.textContent = '';
-      matchupSummary.style.display = 'none';
-      randomizeTeamsBtn.disabled = false;
-      randomizeMapBtn.disabled = true;
-      tabMap.disabled = true;
-    });
-
-    // Renderizar mapas
-    function renderMaps() {
-      mapsContainer.innerHTML = '';
-      activeMaps.forEach(map => {
-        const div = document.createElement('div');
-        div.className = 'map-card';
-        if(winnerMap && winnerMap.id === map.id) div.classList.add('winner');
-        div.id = `map-${map.id}`;
-        div.dataset.id = map.id;
-        div.innerHTML = `<h3>${map.name}</h3>`;
-        mapsContainer.appendChild(div);
-      });
-    }
-    renderMaps();
-
-    // Animación y sorteo mapa
-    let eliminationInterval = null;
-    const fixedDelay = 800;
-
-    randomizeMapBtn.addEventListener('click', () => {
-      if(isRandomizingMaps) {
-        resetMapRandomization();
-        return;
-      }
-      if(activeMaps.length <= 1) {
-        resetMapRandomization();
-        return;
-      }
-
-      isRandomizingMaps = true;
-      randomizeMapBtn.innerHTML = '<i class="fas fa-stop"></i> Detener';
-      statusMap.textContent = 'Sorteando mapa...';
-
-      eliminationInterval = setInterval(() => {
-        if(activeMaps.length === 1) {
-          finishMapRandomization();
-          return;
-        }
-        const randomIndex = Math.floor(Math.random() * activeMaps.length);
-        const mapToEliminate = activeMaps[randomIndex];
-        highlightMap(mapToEliminate.id, () => {
-          if(activeMaps.length > 1) {
-            eliminateMap(mapToEliminate.id);
-            if(activeMaps.length === 1) finishMapRandomization();
-          }
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePlayersPerTeam();
+            createParticles();
         });
-      }, fixedDelay);
-    });
 
-    function highlightMap(mapId, callback) {
-      const mapEl = document.getElementById(`map-${mapId}`);
-      if(!mapEl) return;
-      mapEl.classList.add('highlight');
-      mapEl.classList.add('ruleta-animation');
-      setTimeout(() => {
-        mapEl.classList.remove('highlight');
-        mapEl.classList.remove('ruleta-animation');
-        if(callback) callback();
-      }, 500);
-    }
-    function eliminateMap(mapId) {
-      if(activeMaps.length <= 1) return;
-      const idx = activeMaps.findIndex(m => m.id === mapId);
-      if(idx === -1) return;
-      const el = document.getElementById(`map-${mapId}`);
-      if(el) el.classList.add('eliminated');
-      activeMaps.splice(idx, 1);
-      statusMap.textContent = `Quedan ${activeMaps.length} mapas...`;
-    }
-    function finishMapRandomization() {
-      clearInterval(eliminationInterval);
-      if(activeMaps.length === 1) {
-        winnerMap = activeMaps[0];
-        const winnerEl = document.getElementById(`map-${winnerMap.id}`);
-        if(winnerEl) winnerEl.classList.add('winner');
-        statusMap.textContent = `¡Mapa seleccionado: ${winnerMap.name}!`;
-      }
-      randomizeMapBtn.innerHTML = '<i class="fas fa-redo"></i> Reiniciar';
-      isRandomizingMaps = false;
-    }
-    function resetMapRandomization() {
-      clearInterval(eliminationInterval);
-      activeMaps = [...valorantMaps];
-      winnerMap = null;
-      renderMaps();
-      statusMap.textContent = '';
-      randomizeMapBtn.innerHTML = '<i class="fas fa-random"></i> Sortear Mapa';
-      isRandomizingMaps = false;
-    }
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const colors = ['#ff4655', '#4dabf7', '#51cf66', '#ffd43b'];
+            
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
 
-    // Resetea ambos botones a estados iniciales
-    function resetButtons() {
-      randomizeTeamsBtn.disabled = false;
-      randomizeMapBtn.disabled = true;
-      tabMap.disabled = true;
-    }
-  });
-</script>
-</body>
+        function updatePlayersPerTeam() {
+            const totalPlayers = parseInt(document.getElementById('total-players').value);
+            const matchesCount = totalPlayers / 10;
+            const teamsCount = Math.floor(totalPlayers / 5);
+            
+            if (totalPlayers === 10) {
+                document.getElementById('teams-count').textContent = `${teamsCount} (1 partida)`;
+            } else {
+                document.getElementById('teams-count').textContent = `${teamsCount} (2 partidas simultáneas)`;
+            }
+            
+            generatePlayerInputs(totalPlayers);
+        }
+
+        function generatePlayerInputs(totalPlayers) {
+            const container = document.getElementById('players-grid');
+            container.innerHTML = '';
+
+            for (let i = 1; i <= totalPlayers; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'player-input';
+                input.placeholder = `Jugador ${i}`;
+                input.id = `player-${i}`;
+                container.appendChild(input);
+            }
+        }
+
+        async function startEpicRandomization() {
+            if (isRandomizing) return;
+            
+            const totalPlayers = parseInt(document.getElementById('total-players').value);
+            const players = [];
+
+            // Recopilar nombres de jugadores
+            for (let i = 1; i <= totalPlayers; i++) {
+                const playerName = document.getElementById(`player-${i}`).value.trim();
+                if (!playerName) {
+                    showStatus('⚠️ Por favor, completa todos los nombres de jugadores', 'error');
+                    return;
+                }
+                players.push(playerName);
+            }
+
+            isRandomizing = true;
+            
+            // Mostrar overlay de carga
+            showLoadingOverlay();
+            
+            // Countdown
+            await epicCountdown();
+            
+            // Selección de mapa con eliminación
+            await selectMapWithElimination();
+            
+            // Formar equipos con animaciones
+            await createTeamsWithAnimation(players);
+            
+            hideLoadingOverlay();
+            isRandomizing = false;
+        }
+
+        function showLoadingOverlay() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+
+        function hideLoadingOverlay() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        async function epicCountdown() {
+            const countdownElement = document.getElementById('countdown');
+            const loadingText = document.getElementById('loading-text');
+            
+            loadingText.textContent = 'Iniciando sorteo...';
+            countdownElement.style.display = 'block';
+            
+            for (let i = 3; i >= 1; i--) {
+                countdownElement.textContent = i;
+                countdownElement.style.animation = 'none';
+                setTimeout(() => {
+                    countdownElement.style.animation = 'countdownPulse 1s ease-in-out';
+                }, 10);
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            countdownElement.textContent = 'INICIO';
+            countdownElement.style.color = '#51cf66';
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            countdownElement.style.display = 'none';
+        }
+
+        async function selectMapWithElimination() {
+            const totalPlayers = parseInt(document.getElementById('total-players').value);
+            const mapsNeeded = totalPlayers === 20 ? 2 : 1;
+            
+            selectedMaps = [];
+            
+            for (let mapRound = 1; mapRound <= mapsNeeded; mapRound++) {
+                await selectSingleMap(mapRound, mapsNeeded);
+            }
+        }
+
+        async function selectSingleMap(roundNumber, totalRounds) {
+            const loadingText = document.getElementById('loading-text');
+            const mapElimination = document.getElementById('map-elimination');
+            const mapsGrid = document.getElementById('maps-grid');
+            const eliminationStatus = document.getElementById('elimination-status');
+            
+            loadingText.style.display = 'none';
+            mapElimination.style.display = 'block';
+            
+            // Título para múltiples mapas
+            const mapTitle = document.querySelector('#map-elimination h2');
+            if (totalRounds > 1) {
+                mapTitle.textContent = `🗺️ SELECCIÓN DE MAPA ${roundNumber}/${totalRounds}`;
+            } else {
+                mapTitle.textContent = '🗺️ SELECCIÓN DE MAPA';
+            }
+            
+            // Crear tarjetas de mapas (excluyendo mapas ya seleccionados)
+            mapsGrid.innerHTML = '';
+            const availableMaps = valorantMaps.filter(map => !selectedMaps.includes(map));
+            
+            availableMaps.forEach(map => {
+                const mapCard = document.createElement('div');
+                mapCard.className = 'map-card';
+                mapCard.textContent = map;
+                mapCard.dataset.map = map;
+                mapsGrid.appendChild(mapCard);
+            });
+
+            // Proceso de eliminación aleatoria
+            let remainingMaps = [...availableMaps];
+            eliminationStatus.textContent = `Eliminando ${remainingMaps.length - 1} mapas...`;
+            
+            // Eliminar mapas aleatoriamente uno por uno hasta que quede solo uno
+            while (remainingMaps.length > 1) {
+                await new Promise(resolve => setTimeout(resolve, 1200));
+                
+                // Seleccionar un mapa aleatorio para eliminar
+                const randomIndex = Math.floor(Math.random() * remainingMaps.length);
+                const mapToEliminate = remainingMaps[randomIndex];
+                
+                // Remover del array de mapas restantes
+                remainingMaps.splice(randomIndex, 1);
+                
+                // Marcar como eliminado visualmente
+                const mapCard = document.querySelector(`[data-map="${mapToEliminate}"]`);
+                if (mapCard) {
+                    mapCard.classList.add('eliminated');
+                }
+                
+                // Actualizar estado
+                if (remainingMaps.length > 1) {
+                    eliminationStatus.textContent = `Quedan ${remainingMaps.length} mapas...`;
+                } else {
+                    eliminationStatus.textContent = '¡Mapa seleccionado!';
+                }
+            }
+            
+            // Mostrar ganador
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const winnerMap = remainingMaps[0]; // El único mapa que queda
+            const winnerCard = document.querySelector(`[data-map="${winnerMap}"]`);
+            if (winnerCard) {
+                winnerCard.classList.add('winner');
+                selectedMaps.push(winnerMap);
+            }
+            
+            if (totalRounds > 1) {
+                eliminationStatus.textContent = `🏆 Mapa ${roundNumber}: ${winnerMap}`;
+            } else {
+                eliminationStatus.textContent = `🏆 ${winnerMap} ha sido seleccionado`;
+            }
+            eliminationStatus.style.color = '#51cf66';
+            
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Si hay más mapas por seleccionar, limpiar para el siguiente
+            if (roundNumber < totalRounds) {
+                eliminationStatus.textContent = 'Preparando siguiente selección...';
+                eliminationStatus.style.color = '#ffd43b';
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            } else {
+                mapElimination.style.display = 'none';
+                loadingText.style.display = 'block';
+            }
+        }
+
+        async function createTeamsWithAnimation(players) {
+            const loadingText = document.getElementById('loading-text');
+            const totalPlayers = players.length;
+            
+            loadingText.textContent = 'Formando equipos...';
+            
+            // Barajar jugadores con sonido
+            const shuffledPlayers = shuffleArray([...players]);
+            currentTeams = [];
+
+            if (totalPlayers === 10) {
+                // Una sola partida
+                const teamNames = ['A', 'B'];
+                const teamColors = ['team-a', 'team-b'];
+                const roles = ['Atacante', 'Defensor'];
+                const shuffledRoles = shuffleArray(roles);
+
+                for (let i = 0; i < 2; i++) {
+                    const teamPlayers = shuffledPlayers.slice(i * 5, (i + 1) * 5);
+                    currentTeams.push({
+                        name: `Equipo ${teamNames[i]}`,
+                        players: teamPlayers,
+                        color: teamColors[i],
+                        role: shuffledRoles[i],
+                        match: 1,
+                        map: selectedMaps[0]
+                    });
+                }
+            } else {
+                // Dos partidas simultáneas
+                const teamNames = ['A', 'B', 'C', 'D'];
+                const teamColors = ['team-a', 'team-b', 'team-a', 'team-b'];
+                const roles = ['Atacante', 'Defensor'];
+
+                for (let match = 1; match <= 2; match++) {
+                    const matchPlayers = shuffledPlayers.slice((match - 1) * 10, match * 10);
+                    const shuffledMatchPlayers = shuffleArray(matchPlayers);
+                    const shuffledRoles = shuffleArray([...roles]);
+
+                    for (let i = 0; i < 2; i++) {
+                        const teamIndex = (match - 1) * 2 + i;
+                        const teamPlayers = shuffledMatchPlayers.slice(i * 5, (i + 1) * 5);
+                        currentTeams.push({
+                            name: `Equipo ${teamNames[teamIndex]}`,
+                            players: teamPlayers,
+                            color: teamColors[teamIndex],
+                            role: shuffledRoles[i],
+                            match: match,
+                            map: selectedMaps[match - 1]
+                        });
+                    }
+                }
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            displayResults();
+            const matchText = totalPlayers === 10 ? '1 partida' : '2 partidas simultáneas';
+            showStatus(`✅ Sorteo completado. ${matchText} organizadas`, 'success');
+        }
+
+        function displayResults() {
+            // Mostrar mapas seleccionados
+            const mapDisplay = document.getElementById('selected-map-display');
+            
+            if (selectedMaps.length === 1) {
+                mapDisplay.innerHTML = `
+                    <h3 style="font-size: 2.2rem; margin: 0; color: #51cf66; text-transform: uppercase; letter-spacing: 2px;">${selectedMaps[0]}</h3>
+                    <p style="margin: 15px 0 0 0; color: #a0a0a0; font-size: 1.1rem;">Campo de batalla seleccionado</p>
+                `;
+            } else {
+                mapDisplay.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: center;">
+                        <div style="background: rgba(255, 70, 85, 0.1); border: 2px solid #ff4655; border-radius: 15px; padding: 20px;">
+                            <h4 style="color: #ff4655; margin: 0 0 10px 0; font-size: 1.1rem;">PARTIDA 1</h4>
+                            <h3 style="font-size: 1.8rem; margin: 0; color: #51cf66; text-transform: uppercase;">${selectedMaps[0]}</h3>
+                        </div>
+                        <div style="background: rgba(77, 171, 247, 0.1); border: 2px solid #4dabf7; border-radius: 15px; padding: 20px;">
+                            <h4 style="color: #4dabf7; margin: 0 0 10px 0; font-size: 1.1rem;">PARTIDA 2</h4>
+                            <h3 style="font-size: 1.8rem; margin: 0; color: #51cf66; text-transform: uppercase;">${selectedMaps[1]}</h3>
+                        </div>
+                    </div>
+                    <p style="margin: 20px 0 0 0; color: #a0a0a0; font-size: 1.1rem;">Campos de batalla para partidas simultáneas</p>
+                `;
+            }
+
+            // Mostrar equipos con animación
+            displayTeamsWithAnimation();
+            
+            // Mostrar contenedor de resultados
+            document.getElementById('results-container').style.display = 'block';
+        }
+
+        async function displayTeamsWithAnimation() {
+            const container = document.getElementById('teams-container');
+            container.innerHTML = '';
+            
+            // Agrupar equipos por partida
+            const matches = {};
+            currentTeams.forEach(team => {
+                if (!matches[team.match]) {
+                    matches[team.match] = [];
+                }
+                matches[team.match].push(team);
+            });
+            
+            // Crear secciones para cada partida
+            Object.keys(matches).forEach(matchNumber => {
+                const matchTeams = matches[matchNumber];
+                
+                // Crear contenedor de partida si hay múltiples partidas
+                if (Object.keys(matches).length > 1) {
+                    const matchHeader = document.createElement('div');
+                    matchHeader.style.cssText = `
+                        grid-column: 1 / -1;
+                        text-align: center;
+                        margin: 30px 0 20px 0;
+                        padding: 15px;
+                        background: rgba(${matchNumber === '1' ? '255, 70, 85' : '77, 171, 247'}, 0.1);
+                        border: 2px solid ${matchNumber === '1' ? '#ff4655' : '#4dabf7'};
+                        border-radius: 15px;
+                        color: ${matchNumber === '1' ? '#ff4655' : '#4dabf7'};
+                        font-size: 1.5rem;
+                        font-weight: bold;
+                        text-transform: uppercase;
+                        letter-spacing: 2px;
+                    `;
+                    matchHeader.innerHTML = `🎮 PARTIDA ${matchNumber} - ${matchTeams[0].map}`;
+                    container.appendChild(matchHeader);
+                }
+                
+                // Crear tarjetas de equipos para esta partida
+                matchTeams.forEach((team, teamIndex) => {
+                    const globalIndex = parseInt(matchNumber - 1) * 2 + teamIndex;
+                    const teamCard = document.createElement('div');
+                    teamCard.className = `team-card ${team.color}`;
+                    
+                    teamCard.innerHTML = `
+                        <div class="team-header">
+                            <div class="team-name">${team.name}</div>
+                            <div class="team-role" style="background: rgba(${team.role === 'Atacante' ? '255, 70, 85' : '77, 171, 247'}, 0.3); color: ${team.role === 'Atacante' ? '#ff4655' : '#4dabf7'}; border: 2px solid ${team.role === 'Atacante' ? '#ff4655' : '#4dabf7'};">
+                                ${team.role === 'Atacante' ? '⚔️' : '🛡️'} ${team.role}
+                            </div>
+                        </div>
+                        ${Object.keys(matches).length === 1 ? `
+                            <div style="text-align: center; margin: 10px 0; padding: 8px; background: rgba(81, 207, 102, 0.1); border-radius: 8px; color: #51cf66; font-weight: bold;">
+                                📍 ${team.map}
+                            </div>
+                        ` : ''}
+                        <ul class="team-players">
+                            ${team.players.map(player => `<li>${player}</li>`).join('')}
+                        </ul>
+                    `;
+                    
+                    container.appendChild(teamCard);
+                    
+                    // Animar entrada del equipo
+                    setTimeout(() => {
+                        teamCard.classList.add('animate-in');
+                    }, globalIndex * 300);
+                    
+                    // Animar jugadores individualmente
+                    setTimeout(() => {
+                        const playerItems = teamCard.querySelectorAll('.team-players li');
+                        playerItems.forEach((item, playerIndex) => {
+                            setTimeout(() => {
+                                item.classList.add('animate-in');
+                            }, playerIndex * 200);
+                        });
+                    }, globalIndex * 300 + 400);
+                });
+            });
+        }
+
+        function resetEverything() {
+            if (isRandomizing) return;
+            
+            currentTeams = [];
+            selectedMaps = [];
+            document.getElementById('results-container').style.display = 'none';
+            document.getElementById('status-message').style.display = 'none';
+            document.getElementById('map-elimination').style.display = 'none';
+            
+            // Limpiar inputs
+            document.querySelectorAll('.player-input').forEach(input => {
+                input.value = '';
+            });
+        }
+
+        // Funciones auxiliares
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function showStatus(message, status) {
+            const statusElement = document.getElementById('status-message');
+            statusElement.textContent = message;
+            statusElement.className = `status-message status-${status}`;
+            statusElement.style.display = 'block';
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96edaf23a46f521c',t:'MTc1NTE0NTQ4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
