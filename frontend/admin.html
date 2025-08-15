@@ -2,376 +2,21 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel de Administrador</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <title>PANEL DE ADMINISTRADOR</title>
   <style>
-    :root {
-      --valorant-red: #ff4655;
-      --valorant-red-glow: rgba(255, 70, 85, 0.4);
-      --valorant-blue: #00d4ff;
-      --valorant-purple: #a855f7;
-      --valorant-pink: #ec4899;
-      --valorant-green: #10b981;
-      
-      --bg-dark: #121212;
-      --bg-surface: #1e1e1e;
-      --bg-card: #2a2a2a;
-      --border-color: #333;
-      
-      --text-primary: #eee;
-      --text-secondary: #ccc;
-      --text-muted: #999;
-      
-      --success: #10b981;
-      --warning: #f59e0b;
-      --error: #ef4444;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      background: linear-gradient(135deg, var(--bg-dark) 0%, #0a0a0a 100%);
-      color: var(--text-primary);
-      font-family: 'Poppins', sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: 
-        radial-gradient(circle at 20% 80%, rgba(255, 70, 85, 0.03) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.02) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.02) 0%, transparent 50%);
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    header {
-      background: rgba(30, 30, 30, 0.95);
-      backdrop-filter: blur(10px);
-      border-bottom: 2px solid var(--valorant-red);
-      padding: 1.5rem 0;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      box-shadow: 0 0 20px var(--valorant-red-glow);
-    }
-
-    header h1 {
-      font-family: 'Orbitron', monospace;
-      font-size: 2rem;
-      font-weight: 900;
-      color: var(--valorant-red);
-      text-shadow: 0 0 10px var(--valorant-red-glow);
-      text-align: center;
-      text-transform: uppercase;
-      letter-spacing: 3px;
-    }
-
-    nav {
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border-color);
-      padding: 0;
-      position: sticky;
-      top: 80px;
-      z-index: 999;
-    }
-
-    nav ul {
-      list-style: none;
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    nav li {
-      margin: 0;
-    }
-
-    nav a {
-      display: block;
-      padding: 1.2rem 2rem;
-      color: var(--text-secondary);
-      text-decoration: none;
-      transition: all 0.3s ease;
-      border-bottom: 3px solid transparent;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-size: 0.9rem;
-    }
-
-    nav a:hover,
-    nav a.active {
-      background: rgba(255, 70, 85, 0.1);
-      color: var(--valorant-red);
-      border-bottom-color: var(--valorant-red);
-      box-shadow: inset 0 0 10px var(--valorant-red-glow);
-    }
-
-    main {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-
-    section {
-      display: none;
-      animation: fadeIn 0.5s ease-in-out;
-      background: var(--bg-card);
-      border-radius: 12px;
-      padding: 2rem;
-      border: 1px solid var(--border-color);
-      margin-bottom: 2rem;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-    }
-
-    section.active {
-      display: block;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    section h2 {
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--valorant-red);
-      text-shadow: 0 0 10px var(--valorant-red-glow);
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 2px solid var(--border-color);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-
-    #dashboard div {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
-    }
-
-    #dashboard p {
-      background: var(--bg-surface);
-      padding: 2rem;
-      border-radius: 12px;
-      border: 1px solid var(--border-color);
-      text-align: center;
-      font-size: 1.1rem;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #dashboard p::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: var(--valorant-red);
-    }
-
-    #dashboard p:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      border-color: var(--valorant-red);
-    }
-
-    #dashboard span {
-      display: block;
-      font-size: 2.5rem;
-      font-weight: 900;
-      color: var(--valorant-red);
-      margin-top: 1rem;
-      text-shadow: 0 0 10px var(--valorant-red-glow);
-    }
-
-    form {
-      background: var(--bg-surface);
-      padding: 2rem;
-      border-radius: 12px;
-      border: 1px solid var(--border-color);
-      margin-bottom: 2rem;
-    }
-
-    form input,
-    form textarea,
-    form select {
-      width: 100%;
-      padding: 1rem;
-      margin: 0.5rem 0;
-      border: 2px solid var(--border-color);
-      border-radius: 8px;
-      background: var(--bg-dark);
-      color: var(--text-primary);
-      font-family: 'Poppins', sans-serif;
-      font-size: 1rem;
-      transition: all 0.3s ease;
-    }
-
-    form input:focus,
-    form textarea:focus,
-    form select:focus {
-      outline: none;
-      border-color: var(--valorant-red);
-      box-shadow: 0 0 15px var(--valorant-red-glow);
-      background: rgba(18, 18, 18, 0.95);
-    }
-
-    form input::placeholder,
-    form textarea::placeholder {
-      color: var(--text-muted);
-    }
-
-    form label {
-      display: block;
-      margin: 1rem 0 0.5rem 0;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-size: 0.9rem;
-    }
-
-    form button {
-      background: linear-gradient(135deg, var(--valorant-red), #ff6b7a);
-      color: white;
-      border: 2px solid var(--valorant-red);
-      padding: 1rem 2rem;
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-family: 'Poppins', sans-serif;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-size: 1rem;
-      margin-top: 1rem;
-      box-shadow: 0 0 15px var(--valorant-red-glow);
-    }
-
-    form button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px var(--valorant-red-glow);
-      background: linear-gradient(135deg, #ff6b7a, var(--valorant-red));
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--bg-surface);
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-      border: none;
-    }
-
-    table th,
-    table td {
-      padding: 1.2rem;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-      border: none;
-    }
-
-    table th {
-      background: var(--bg-dark);
-      color: var(--valorant-red);
-      font-weight: 700;
-      text-transform: uppercase;
-      font-size: 0.9rem;
-      letter-spacing: 1px;
-    }
-
-    table tbody tr {
-      transition: all 0.3s ease;
-    }
-
-    table tbody tr:hover {
-      background: rgba(255, 70, 85, 0.05);
-    }
-
-    table tbody td {
-      color: var(--text-secondary);
-    }
-
-    #addPlayerForm {
-      display: grid;
-      grid-template-columns: 1fr 1fr auto;
-      gap: 1rem;
-      align-items: end;
-    }
-
-    #addMatchForm textarea {
-      min-height: 150px;
-      resize: vertical;
-      font-family: 'Courier New', monospace;
-    }
-
-    #addMatchForm select {
-      max-width: 300px;
-    }
-
-    @media (max-width: 768px) {
-      nav ul {
-        flex-direction: column;
-      }
-      
-      nav a {
-        text-align: center;
-        border-bottom: none;
-        border-left: 3px solid transparent;
-      }
-      
-      nav a:hover,
-      nav a.active {
-        border-left-color: var(--valorant-red);
-        border-bottom: none;
-      }
-      
-      main {
-        padding: 1rem;
-      }
-      
-      section {
-        padding: 1.5rem;
-      }
-      
-      #dashboard div {
-        grid-template-columns: 1fr;
-      }
-      
-      #addPlayerForm {
-        grid-template-columns: 1fr;
-      }
-      
-      table {
-        font-size: 0.9rem;
-      }
-      
-      table th,
-      table td {
-        padding: 0.8rem 0.5rem;
-      }
-    }
+    /* Minimal para organizar las tablas y formularios */
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    header, nav, main { padding: 1rem; }
+    nav ul { list-style: none; display: flex; gap: 1rem; padding: 0; }
+    nav a { text-decoration: none; color: blue; }
+    section { margin-top: 2rem; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: center; }
+    select, input { padding: 0.3rem; width: 100%; }
+    .team-section { margin-top: 1rem; }
+    .player-row { display: flex; gap: 0.5rem; margin-bottom: 0.3rem; }
+    .player-row > * { flex: 1; }
+    button { padding: 0.5rem 1rem; margin-top: 1rem; }
   </style>
 </head>
 <body>
@@ -393,10 +38,8 @@
     <!-- Dashboard -->
     <section id="dashboard">
       <h2>Dashboard / Resumen</h2>
-      <div>
-        <p>Total Jugadores: <span id="totalPlayers">0</span></p>
-        <p>Partidas Registradas: <span id="totalMatches">0</span></p>
-      </div>
+      <p>Total Jugadores: <span id="totalPlayers">0</span></p>
+      <p>Partidas Registradas: <span id="totalMatches">0</span></p>
     </section>
 
     <!-- Players -->
@@ -408,7 +51,7 @@
         <button type="submit">Registrar Jugador</button>
       </form>
 
-      <table border="1">
+      <table>
         <thead>
           <tr>
             <th>Nombre</th>
@@ -421,7 +64,7 @@
         </thead>
         <tbody id="playersTableBody">
           <tr>
-            <td colspan="6" style="text-align:center">No hay jugadores registrados</td>
+            <td colspan="6">No hay jugadores registrados</td>
           </tr>
         </tbody>
       </table>
@@ -436,18 +79,27 @@
     <!-- Matches -->
     <section id="matches">
       <h2>Añadir Partidas</h2>
-      <form id="addMatchForm">
-        <textarea id="matchData" placeholder='JSON con los 10 jugadores' rows="6" cols="50" required></textarea>
-        <br>
-        <label>Equipo Ganador:</label>
-        <select id="winnerTeam" required>
-          <option value="">Seleccionar ganador</option>
-          <option value="A">Equipo A</option>
-          <option value="B">Equipo B</option>
-        </select>
-        <br><br>
-        <button type="submit">Registrar Partida</button>
-      </form>
+
+      <label>Equipo Ganador:</label>
+      <select id="winnerTeam" required>
+        <option value="">Seleccionar ganador</option>
+        <option value="A">Equipo A</option>
+        <option value="B">Equipo B</option>
+      </select>
+
+      <!-- Team A -->
+      <div class="team-section">
+        <h3>Team A</h3>
+        <div id="teamAContainer"></div>
+      </div>
+
+      <!-- Team B -->
+      <div class="team-section">
+        <h3>Team B</h3>
+        <div id="teamBContainer"></div>
+      </div>
+
+      <button id="submitMatch">Registrar Partida</button>
     </section>
 
     <!-- Settings -->
@@ -457,36 +109,6 @@
     </section>
   </main>
 
-  <script>
-    // Navigation functionality
-    document.addEventListener('DOMContentLoaded', function() {
-      const navLinks = document.querySelectorAll('nav a');
-      const sections = document.querySelectorAll('section');
-
-      // Show dashboard by default
-      document.getElementById('dashboard').classList.add('active');
-      document.querySelector('nav a[href="#dashboard"]').classList.add('active');
-
-      navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          
-          // Remove active class from all links
-          navLinks.forEach(l => l.classList.remove('active'));
-          
-          // Add active class to clicked link
-          this.classList.add('active');
-          
-          // Hide all sections
-          sections.forEach(section => section.classList.remove('active'));
-          
-          // Show target section
-          const targetSection = this.getAttribute('href').substring(1);
-          document.getElementById(targetSection).classList.add('active');
-        });
-      });
-    });
-  </script>
   <script src="admin.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96fc2fba05d05266',t:'MTc1NTI5NzU1MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
