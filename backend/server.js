@@ -143,6 +143,35 @@ app.get("/leaderboard", async (req, res) => {
   }
 });
 
+// Actualizar jugador en partidas existentes
+app.put("/matches/update-player", async (req, res) => {
+  try {
+    const { oldName, oldTag, newName, newTag } = req.body;
+    if (!oldName || !oldTag || !newName || !newTag)
+      return res.status(400).json({ error: "Todos los campos son requeridos" });
+
+    // Buscar todas las partidas donde esté ese jugador
+    const matches = await matchesCollection.find({ "match.name": oldName, "match.tag": oldTag }).toArray();
+
+    for (const match of matches) {
+      let modified = false;
+      match.match.forEach(player => {
+        if (player.name === oldName && player.tag === oldTag) {
+          player.name = newName;
+          player.tag = newTag;
+          modified = true;
+        }
+      });
+      if (modified) await matchesCollection.updateOne({ _id: match._id }, { $set: { match: match.match } });
+    }
+
+    res.json({ message: "Jugador actualizado en todas las partidas correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al actualizar jugador en partidas" });
+  }
+});
+
 // Historial de un jugador
 app.get("/matches/:name/:tag", async (req, res) => {
   try {
