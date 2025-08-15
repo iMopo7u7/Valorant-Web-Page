@@ -35,6 +35,11 @@ async function loadPlayers() {
         const tbody = document.getElementById("playersTableBody");
         tbody.innerHTML = "";
 
+        if (!players.length) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center">No hay jugadores registrados</td></tr>`;
+            return;
+        }
+
         players.forEach(p => {
             const row = document.createElement("tr");
             row.innerHTML = `
