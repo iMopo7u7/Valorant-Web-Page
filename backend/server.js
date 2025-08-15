@@ -1,181 +1,232 @@
-// server.js - Backend completo ES Modules, compatible con frontend separado
 import express from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
+import { MongoClient } from "mongodb";
+import dotenv from "dotenv";
+ 
+dotenv.config();
+ 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Configuración __dirname en ES Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Middleware
-app.use(cors()); // permite requests desde tu frontend externo
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// Archivos de datos
-const PLAYERS_FILE = path.join(__dirname, "players.json");
-const MATCHES_FILE = path.join(__dirname, "matches.json");
-
-// Funciones de lectura/escritura
-function readPlayers() {
-  if (!fs.existsSync(PLAYERS_FILE)) return [];
-  return JSON.parse(fs.readFileSync(PLAYERS_FILE));
+ 
+app.use(cors());
+app.use(express.json());
+ 
+if (!process.env.MONGODB_URI) {
+  console.error("❌ ERROR: MONGODB_URI no está definido en las variables de entorno.");
+  process.exit(1);
 }
-
-function writePlayers(players) {
-  fs.writeFileSync(PLAYERS_FILE, JSON.stringify(players, null, 2));
+ 
+let db, playersCollection, matchesCollection;
+ 
+async function connectDB() {
+  try {
+    const client = new MongoClient(process.env.MONGODB_URI);
+    await client.connect();
+    db = client.db("valorantDB");
+    playersCollection = db.collection("players");
+    matchesCollection = db.collection("matches");
+    console.log("✅ Conectado a MongoDB");
+  } catch (err) {
+    console.error("❌ Error conectando a MongoDB:", err);
+    process.exit(1);
+  }
 }
-
-function readMatches() {
-  if (!fs.existsSync(MATCHES_FILE)) return [];
-  return JSON.parse(fs.readFileSync(MATCHES_FILE));
-}
-
-function writeMatches(matches) {
-  fs.writeFileSync(MATCHES_FILE, JSON.stringify(matches, null, 2));
-}
-
-// --- Rutas de leaderboard/frontend ---
-// Leaderboard
-app.get("/leaderboard", (req, res) => {
-  const players = readPlayers();
-
-  // Calcula stats para frontend si no existen
-  const leaderboard = players.map(p => ({
-    name: p.name,
-    tag: p.tag,
-    avgACS: p.avgACS ?? 0,
-    avgKDA: p.kda ?? 0,
-    hsPercent: p.hsPercent ?? 0,
-    avgFirstBloods: p.avgFirstBloods ?? 0,
-    winrate: p.winrate ?? 0,
-    score: p.score ?? 0
-  }));
-
-  leaderboard.sort((a, b) => b.score - a.score);
-
-  res.json(leaderboard);
-});
-
-// Rutas compatibles con frontend antiguo
-app.get("/players", (req, res) => {
-  const players = readPlayers();
-  res.json(players);
-});
-
-app.post("/players", (req, res) => {
-  const { name, tag } = req.body;
-  if (!name || !tag) return res.status(400).json({ error: "Faltan datos" });
-
-  const players = readPlayers();
-  const newPlayer = { id: Date.now(), name, tag, kda: 0 };
-  players.push(newPlayer);
-  writePlayers(players);
-
-  res.json({ success: true, message: "Jugador agregado", player: newPlayer });
-});
-
-app.post("/matches", (req, res) => {
-  const { match, winnerTeam } = req.body;
-  if (!match || !winnerTeam) return res.status(400).json({ error: "Datos incompletos" });
-
-  const matches = readMatches();
-  matches.push({ id: Date.now(), match, winnerTeam, date: new Date() });
-  writeMatches(matches);
-
-  // Actualizar stats por jugador
-  const players = readPlayers();
-  match.forEach(pData => {
-    const player = players.find(p => p.name === pData.name && p.tag === pData.tag);
-    if (player) {
-      // Acumulamos estadísticas
-      player.kills = (player.kills || 0) + pData.kills;
-      player.deaths = (player.deaths || 0) + pData.deaths;
-      player.assists = (player.assists || 0) + pData.assists;
-      player.avgKDA = (player.kills + player.assists) / Math.max(player.deaths, 1);
-      player.avgACS = (player.avgACS || 0) + (pData.acs || 0);
-      player.hsPercent = (player.hsPercent || 0) + (pData.hsPercent || 0);
-      player.avgFirstBloods = (player.avgFirstBloods || 0) + (pData.firstBloods || 0);
-      player.winrate = ((player.winrate || 0) + (winnerTeam === (pData.team || "A") ? 100 : 0)) / 2;
-      player.score = (player.avgKDA + player.avgACS + player.winrate) / 3; // ejemplo de score compuesto
+ 
+// Añadir jugador
+app.post("/players", async (req, res) => {
+  try {
+    const { name, tag } = req.body;
+    if (!name || !tag || typeof name !== "string" || typeof tag !== "string") {
+      return res.status(400).json({ error: "Nombre y tag válidos son requeridos" });
     }
-  });
-  writePlayers(players);
-
-  res.json({ success: true, message: "Partida registrada", data: req.body });
-});
-
-// --- Rutas admin ---
-app.get("/admin/players", (req, res) => {
-  const players = readPlayers();
-  res.json(players);
-});
-
-app.post("/admin/add-player", (req, res) => {
-  const { name, tag } = req.body;
-  if (!name || !tag) return res.status(400).json({ error: "Faltan datos" });
-
-  const players = readPlayers();
-  const newPlayer = { id: Date.now(), name, tag, kda: 0 };
-  players.push(newPlayer);
-  writePlayers(players);
-
-  res.json({ success: true, player: newPlayer });
-});
-
-app.put("/admin/edit-player/:id", (req, res) => {
-  const { id } = req.params;
-  const { name, kills, deaths, assists } = req.body;
-  const players = readPlayers();
-  const player = players.find(p => p.id == id);
-  if (!player) return res.status(404).json({ error: "Jugador no encontrado" });
-
-  if (name) player.name = name;
-  if (kills != null) player.kills = Number(kills);
-  if (deaths != null) player.deaths = Number(deaths);
-  if (assists != null) player.assists = Number(assists);
-  player.kda = (player.kills + player.assists) / Math.max(player.deaths, 1);
-
-  writePlayers(players);
-  res.json({ success: true, player });
-});
-
-app.delete("/admin/delete-player/:id", (req, res) => {
-  let players = readPlayers();
-  const initialLength = players.length;
-  players = players.filter(p => p.id != req.params.id);
-
-  if (players.length === initialLength)
-    return res.status(404).json({ error: "Jugador no encontrado" });
-
-  writePlayers(players);
-  res.json({ success: true });
-});
-
-// --- Login admin ---
-app.post("/api/login", (req, res) => {
-  const { username, password } = req.body;
-  const ADMIN_USER = "admin";
-  const ADMIN_PASS = "1234"; // Cambia esta credencial
-  if (username === ADMIN_USER && password === ADMIN_PASS) {
-    res.json({ success: true });
-  } else {
-    res.status(401).json({ error: "Credenciales incorrectas" });
+ 
+    const exists = await playersCollection.findOne({
+      name: { $regex: `^${name.trim()}$`, $options: "i" },
+      tag: { $regex: `^${tag.trim()}$`, $options: "i" },
+    });
+ 
+    if (exists) return res.status(400).json({ error: "Jugador con ese nombre y tag ya existe" });
+ 
+    const newPlayer = {
+      name: name.trim(),
+      tag: tag.trim(),
+      totalKills: 0,
+      totalDeaths: 0,
+      totalAssists: 0,
+      totalACS: 0,
+      totalFirstBloods: 0,
+      totalHeadshotKills: 0, // se sigue acumulando internamente
+      matchesPlayed: 0,
+      wins: 0,
+    };
+ 
+    await playersCollection.insertOne(newPlayer);
+    res.json({ message: "Jugador añadido exitosamente" });
+  } catch (err) {
+    res.status(500).json({ error: "Error interno al añadir jugador" });
   }
 });
-
-// --- Ruta raíz de prueba ---
-app.get("/", (req, res) => {
-  res.json({ message: "Backend activo. Usa /leaderboard, /players o rutas admin" });
+ 
+// Listar jugadores
+app.get("/players", async (req, res) => {
+  try {
+    const players = await playersCollection.find().toArray();
+    res.json(players);
+  } catch {
+    res.status(500).json({ error: "Error al obtener jugadores" });
+  }
 });
-
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+ 
+// Añadir partida con HS% en lugar de headshotKills
+app.post("/matches", async (req, res) => {
+  try {
+    const { match, winnerTeam } = req.body;
+ 
+    if (!Array.isArray(match) || match.length !== 10)
+      return res.status(400).json({ error: "Debes enviar un array de 10 jugadores" });
+ 
+    if (!["A", "B"].includes(winnerTeam))
+      return res.status(400).json({ error: "Debe indicar equipo ganador válido (A o B)" });
+ 
+    const seenPlayers = new Set();
+ 
+    for (const p of match) {
+      const requiredNumbers = ["kills","deaths","assists","acs","firstBloods","hsPercent"];
+      if (!p.name || !p.tag || requiredNumbers.some(n => typeof p[n] !== "number" || p[n] < 0) || p.hsPercent > 100) {
+        return res.status(400).json({ error: `Datos inválidos para jugador ${p.name}#${p.tag}` });
+      }
+ 
+      const exists = await playersCollection.findOne({
+        name: { $regex: `^${p.name.trim()}$`, $options: "i" },
+        tag: { $regex: `^${p.tag.trim()}$`, $options: "i" },
+      });
+ 
+      if (!exists) return res.status(400).json({ error: `Jugador no encontrado: ${p.name}#${p.tag}` });
+ 
+      const key = `${p.name.toLowerCase()}#${p.tag.toLowerCase()}`;
+      if (seenPlayers.has(key)) return res.status(400).json({ error: `Jugador repetido: ${p.name}#${p.tag}` });
+      seenPlayers.add(key);
+    }
+ 
+    // Guardar la partida
+    await matchesCollection.insertOne({ match, winnerTeam, date: new Date() });
+ 
+    // Actualizar estadísticas
+    for (const p of match) {
+      const playerTeam = match.indexOf(p) < 5 ? "A" : "B"; // asumiendo orden
+      const headshotKills = Math.round((p.hsPercent / 100) * p.kills);
+ 
+      await playersCollection.updateOne(
+        { name: { $regex: `^${p.name.trim()}$`, $options: "i" }, tag: { $regex: `^${p.tag.trim()}$`, $options: "i" } },
+        {
+          $inc: {
+            totalKills: p.kills,
+            totalDeaths: p.deaths,
+            totalAssists: p.assists,
+            totalACS: p.acs,
+            totalFirstBloods: p.firstBloods,
+            totalHeadshotKills: headshotKills,
+            matchesPlayed: 1,
+            wins: playerTeam === winnerTeam ? 1 : 0,
+          },
+        }
+      );
+    }
+ 
+    res.json({ message: "Partida añadida exitosamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error interno al añadir partida" });
+  }
+});
+ 
+// Leaderboard
+app.get("/leaderboard", async (req, res) => {
+  try {
+    const players = await playersCollection.find().toArray();
+ 
+    const withScores = players.map((p) => {
+      const matches = p.matchesPlayed || 0;
+      const avgKills = matches ? p.totalKills / matches : 0;
+      const avgDeaths = matches ? p.totalDeaths / matches : 1;
+      const avgACS = matches ? p.totalACS / matches : 0;
+      const avgFirstBloods = matches ? p.totalFirstBloods / matches : 0;
+      const avgAssists = matches ? p.totalAssists / matches : 0;
+      const winrate = matches ? (p.wins / matches) * 100 : 0;
+      const hsPercent = p.totalKills ? (p.totalHeadshotKills / p.totalKills) * 100 : 0;
+ 
+      // KDA
+      const avgKDA = avgDeaths === 0 ? avgKills : avgKills / avgDeaths;
+ 
+      // Anti "farm kills": límite máximo de kills por partida para cálculo
+      const cappedKills = Math.min(avgKills, 30);
+      const impactKillsScore = (avgFirstBloods * 1.5) + (cappedKills - avgFirstBloods);
+ 
+      // Ponderación de cada estadística (ajustada)
+      const scoreRaw =
+        (avgACS * 1.5) +
+        (impactKillsScore * 1.2) +
+        (avgAssists * 0.8) +
+        (hsPercent * 1.0) +
+        (winrate * 1.0) -
+        (avgDeaths * 1.0);
+ 
+      // Factor de confiabilidad según número de partidas
+      const reliabilityFactor = Math.min(matches / 5, 1); // 0 a 1, 5 partidas o más = 1
+ 
+      // Bonus por consistencia limitado
+      const consistencyBonus = 1 + (Math.min(matches, 20) / 100); // max 20% extra
+ 
+      const finalScore = scoreRaw * consistencyBonus * reliabilityFactor;
+ 
+      return {
+        name: p.name,
+        tag: p.tag,
+        avgKills,
+        avgDeaths,
+        avgACS,
+        avgFirstBloods,
+        avgAssists,
+        hsPercent,
+        winrate,
+        avgKDA,
+        score: finalScore,
+        matchesPlayed: matches,
+        totalFirstBloods: p.totalFirstBloods,
+        wins: p.wins,
+      };
+    });
+ 
+    // Ordenar de mayor a menor score
+    withScores.sort((a, b) => b.score - a.score);
+ 
+    res.json(withScores);
+  } catch (err) {
+    console.error("Error en leaderboard:", err);
+    res.status(500).json({ error: "Error al generar leaderboard" });
+  }
+});
+ 
+// Historial de partidas de un jugador
+app.get("/matches/:name/:tag", async (req, res) => {
+  try {
+    const { name, tag } = req.params;
+    const matches = await matchesCollection
+      .find({
+        match: {
+          $elemMatch: {
+            name: { $regex: `^${name}$`, $options: "i" },
+            tag: { $regex: `^${tag}$`, $options: "i" },
+          },
+        },
+      })
+      .toArray();
+    res.json(matches);
+  } catch {
+    res.status(500).json({ error: "Error al obtener historial" });
+  }
+});
+ 
+connectDB().then(() => {
+  app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 });
