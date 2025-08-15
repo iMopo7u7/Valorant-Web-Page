@@ -97,9 +97,9 @@ async function loadPlayers() {
     document.getElementById("totalPlayers").innerText = players.length;
 
     // Total matches
-    const matchesRes = await fetch(`${API_URL}/matches`);
+    const matchesRes = await fetch(`${API_URL}/matches-count`);
     const matchesData = await matchesRes.json();
-    document.getElementById("totalMatches").innerText = matchesData.length || 0;
+    document.getElementById("totalMatches").innerText = matchesData.count || 0;
 
   } catch (err) {
     console.error(err);
