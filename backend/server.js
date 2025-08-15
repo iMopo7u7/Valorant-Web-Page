@@ -1,4 +1,4 @@
-// server.js - Backend solo API (ES Modules)
+// server.js en ES Modules
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
@@ -9,14 +9,15 @@ import { fileURLToPath } from "url";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuración de __dirname en ES Modules
+// __dirname en ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Middleware
-app.use(cors()); // permite requests desde tu frontend externo
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "public"))); // si tienes frontend en /public
 
 // Archivo de datos
 const DATA_FILE = path.join(__dirname, "players.json");
@@ -33,7 +34,6 @@ function writePlayers(players) {
 }
 
 // --- Rutas públicas ---
-// Obtener leaderboard
 app.get("/leaderboard", (req, res) => {
   const players = readPlayers();
   players.sort((a, b) => (b.kda || 0) - (a.kda || 0));
@@ -41,13 +41,11 @@ app.get("/leaderboard", (req, res) => {
 });
 
 // --- Rutas admin ---
-// Obtener todos los jugadores
 app.get("/admin/players", (req, res) => {
   const players = readPlayers();
   res.json(players);
 });
 
-// Añadir jugador
 app.post("/admin/add-player", (req, res) => {
   const { name, kills, deaths, assists } = req.body;
   if (!name || kills == null || deaths == null || assists == null) {
@@ -69,7 +67,6 @@ app.post("/admin/add-player", (req, res) => {
   res.json({ success: true, player: newPlayer });
 });
 
-// Editar jugador
 app.put("/admin/edit-player/:id", (req, res) => {
   const { id } = req.params;
   const { name, kills, deaths, assists } = req.body;
@@ -87,7 +84,6 @@ app.put("/admin/edit-player/:id", (req, res) => {
   res.json({ success: true, player });
 });
 
-// Eliminar jugador
 app.delete("/admin/delete-player/:id", (req, res) => {
   const { id } = req.params;
   let players = readPlayers();
@@ -101,7 +97,7 @@ app.delete("/admin/delete-player/:id", (req, res) => {
   res.json({ success: true });
 });
 
-// Iniciar servidor
+// Servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
