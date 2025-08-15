@@ -76,6 +76,62 @@ app.get("/players", async (req, res) => {
   }
 });
 
+// Editar jugador (actualiza players y matches)
+app.put("/players", async (req, res) => {
+  try {
+    const { oldName, oldTag, newName, newTag } = req.body;
+    if (!oldName || !oldTag || !newName || !newTag)
+      return res.status(400).json({ error: "Todos los campos son requeridos" });
+
+    // Actualizar en players
+    await playersCollection.updateOne(
+      { name: oldName, tag: oldTag },
+      { $set: { name: newName, tag: newTag } }
+    );
+
+    // Actualizar en matches
+    const matches = await matchesCollection.find({ "match.name": oldName, "match.tag": oldTag }).toArray();
+    for (const match of matches) {
+      let modified = false;
+      match.match.forEach(player => {
+        if (player.name === oldName && player.tag === oldTag) {
+          player.name = newName;
+          player.tag = newTag;
+          modified = true;
+        }
+      });
+      if (modified) await matchesCollection.updateOne({ _id: match._id }, { $set: { match: match.match } });
+    }
+
+    res.json({ message: "Jugador actualizado correctamente en players y matches" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al actualizar jugador" });
+  }
+});
+
+// Eliminar jugador
+app.delete("/players", async (req, res) => {
+  try {
+    const { name, tag } = req.body;
+    if (!name || !tag) return res.status(400).json({ error: "Nombre y tag requeridos" });
+
+    // Eliminar de players
+    await playersCollection.deleteOne({ name, tag });
+
+    // Eliminar de matches (opcional: se puede mantener match pero sin ese jugador)
+    await matchesCollection.updateMany(
+      { "match.name": name, "match.tag": tag },
+      { $pull: { match: { name, tag } } }
+    );
+
+    res.json({ message: "Jugador eliminado correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al eliminar jugador" });
+  }
+});
+
 // Añadir partida
 app.post("/matches", async (req, res) => {
   try {
@@ -140,35 +196,6 @@ app.get("/leaderboard", async (req, res) => {
     res.json(withScores);
   } catch {
     res.status(500).json({ error: "Error al generar leaderboard" });
-  }
-});
-
-// Actualizar jugador en partidas existentes
-app.put("/matches/update-player", async (req, res) => {
-  try {
-    const { oldName, oldTag, newName, newTag } = req.body;
-    if (!oldName || !oldTag || !newName || !newTag)
-      return res.status(400).json({ error: "Todos los campos son requeridos" });
-
-    // Buscar todas las partidas donde esté ese jugador
-    const matches = await matchesCollection.find({ "match.name": oldName, "match.tag": oldTag }).toArray();
-
-    for (const match of matches) {
-      let modified = false;
-      match.match.forEach(player => {
-        if (player.name === oldName && player.tag === oldTag) {
-          player.name = newName;
-          player.tag = newTag;
-          modified = true;
-        }
-      });
-      if (modified) await matchesCollection.updateOne({ _id: match._id }, { $set: { match: match.match } });
-    }
-
-    res.json({ message: "Jugador actualizado en todas las partidas correctamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al actualizar jugador en partidas" });
   }
 });
 
