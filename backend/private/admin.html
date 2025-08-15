@@ -1326,10 +1326,10 @@
       </section>
     </main>
   </div>
-  
+
   <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const API_URL = 'http://localhost:3000/api/admin/players'; // Cambia a tu URL de Render si no es localhost
+  const API_URL = '/api/admin'; // base de los endpoints de admin en backend
 
   // Elementos del DOM
   const navLinks = document.querySelectorAll('.nav-link');
@@ -1338,15 +1338,15 @@ document.addEventListener('DOMContentLoaded', function() {
   // Verificar sesión al cargar la página
   async function checkSession() {
     try {
-      const res = await fetch(API_URL, { method: 'GET', credentials: 'include' });
+      const res = await fetch(`${API_URL}/players`, { method: 'GET', credentials: 'include' });
       if (res.status === 401) {
-        window.location.href = '/login.html';
+        window.location.href = '/login';
       } else {
         loadPlayersList();
       }
     } catch {
       alert('No se pudo verificar la sesión. Redirigiendo al login.');
-      window.location.href = '/login.html';
+      window.location.href = '/login';
     }
   }
 
@@ -1361,7 +1361,7 @@ document.addEventListener('DOMContentLoaded', function() {
       sections.forEach(section => section.classList.remove('active'));
       const targetSection = this.getAttribute('data-section');
       document.getElementById(targetSection).classList.add('active');
-      
+
       if (targetSection === 'players') loadPlayersList();
     });
   });
@@ -1377,7 +1377,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch(`${API_URL}/players`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -1401,7 +1401,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Cargar lista de jugadores
   async function loadPlayersList() {
     try {
-      const response = await fetch(API_URL, { method: 'GET', credentials: 'include' });
+      const response = await fetch(`${API_URL}/players`, { method: 'GET', credentials: 'include' });
       const players = await response.json();
 
       const tbody = document.querySelector('#players .data-table tbody');
@@ -1439,7 +1439,7 @@ async function deletePlayer(id) {
   if (!confirm('¿Eliminar este jugador? Esta acción no se puede deshacer.')) return;
 
   try {
-    const response = await fetch(`http://localhost:3000/api/admin/players/${id}`, {
+    const response = await fetch(`/api/admin/players/${id}`, {
       method: 'DELETE',
       credentials: 'include'
     });
