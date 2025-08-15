@@ -1,9 +1,10 @@
+// server.js
 import express from "express";
 import session from "express-session";
+import cors from "cors";
+import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
-import bodyParser from "body-parser";
-import cors from "cors";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,128 +12,151 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Datos de ejemplo
-let players = []; // { id, name, tag, matchesPlayed }
-let matches = []; // { matchData, winnerTeam }
+// ===== Configuración Middleware =====
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Middlewares
-app.use(bodyParser.json());
-
-// CORS para frontend público
+// CORS para permitir frontend separado
 app.use(cors({
-  origin: ["https://valorant-10-mans-frontend.onrender.com"], // tu frontend
+  origin: "https://valorant-10-mans-frontend.onrender.com",
   credentials: true
 }));
 
-// Sesiones
+// Sesión simple para admin
 app.use(session({
-  secret: "valorant-secret",
+  secret: "valorant-secret-key", // cambia a algo seguro
   resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false } // cambiar a true si usas HTTPS
+  saveUninitialized: false,
+  cookie: { maxAge: 1000 * 60 * 60 } // 1 hora
 }));
 
-// Servir archivos estáticos de public si los hubiera
-app.use(express.static(path.join(__dirname, "public")));
+// ===== MongoDB =====
+const mongoUri = process.env.MONGO_URI || "mongodb://localhost:27017/valorant";
+mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("MongoDB conectado"))
+  .catch(err => console.error("Error conectando MongoDB:", err));
 
-// ---------------------- FRONTEND PÚBLICO ----------------------
-// Leaderboard público
-app.get("/leaderboard", (req, res) => {
-  // Ejemplo: calcula avgACS, avgKDA, etc.
-  const leaderboard = players.map(player => {
-    const playedMatches = matches.filter(m => m.match.some(p => p.name === player.name && p.tag === player.tag));
-    const totalKills = playedMatches.reduce((sum, m) => sum + m.match.find(p => p.name === player.name && p.tag === player.tag).kills, 0);
-    const totalDeaths = playedMatches.reduce((sum, m) => sum + m.match.find(p => p.name === player.name && p.tag === player.tag).deaths, 0);
-    const totalAssists = playedMatches.reduce((sum, m) => sum + m.match.find(p => p.name === player.name && p.tag === player.tag).assists, 0);
-    const totalACS = playedMatches.reduce((sum, m) => sum + m.match.find(p => p.name === player.name && p.tag === player.tag).acs, 0);
-    const totalFB = playedMatches.reduce((sum, m) => sum + m.match.find(p => p.name === player.name && p.tag === player.tag).firstBloods, 0);
-    const totalHS = playedMatches.reduce((sum, m) => sum + m.match.find(p => p.name === player.name && p.tag === player.tag).hsPercent, 0);
-    const played = playedMatches.length;
-
-    return {
-      name: player.name,
-      tag: player.tag,
-      avgACS: played ? totalACS / played : 0,
-      avgKDA: played ? (totalKills + totalAssists) / (totalDeaths || 1) : 0,
-      hsPercent: played ? totalHS / played : 0,
-      avgFirstBloods: played ? totalFB / played : 0,
-      winrate: played ? (playedMatches.filter(m => m.winnerTeam === "A").length / played) * 100 : 0,
-      score: played ? (totalKills + totalAssists + totalFB) / (totalDeaths || 1) : 0
-    };
-  });
-
-  res.json(leaderboard);
+const playerSchema = new mongoose.Schema({
+  name: String,
+  tag: String,
+  matchesPlayed: { type: Number, default: 0 },
+  avgACS: { type: Number, default: 0 },
+  avgKDA: { type: Number, default: 0 },
+  hsPercent: { type: Number, default: 0 },
+  avgFirstBloods: { type: Number, default: 0 },
+  winrate: { type: Number, default: 0 },
+  score: { type: Number, default: 0 }
 });
 
-// ---------------------- ADMIN PRIVADO ----------------------
+const matchSchema = new mongoose.Schema({
+  players: [playerSchema],
+  winnerTeam: String,
+  createdAt: { type: Date, default: Date.now }
+});
 
-// Servir login y admin.html
+const Player = mongoose.model("Player", playerSchema);
+const Match = mongoose.model("Match", matchSchema);
+
+// ===== Rutas Públicas =====
+
+// Leaderboard para frontend público
+app.get("/leaderboard", async (req, res) => {
+  try {
+    const players = await Player.find().sort({ score: -1 });
+    res.json(players);
+  } catch (err) {
+    res.status(500).json({ error: "Error cargando leaderboard" });
+  }
+});
+
+// ===== Admin / Login =====
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "password123"; // cambia a algo seguro
+
+// Servir login.html
 app.get("/login", (req, res) => {
   res.sendFile(path.join(__dirname, "private/login.html"));
 });
 
-app.get("/admin", (req, res) => {
-  if (!req.session.user) return res.redirect("/login");
-  res.sendFile(path.join(__dirname, "private/admin.html"));
-});
-
-// Login
+// Procesar login
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
-  // Ejemplo simple
-  if (username === "admin" && password === "1234") {
-    req.session.user = { username };
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    req.session.user = username;
     return res.json({ message: "Login exitoso" });
   }
   res.status(401).json({ error: "Usuario o contraseña incorrectos" });
 });
 
-// Logout
-app.post("/api/logout", (req, res) => {
-  req.session.destroy(() => {
-    res.json({ message: "Sesión cerrada" });
-  });
+// Servir admin.html si hay sesión
+app.get("/admin", (req, res) => {
+  if (!req.session.user) return res.redirect("/login");
+  res.sendFile(path.join(__dirname, "private/admin.html"));
 });
 
-// Middleware de autenticación para admin
-function authAdmin(req, res, next) {
+// Logout
+app.post("/api/logout", (req, res) => {
+  req.session.destroy();
+  res.json({ message: "Logout exitoso" });
+});
+
+// ===== Rutas Admin / CRUD jugadores =====
+
+// Middleware para proteger rutas admin
+function authMiddleware(req, res, next) {
   if (!req.session.user) return res.status(401).json({ error: "No autorizado" });
   next();
 }
 
-// CRUD Jugadores
-app.get("/api/admin/players", authAdmin, (req, res) => {
-  res.json(players);
+// Listar jugadores
+app.get("/api/admin/players", authMiddleware, async (req, res) => {
+  try {
+    const players = await Player.find().sort({ score: -1 });
+    res.json(players);
+  } catch (err) {
+    res.status(500).json({ error: "Error cargando jugadores" });
+  }
 });
 
-app.post("/api/admin/players", authAdmin, (req, res) => {
+// Crear jugador
+app.post("/api/admin/players", authMiddleware, async (req, res) => {
   const { name, tag } = req.body;
-  if (!name || !tag) return res.status(400).json({ error: "Faltan datos" });
-  const id = `${Date.now()}`; // simple ID
-  players.push({ id, name, tag, matchesPlayed: 0 });
-  res.json({ message: "Jugador agregado", id });
+  if (!name || !tag) return res.status(400).json({ error: "Nombre y tag requeridos" });
+  try {
+    const existing = await Player.findOne({ name, tag });
+    if (existing) return res.status(400).json({ error: "Jugador ya existe" });
+    const player = new Player({ name, tag });
+    await player.save();
+    res.json({ message: "Jugador registrado", player });
+  } catch (err) {
+    res.status(500).json({ error: "Error creando jugador" });
+  }
 });
 
-app.delete("/api/admin/players/:id", authAdmin, (req, res) => {
-  const { id } = req.params;
-  players = players.filter(p => p.id !== id);
-  res.json({ message: "Jugador eliminado" });
+// Eliminar jugador
+app.delete("/api/admin/players/:id", authMiddleware, async (req, res) => {
+  try {
+    await Player.findByIdAndDelete(req.params.id);
+    res.json({ message: "Jugador eliminado" });
+  } catch (err) {
+    res.status(500).json({ error: "Error eliminando jugador" });
+  }
 });
 
-// Registrar partidas (opcional)
-app.post("/api/admin/matches", authAdmin, (req, res) => {
+// ===== Registrar partidas =====
+app.post("/matches", async (req, res) => {
   const { match, winnerTeam } = req.body;
-  if (!match || !winnerTeam) return res.status(400).json({ error: "Faltan datos de partida" });
-  matches.push({ match, winnerTeam });
-  // Actualizar matchesPlayed
-  match.forEach(p => {
-    const player = players.find(pl => pl.name === p.name && pl.tag === p.tag);
-    if (player) player.matchesPlayed = (player.matchesPlayed || 0) + 1;
-  });
-  res.json({ message: "Partida registrada" });
+  if (!match || !winnerTeam) return res.status(400).json({ error: "Datos incompletos" });
+  try {
+    const newMatch = new Match({ players: match, winnerTeam });
+    await newMatch.save();
+    res.json({ message: "Partida registrada" });
+  } catch (err) {
+    res.status(500).json({ error: "Error registrando partida" });
+  }
 });
 
-// ---------------------- INICIO SERVIDOR ----------------------
+// ===== Iniciar servidor =====
 app.listen(PORT, () => {
-  console.log(`Backend corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en puerto ${PORT}`);
 });
