@@ -14,6 +14,29 @@ async function loadPlayers() {
   }
 }
 
+// --- Añadir jugador ---
+document.getElementById("addPlayerForm").addEventListener("submit", async (e) => {
+  e.preventDefault(); // evita recargar la página
+  const name = document.getElementById("playerName").value.trim();
+  const tag = document.getElementById("playerTag").value.trim();
+  if (!name || !tag) return alert("Nombre y tag requeridos");
+
+  try {
+    const res = await fetch(`${API_URL}/players`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, tag })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Error al añadir jugador");
+    alert(data.message);
+    e.target.reset();
+    loadPlayers();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
 // --- Actualizar tabla de jugadores ---
 function updatePlayersTable() {
   const tbody = document.getElementById("playersTableBody");
@@ -152,6 +175,7 @@ document.getElementById("submitMatchBtn").addEventListener("click", async () => 
 
   for (const row of [...teamA, ...teamB]) {
     const select = row.querySelector(".player-select");
+    if (!select.value) continue; // ignora filas vacías
     const [name, tag] = select.value.split("||");
     const kills = parseInt(row.querySelector(".kill").value) || 0;
     const deaths = parseInt(row.querySelector(".death").value) || 0;
@@ -162,6 +186,8 @@ document.getElementById("submitMatchBtn").addEventListener("click", async () => 
 
     match.push({ name, tag, kills, deaths, assists, acs, firstBloods, hsPercent });
   }
+
+  if (match.length === 0) return alert("No hay jugadores seleccionados");
 
   try {
     const res = await fetch(`${API_URL}/matches`, {
