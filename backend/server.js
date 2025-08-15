@@ -15,39 +15,17 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Middlewares
+// Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public")); // carpeta frontend
 
 // Configurar sesiones
 app.use(session({
-  secret: process.env.SESSION_SECRET || "clave-secreta-super-segura",
+  secret: process.env.SESSION_SECRET || "clave-super-secreta",
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // true si usas HTTPS
+  cookie: { secure: false } // HTTPS -> true
 }));
-
-// --- Conexión MongoDB ---
-if (!process.env.MONGODB_URI) {
-  console.error("❌ ERROR: MONGODB_URI no está definido en las variables de entorno.");
-  process.exit(1);
-}
-
-let db, playersCollection, matchesCollection;
-async function connectDB() {
-  try {
-    const client = new MongoClient(process.env.MONGODB_URI);
-    await client.connect();
-    db = client.db("valorantDB");
-    playersCollection = db.collection("players");
-    matchesCollection = db.collection("matches");
-    console.log("✅ Conectado a MongoDB");
-  } catch (err) {
-    console.error("❌ Error conectando a MongoDB:", err);
-    process.exit(1);
-  }
-}
 
 // --- LOGIN ADMIN ---
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
@@ -68,29 +46,47 @@ app.get("/api/logout", (req, res) => {
   });
 });
 
+// Middleware para proteger rutas
 function authMiddleware(req, res, next) {
   if (req.session.user) return next();
   res.redirect("/login.html");
 }
 
-// --- API EXISTENTE ---
+// --- CONEXIÓN MONGO ---
+if (!process.env.MONGODB_URI) {
+  console.error("❌ MONGODB_URI no definido.");
+  process.exit(1);
+}
 
-// Añadir jugador
+let db, playersCollection, matchesCollection;
+
+async function connectDB() {
+  try {
+    const client = new MongoClient(process.env.MONGODB_URI);
+    await client.connect();
+    db = client.db("valorantDB");
+    playersCollection = db.collection("players");
+    matchesCollection = db.collection("matches");
+    console.log("✅ Conectado a MongoDB");
+  } catch (err) {
+    console.error("❌ Error conectando a MongoDB:", err);
+    process.exit(1);
+  }
+}
+
+// --- APIs de leaderboard y jugadores ---
 app.post("/players", async (req, res) => {
   try {
     const { name, tag } = req.body;
-    if (!name || !tag || typeof name !== "string" || typeof tag !== "string") {
-      return res.status(400).json({ error: "Nombre y tag válidos son requeridos" });
-    }
+    if (!name || !tag) return res.status(400).json({ error: "Nombre y tag requeridos" });
 
     const exists = await playersCollection.findOne({
-      name: { $regex: `^${name.trim()}$`, $options: "i" },
-      tag: { $regex: `^${tag.trim()}$`, $options: "i" },
+      name: { $regex: `^${name}$`, $options: "i" },
+      tag: { $regex: `^${tag}$`, $options: "i" },
     });
+    if (exists) return res.status(400).json({ error: "Jugador ya existe" });
 
-    if (exists) return res.status(400).json({ error: "Jugador con ese nombre y tag ya existe" });
-
-    const newPlayer = {
+    await playersCollection.insertOne({
       name: name.trim(),
       tag: tag.trim(),
       totalKills: 0,
@@ -101,16 +97,13 @@ app.post("/players", async (req, res) => {
       totalHeadshotKills: 0,
       matchesPlayed: 0,
       wins: 0,
-    };
-
-    await playersCollection.insertOne(newPlayer);
-    res.json({ message: "Jugador añadido exitosamente" });
-  } catch (err) {
-    res.status(500).json({ error: "Error interno al añadir jugador" });
+    });
+    res.json({ message: "Jugador añadido" });
+  } catch {
+    res.status(500).json({ error: "Error interno" });
   }
 });
 
-// Listar jugadores
 app.get("/players", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
@@ -124,28 +117,15 @@ app.get("/players", async (req, res) => {
 app.post("/matches", async (req, res) => {
   try {
     const { match, winnerTeam } = req.body;
-
-    if (!Array.isArray(match) || match.length !== 10)
-      return res.status(400).json({ error: "Debes enviar un array de 10 jugadores" });
-
-    if (!["A", "B"].includes(winnerTeam))
-      return res.status(400).json({ error: "Debe indicar equipo ganador válido (A o B)" });
+    if (!Array.isArray(match) || match.length !== 10) return res.status(400).json({ error: "Array de 10 jugadores requerido" });
+    if (!["A","B"].includes(winnerTeam)) return res.status(400).json({ error: "Equipo ganador inválido" });
 
     const seenPlayers = new Set();
-
     for (const p of match) {
-      const requiredNumbers = ["kills","deaths","assists","acs","firstBloods","hsPercent"];
-      if (!p.name || !p.tag || requiredNumbers.some(n => typeof p[n] !== "number" || p[n] < 0) || p.hsPercent > 100) {
-        return res.status(400).json({ error: `Datos inválidos para jugador ${p.name}#${p.tag}` });
+      const required = ["kills","deaths","assists","acs","firstBloods","hsPercent"];
+      if (!p.name || !p.tag || required.some(n => typeof p[n]!=="number" || p[n]<0 || (n==="hsPercent" && p[n]>100))) {
+        return res.status(400).json({ error: `Datos inválidos para ${p.name}#${p.tag}` });
       }
-
-      const exists = await playersCollection.findOne({
-        name: { $regex: `^${p.name.trim()}$`, $options: "i" },
-        tag: { $regex: `^${p.tag.trim()}$`, $options: "i" },
-      });
-
-      if (!exists) return res.status(400).json({ error: `Jugador no encontrado: ${p.name}#${p.tag}` });
-
       const key = `${p.name.toLowerCase()}#${p.tag.toLowerCase()}`;
       if (seenPlayers.has(key)) return res.status(400).json({ error: `Jugador repetido: ${p.name}#${p.tag}` });
       seenPlayers.add(key);
@@ -154,30 +134,26 @@ app.post("/matches", async (req, res) => {
     await matchesCollection.insertOne({ match, winnerTeam, date: new Date() });
 
     for (const p of match) {
-      const playerTeam = match.indexOf(p) < 5 ? "A" : "B";
-      const headshotKills = Math.round((p.hsPercent / 100) * p.kills);
-
+      const playerTeam = match.indexOf(p)<5 ? "A":"B";
+      const headshotKills = Math.round((p.hsPercent/100)*p.kills);
       await playersCollection.updateOne(
-        { name: { $regex: `^${p.name.trim()}$`, $options: "i" }, tag: { $regex: `^${p.tag.trim()}$`, $options: "i" } },
-        {
-          $inc: {
-            totalKills: p.kills,
-            totalDeaths: p.deaths,
-            totalAssists: p.assists,
-            totalACS: p.acs,
-            totalFirstBloods: p.firstBloods,
-            totalHeadshotKills: headshotKills,
-            matchesPlayed: 1,
-            wins: playerTeam === winnerTeam ? 1 : 0,
-          },
-        }
+        { name: { $regex: `^${p.name}$`, $options: "i" }, tag: { $regex: `^${p.tag}$`, $options: "i" } },
+        { $inc: {
+          totalKills: p.kills,
+          totalDeaths: p.deaths,
+          totalAssists: p.assists,
+          totalACS: p.acs,
+          totalFirstBloods: p.firstBloods,
+          totalHeadshotKills: headshotKills,
+          matchesPlayed: 1,
+          wins: playerTeam===winnerTeam?1:0
+        }}
       );
     }
-
-    res.json({ message: "Partida añadida exitosamente" });
-  } catch (err) {
+    res.json({ message: "Partida añadida" });
+  } catch(err) {
     console.error(err);
-    res.status(500).json({ error: "Error interno al añadir partida" });
+    res.status(500).json({ error: "Error interno" });
   }
 });
 
@@ -185,86 +161,61 @@ app.post("/matches", async (req, res) => {
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
-
-    const withScores = players.map((p) => {
-      const matches = p.matchesPlayed || 0;
-      const avgKills = matches ? p.totalKills / matches : 0;
-      const avgDeaths = matches ? p.totalDeaths / matches : 1;
-      const avgACS = matches ? p.totalACS / matches : 0;
-      const avgFirstBloods = matches ? p.totalFirstBloods / matches : 0;
-      const avgAssists = matches ? p.totalAssists / matches : 0;
-      const winrate = matches ? (p.wins / matches) * 100 : 0;
-      const hsPercent = p.totalKills ? (p.totalHeadshotKills / p.totalKills) * 100 : 0;
-
-      const avgKDA = avgDeaths === 0 ? avgKills : avgKills / avgDeaths;
-      const cappedKills = Math.min(avgKills, 30);
-      const impactKillsScore = (avgFirstBloods * 1.5) + (cappedKills - avgFirstBloods);
-
-      const scoreRaw =
-        (avgACS * 1.5) +
-        (impactKillsScore * 1.2) +
-        (avgAssists * 0.8) +
-        (hsPercent * 1.0) +
-        (winrate * 1.0) -
-        (avgDeaths * 1.0);
-
-      const reliabilityFactor = Math.min(matches / 5, 1);
-      const consistencyBonus = 1 + (Math.min(matches, 20) / 100);
-
-      const finalScore = scoreRaw * consistencyBonus * reliabilityFactor;
+    const withScores = players.map(p=>{
+      const matches = p.matchesPlayed||0;
+      const avgKills = matches?p.totalKills/matches:0;
+      const avgDeaths = matches?p.totalDeaths/matches:1;
+      const avgACS = matches?p.totalACS/matches:0;
+      const avgFirstBloods = matches?p.totalFirstBloods/matches:0;
+      const avgAssists = matches?p.totalAssists/matches:0;
+      const winrate = matches?p.wins/matches*100:0;
+      const hsPercent = p.totalKills?(p.totalHeadshotKills/p.totalKills*100):0;
+      const avgKDA = avgDeaths===0?avgKills:avgKills/avgDeaths;
+      const cappedKills = Math.min(avgKills,30);
+      const impactKillsScore = (avgFirstBloods*1.5)+(cappedKills-avgFirstBloods);
+      const scoreRaw = (avgACS*1.5)+(impactKillsScore*1.2)+(avgAssists*0.8)+(hsPercent*1.0)+(winrate*1.0)-(avgDeaths*1.0);
+      const reliabilityFactor = Math.min(matches/5,1);
+      const consistencyBonus = 1+Math.min(matches,20)/100;
+      const finalScore = scoreRaw*consistencyBonus*reliabilityFactor;
 
       return {
-        name: p.name,
-        tag: p.tag,
-        avgKills,
-        avgDeaths,
-        avgACS,
-        avgFirstBloods,
-        avgAssists,
-        hsPercent,
-        winrate,
-        avgKDA,
-        score: finalScore,
-        matchesPlayed: matches,
-        totalFirstBloods: p.totalFirstBloods,
-        wins: p.wins,
+        name:p.name, tag:p.tag, avgKills, avgDeaths, avgACS, avgFirstBloods,
+        avgAssists, hsPercent, winrate, avgKDA, score:finalScore
       };
     });
-
-    withScores.sort((a, b) => b.score - a.score);
+    withScores.sort((a,b)=>b.score-a.score);
     res.json(withScores);
-  } catch (err) {
-    console.error("Error en leaderboard:", err);
+  } catch(err){
+    console.error(err);
     res.status(500).json({ error: "Error al generar leaderboard" });
   }
 });
 
 // Historial
-app.get("/matches/:name/:tag", async (req, res) => {
-  try {
-    const { name, tag } = req.params;
-    const matches = await matchesCollection
-      .find({
-        match: {
-          $elemMatch: {
-            name: { $regex: `^${name}$`, $options: "i" },
-            tag: { $regex: `^${tag}$`, $options: "i" },
-          },
-        },
-      })
-      .toArray();
+app.get("/matches/:name/:tag", async (req,res)=>{
+  try{
+    const {name,tag}=req.params;
+    const matches = await matchesCollection.find({
+      match: {$elemMatch:{
+        name:{$regex:`^${name}$`,$options:"i"},
+        tag:{$regex:`^${tag}$`,$options:"i"}
+      }}
+    }).toArray();
     res.json(matches);
   } catch {
     res.status(500).json({ error: "Error al obtener historial" });
   }
 });
 
-// Página admin protegida
-app.get("/admin.html", authMiddleware, (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "admin.html"));
+// --- SERVIR ADMIN PROTEGIDO ---
+app.get("/admin.html", authMiddleware, (req,res)=>{
+  res.sendFile(path.join(__dirname,"public","admin.html"));
 });
 
+// --- SERVIR DEMÁS ARCHIVOS ESTÁTICOS ---
+app.use(express.static(path.join(__dirname,"public")));
+
 // --- INICIO ---
-connectDB().then(() => {
-  app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+connectDB().then(()=>{
+  app.listen(PORT,()=>console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 });
