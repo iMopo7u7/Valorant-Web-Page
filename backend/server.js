@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middlewares
 app.use(cors({
-  origin: "https://tu-frontend.onrender.com", // ⚠️ cambia a tu dominio del frontend
+  origin: "https://valorant-10-mans-frontend.onrender.com",
   credentials: true
 }));
 app.use(express.json());
