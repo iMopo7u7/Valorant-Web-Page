@@ -3,32 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Valorant Leaderboard - 10 Mans</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>Valorant Leaderboard - 10 Mans Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      /* Colores neón sutiles */
-      --neon-red: #ff4655;
-      --neon-red-glow: rgba(255, 70, 85, 0.4);
-      --neon-blue: #00d4ff;
-      --neon-purple: #a855f7;
-      --neon-green: #10b981;
+      /* Colores principales */
+      --valorant-red: #ff4655;
+      --valorant-red-glow: rgba(255, 70, 85, 0.4);
+      --valorant-blue: #00d4ff;
+      --valorant-purple: #a855f7;
+      --valorant-pink: #ec4899;
+      --valorant-green: #10b981;
       
       /* Colores de fondo */
-      --bg-dark: #0a0e1a;
-      --bg-surface: #1a1f2e;
-      --bg-card: #252b3d;
-      --border-color: #374151;
+      --bg-dark: #121212;
+      --bg-surface: #1e1e1e;
+      --bg-card: #2a2a2a;
+      --border-color: #333;
       
       /* Colores de texto */
-      --text-primary: #ffffff;
-      --text-secondary: #d1d5db;
-      --text-muted: #9ca3af;
+      --text-primary: #eee;
+      --text-secondary: #ccc;
+      --text-muted: #999;
       
       /* Colores de ranking */
-      --gold: #fbbf24;
-      --silver: #e5e7eb;
-      --bronze: #f59e0b;
+      --gold: #ffd700;
+      --silver: #c0c0c0;
+      --bronze: #cd7f32;
     }
 
     * {
@@ -38,15 +39,16 @@
     }
 
     body {
-      font-family: 'Rajdhani', sans-serif;
-      background: linear-gradient(135deg, var(--bg-dark) 0%, #0f172a 100%);
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #0a0a0a 100%);
       color: var(--text-primary);
+      font-family: 'Poppins', sans-serif;
       min-height: 100vh;
-      padding: 2rem 1rem;
       overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
-    /* Fondo animado sutil */
+    /* Fondo animado */
     body::before {
       content: '';
       position: fixed;
@@ -55,482 +57,353 @@
       width: 100%;
       height: 100%;
       background: 
-        radial-gradient(circle at 20% 80%, rgba(255, 70, 85, 0.05) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 20% 80%, rgba(255, 70, 85, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.02) 0%, transparent 50%),
         radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.02) 0%, transparent 50%);
       pointer-events: none;
       z-index: -1;
     }
 
-    /* Título principal con efecto neón */
-    .title {
+    /* Navegación */
+    .navbar {
+      background: rgba(30, 30, 30, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 2px solid var(--valorant-red);
+      padding: 1rem 0;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      box-shadow: 0 0 20px var(--valorant-red-glow);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 2rem;
+    }
+
+    .logo {
       font-family: 'Orbitron', monospace;
-      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-size: 1.5rem;
       font-weight: 900;
-      text-align: center;
-      margin-bottom: 3rem;
-      color: var(--neon-red);
-      text-shadow: 
-        0 0 10px var(--neon-red-glow),
-        0 0 20px var(--neon-red-glow),
-        0 0 40px var(--neon-red-glow);
-      animation: titleFlicker 4s ease-in-out infinite alternate;
-      position: relative;
-      letter-spacing: 2px;
+      color: var(--valorant-red);
+      text-shadow: 0 0 10px var(--valorant-red-glow);
     }
 
-    /* Animación de flicker sutil */
-    @keyframes titleFlicker {
-      0%, 100% {
-        text-shadow: 
-          0 0 10px var(--neon-red-glow),
-          0 0 20px var(--neon-red-glow),
-          0 0 40px var(--neon-red-glow);
-      }
-      50% {
-        text-shadow: 
-          0 0 5px var(--neon-red-glow),
-          0 0 15px var(--neon-red-glow),
-          0 0 25px var(--neon-red-glow);
-      }
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
     }
 
-    /* Línea decorativa bajo el título */
-    .title::after {
-      content: '';
-      position: absolute;
-      bottom: -15px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--neon-red), transparent);
-      box-shadow: 0 0 10px var(--neon-red-glow);
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--valorant-red);
+      background: rgba(255, 70, 85, 0.1);
+      box-shadow: 0 0 15px var(--valorant-red-glow);
+      border: 1px solid var(--valorant-red);
     }
 
     /* Contenedor principal */
     .container {
-      max-width: 1400px;
+      max-width: 1200px;
       margin: 0 auto;
+      padding: 6rem 2rem 2rem;
+      flex: 1;
     }
 
-    /* Wrapper de la tabla con efectos */
-    .table-wrapper {
-      background: rgba(26, 31, 46, 0.8);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      border: 1px solid var(--border-color);
+    /* Título principal */
+    h1 {
+      text-align: center;
+      color: var(--valorant-red);
+      text-shadow: 0 0 8px var(--valorant-red-glow);
+      margin-bottom: 30px;
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 900;
+      letter-spacing: 2px;
+      animation: titleGlow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes titleGlow {
+      0%, 100% {
+        text-shadow: 
+          0 0 8px var(--valorant-red-glow),
+          0 0 16px var(--valorant-red-glow),
+          0 0 24px var(--valorant-red-glow);
+      }
+      50% {
+        text-shadow: 
+          0 0 4px var(--valorant-red-glow),
+          0 0 12px var(--valorant-red-glow),
+          0 0 20px var(--valorant-red-glow);
+      }
+    }
+
+    /* Tabla del leaderboard */
+    .table-container {
+      background: var(--bg-surface);
+      border-radius: 16px;
+      padding: 2rem;
+      border: 2px solid var(--valorant-red);
       box-shadow: 
-        0 20px 25px -5px rgba(0, 0, 0, 0.3),
-        0 0 0 1px rgba(255, 70, 85, 0.1);
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        0 0 20px var(--valorant-red-glow),
+        inset 0 0 20px rgba(255, 70, 85, 0.05);
       overflow: hidden;
-      position: relative;
     }
 
-    /* Borde animado */
-    .table-wrapper::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(
-        90deg, 
-        var(--neon-red), 
-        var(--neon-blue), 
-        var(--neon-purple), 
-        var(--neon-red)
-      );
-      background-size: 200% 100%;
-      animation: borderFlow 8s linear infinite;
-      opacity: 0.6;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0;
     }
 
-    @keyframes borderFlow {
-      0% { background-position: 0% 0%; }
-      100% { background-position: 200% 0%; }
-    }
-
-    /* Grid de la tabla */
-    .leaderboard-grid {
-      display: grid;
-      grid-template-columns: 
-        60px          /* # */
-        1fr           /* Jugador */
-        120px         /* ACS */
-        120px         /* KDA */
-        100px         /* HS% */
-        140px         /* First Bloods */
-        120px         /* Winrate */
-        140px;        /* Score */
-      gap: 0;
-      font-size: 1rem;
-    }
-
-    /* Header de la tabla */
-    .grid-header {
-      background: linear-gradient(135deg, var(--bg-card), var(--bg-surface));
-      border-bottom: 2px solid var(--border-color);
-      display: contents;
-    }
-
-    .header-cell {
-      padding: 15px 10px;
-      font-family: 'Orbitron', monospace;
-      font-weight: 700;
-      font-size: 0.85rem;
-      color: var(--neon-red);
-      text-transform: uppercase;
-      letter-spacing: 1px;
+    th, td {
+      padding: 15px;
       text-align: center;
-      border-right: 1px solid var(--border-color);
-      background: var(--bg-card);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-shadow: 0 0 8px rgba(255, 70, 85, 0.3);
+      border-bottom: 1px solid var(--border-color);
     }
 
-    .header-cell:first-child {
-      border-top-left-radius: 20px;
+    th {
+      background-color: var(--bg-card);
+      color: var(--valorant-red);
+      font-weight: 700;
+      text-shadow: 0 0 5px var(--valorant-red-glow);
+      border-bottom: 2px solid var(--valorant-red);
     }
 
-    .header-cell:last-child {
-      border-right: none;
-      border-top-right-radius: 20px;
-    }
-
-    .header-cell:nth-child(2) {
-      justify-content: flex-start;
-      padding-left: 20px;
-    }
-
-    /* Filas de datos */
-    .grid-row {
-      display: contents;
-    }
-
-    .data-cell {
-      padding: 15px 10px;
-      background: var(--bg-surface);
-      border-right: 1px solid rgba(55, 65, 81, 0.3);
-      border-bottom: 1px solid rgba(55, 65, 81, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 500;
-      color: var(--text-primary);
+    tbody tr {
       transition: all 0.3s ease;
+      animation: slideInRow 0.6s ease-out forwards;
+      opacity: 0;
+      transform: translateX(-50px);
     }
 
-    .data-cell:last-child {
-      border-right: none;
+    tbody tr:nth-child(1) { animation-delay: 0.1s; }
+    tbody tr:nth-child(2) { animation-delay: 0.2s; }
+    tbody tr:nth-child(3) { animation-delay: 0.3s; }
+    tbody tr:nth-child(4) { animation-delay: 0.4s; }
+    tbody tr:nth-child(5) { animation-delay: 0.5s; }
+
+    @keyframes slideInRow {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
 
-    /* Alineaciones específicas */
-    .data-cell:first-child {
-      font-family: 'Orbitron', monospace;
-      font-weight: 700;
-      font-size: 1.1rem;
+    tbody tr:hover {
+      background-color: rgba(255, 70, 85, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     }
 
-    .data-cell:nth-child(2) {
-      justify-content: flex-start;
-      padding-left: 20px;
-      font-weight: 600;
+    /* Top 3 efectos especiales */
+    tbody tr:nth-child(1) {
+      background: linear-gradient(90deg, rgba(255, 215, 0, 0.1), transparent);
+      border-left: 4px solid var(--gold);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
     }
 
-    /* Efectos hover en filas */
-    .grid-row:hover .data-cell {
-      background: rgba(255, 70, 85, 0.05);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    tbody tr:nth-child(2) {
+      background: linear-gradient(90deg, rgba(192, 192, 192, 0.1), transparent);
+      border-left: 4px solid var(--silver);
+      box-shadow: 0 0 15px rgba(192, 192, 192, 0.3);
     }
 
-    /* Indicador lateral en hover */
-    .grid-row .data-cell:first-child {
-      position: relative;
+    tbody tr:nth-child(3) {
+      background: linear-gradient(90deg, rgba(205, 127, 50, 0.1), transparent);
+      border-left: 4px solid var(--bronze);
+      box-shadow: 0 0 15px rgba(205, 127, 50, 0.3);
     }
 
-    .grid-row:hover .data-cell:first-child::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      background: var(--neon-red);
-      box-shadow: 0 0 8px var(--neon-red-glow);
-    }
-
-    /* Estilos para top 3 */
-    .rank-1 .data-cell {
-      background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), var(--bg-surface));
-      border-left: 3px solid var(--gold);
-    }
-
-    .rank-1 .data-cell:first-child {
-      color: var(--gold);
-      text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
-      animation: goldPulse 3s ease-in-out infinite alternate;
-      position: relative;
-    }
-
-    .rank-1 .data-cell:first-child::after {
-      content: '👑';
-      position: absolute;
-      right: -8px;
-      font-size: 0.9rem;
-      animation: crownBounce 2s ease-in-out infinite;
-    }
-
-    @keyframes goldPulse {
-      0% { text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
-      100% { text-shadow: 0 0 20px rgba(251, 191, 36, 0.8); }
-    }
-
-    @keyframes crownBounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-2px); }
-    }
-
-    .rank-2 .data-cell {
-      background: linear-gradient(135deg, rgba(229, 231, 235, 0.1), var(--bg-surface));
-      border-left: 3px solid var(--silver);
-    }
-
-    .rank-2 .data-cell:first-child {
-      color: var(--silver);
-      text-shadow: 0 0 8px rgba(229, 231, 235, 0.4);
-    }
-
-    .rank-3 .data-cell {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), var(--bg-surface));
-      border-left: 3px solid var(--bronze);
-    }
-
-    .rank-3 .data-cell:first-child {
-      color: var(--bronze);
-      text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
-    }
-
-    /* Colores para estadísticas importantes */
-    .stat-acs, .stat-score {
-      color: var(--neon-red) !important;
-      font-weight: 600;
-      text-shadow: 0 0 6px rgba(255, 70, 85, 0.3);
-    }
-
-    .stat-kda {
-      color: var(--neon-blue) !important;
-      font-weight: 600;
-      text-shadow: 0 0 6px rgba(0, 212, 255, 0.3);
-    }
-
-    .stat-winrate {
-      color: var(--neon-purple) !important;
-      font-weight: 600;
-      text-shadow: 0 0 6px rgba(168, 85, 247, 0.3);
-    }
-
-    /* Estado de carga */
-    .loading-state {
-      grid-column: 1 / -1;
-      padding: 3rem 2rem;
-      text-align: center;
-      color: var(--neon-red);
+    .rank-number {
+      font-weight: 900;
       font-size: 1.2rem;
-      font-weight: 600;
-      background: var(--bg-surface);
-      animation: loadingPulse 2s ease-in-out infinite alternate;
     }
 
-    @keyframes loadingPulse {
-      0% { opacity: 0.7; }
-      100% { opacity: 1; }
+    tbody tr:nth-child(1) .rank-number {
+      color: var(--gold);
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
     }
 
-    /* Responsive Design */
-    @media (max-width: 1200px) {
-      .leaderboard-grid {
-        grid-template-columns: 50px 1fr 100px 100px 80px 120px 100px 120px;
-      }
-      
-      .header-cell, .data-cell {
-        padding: 12px 8px;
-        font-size: 0.9rem;
-      }
+    tbody tr:nth-child(2) .rank-number {
+      color: var(--silver);
+      text-shadow: 0 0 10px rgba(192, 192, 192, 0.5);
     }
 
+    tbody tr:nth-child(3) .rank-number {
+      color: var(--bronze);
+      text-shadow: 0 0 10px rgba(205, 127, 50, 0.5);
+    }
+
+    /* Mensajes de estado */
+    .loading-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+    }
+
+    /* Responsive */
     @media (max-width: 768px) {
-      body {
-        padding: 1rem 0.5rem;
-      }
-
-      .title {
-        font-size: 2rem;
-        margin-bottom: 2rem;
-      }
-
-      .table-wrapper {
-        border-radius: 15px;
-        margin: 0 -0.5rem;
-      }
-
-      /* Layout de cards para móvil */
-      .leaderboard-grid {
-        display: block;
-      }
-
-      .grid-header {
+      .nav-links {
         display: none;
       }
-
-      .grid-row {
-        display: block;
-        margin-bottom: 1rem;
-        background: var(--bg-surface);
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
-        padding: 1.5rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      
+      .container {
+        padding: 6rem 1rem 2rem;
       }
-
-      .grid-row:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-      }
-
-      .data-cell {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem 0;
-        border: none;
-        border-bottom: 1px solid rgba(55, 65, 81, 0.2);
-        background: transparent;
-      }
-
-      .data-cell:last-child {
-        border-bottom: none;
-      }
-
-      .data-cell::before {
-        content: attr(data-label);
-        font-weight: 600;
-        color: var(--neon-red);
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.5px;
-        opacity: 0.8;
-      }
-
-      .data-cell:first-child::before {
-        content: 'Posición';
-      }
-
-      .data-cell:nth-child(2)::before {
-        content: 'Jugador';
-      }
-
-      .data-cell:nth-child(3)::before {
-        content: 'ACS Promedio';
-      }
-
-      .data-cell:nth-child(4)::before {
-        content: 'KDA Promedio';
-      }
-
-      .data-cell:nth-child(5)::before {
-        content: 'HS%';
-      }
-
-      .data-cell:nth-child(6)::before {
-        content: 'First Bloods';
-      }
-
-      .data-cell:nth-child(7)::before {
-        content: 'Winrate %';
-      }
-
-      .data-cell:nth-child(8)::before {
-        content: 'Score';
-      }
-
-      /* Ajustes para top 3 en móvil */
-      .rank-1, .rank-2, .rank-3 {
-        border-left: 4px solid;
-      }
-
-      .rank-1 { border-left-color: var(--gold); }
-      .rank-2 { border-left-color: var(--silver); }
-      .rank-3 { border-left-color: var(--bronze); }
-
-      .rank-1 .data-cell:first-child::after {
-        position: static;
-        margin-left: 0.5rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .grid-row {
+      
+      .table-container {
         padding: 1rem;
-        margin-bottom: 0.75rem;
+        overflow-x: auto;
       }
-
-      .data-cell {
-        padding: 0.5rem 0;
-        font-size: 0.9rem;
+      
+      table, thead, tbody, th, td, tr {
+        display: block;
       }
-    }
-
-    /* Accesibilidad */
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
+      
+      thead tr {
+        display: none;
       }
-    }
-
-    /* Focus states para accesibilidad */
-    .grid-row:focus-within .data-cell {
-      outline: 2px solid var(--neon-red);
-      outline-offset: 2px;
+      
+      tbody tr {
+        margin-bottom: 15px;
+        border-radius: 10px;
+        background: var(--bg-card);
+        padding: 10px;
+        border: 1px solid var(--valorant-red);
+        box-shadow: 0 0 10px var(--valorant-red-glow);
+      }
+      
+      tbody td {
+        padding: 10px;
+        text-align: right;
+        position: relative;
+        border-bottom: 1px solid var(--border-color);
+      }
+      
+      tbody td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--valorant-red);
+      }
     }
   </style>
 </head>
 <body>
+  <!-- Navegación -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="logo">VALORANT 10 MANS</div>
+      <ul class="nav-links">
+        <li><a class="active">Leaderboard</a></li>
+        <li><a>Eventos</a></li>
+        <li><a>Admin</a></li>
+      </ul>
+    </div>
+  </nav>
+
   <div class="container">
-    <!-- Título principal -->
-    <h1 class="title">VALORANT LEADERBOARD - 10 Mans</h1>
-    
-    <!-- Wrapper de la tabla -->
-    <div class="table-wrapper">
-      <div class="leaderboard-grid" id="leaderboardGrid">
-        
-        <!-- Header de la tabla -->
-        <div class="grid-header">
-          <div class="header-cell">#</div>
-          <div class="header-cell">Jugador</div>
-          <div class="header-cell">ACS Promedio</div>
-          <div class="header-cell">KD Promedio</div>
-          <div class="header-cell">HS%</div>
-          <div class="header-cell">First Bloods Promedio</div>
-          <div class="header-cell">Winrate %</div>
-          <div class="header-cell">Score Compuesto</div>
-        </div>
-
-        <!-- Estado de carga inicial -->
-        <div class="loading-state">
-          ⚡ Cargando datos ...
-        </div>
-
+    <!-- Página Principal - Leaderboard -->
+    <div id="leaderboard">
+      <h1>Leaderboard Valorant - 10 Mans</h1>
+      
+      <div class="table-container">
+        <table aria-label="Tabla del leaderboard">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Jugador</th>
+              <th>ACS Promedio</th>
+              <th>KDA Promedio</th>
+              <th>HS%</th>
+              <th>First Bloods Promedio</th>
+              <th>Winrate %</th>
+              <th>Score Compuesto</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody">
+            <tr class="loading-state">
+              <td colspan="8">Cargando datos...</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    // Función para cargar los datos en la tabla
+    function loadLeaderboard() {
+      const tbody = document.getElementById('leaderboardBody');
+      
+      fetch("https://valorant-10-mans.onrender.com/leaderboard")
+        .then((res) => res.json())
+        .then((players) => {
+          // Limpiar tabla
+          tbody.innerHTML = '';
+
+          if (players.length === 0) {
+            tbody.innerHTML = `
+              <tr class="loading-state">
+                <td colspan="8">No hay datos para mostrar</td>
+              </tr>
+            `;
+            return;
+          }
+
+          // Crear filas con los datos reales
+          players.forEach((p, i) => {
+            const row = document.createElement('tr');
+            row.className = `rank-${i + 1}`;
+            row.innerHTML = `
+              <td class="rank-number" data-label="#">${i + 1}</td>
+              <td data-label="Jugador">${p.name}#${p.tag}</td>
+              <td data-label="ACS Promedio">${p.avgACS.toFixed(2)}</td>
+              <td data-label="KDA Promedio">${p.avgKDA.toFixed(2)}</td>
+              <td data-label="HS%">${p.hsPercent.toFixed(2)}%</td>
+              <td data-label="First Bloods">${p.avgFirstBloods.toFixed(2)}</td>
+              <td data-label="Winrate">${p.winrate.toFixed(2)}%</td>
+              <td data-label="Score">${p.score.toFixed(2)}</td>
+            `;
+            tbody.appendChild(row);
+            
+            // Aplicar animación con retraso
+            row.style.animationDelay = `${i * 0.1}s`;
+          });
+        })
+        .catch(() => {
+          tbody.innerHTML = `
+            <tr class="loading-state">
+              <td colspan="8">Error cargando leaderboard</td>
+            </tr>
+          `;
+        });
+    }
+
+    // Animación inicial de las filas de la tabla
+    document.addEventListener('DOMContentLoaded', function() {
+      loadLeaderboard();
+    });
+  </script>
 </body>
 </html>
