@@ -1,5 +1,5 @@
 // Cambia esto por tu backend en Render
-const API_URL = "https://tu-backend.onrender.com";
+const API_URL = "https://valorant-10-mans-frontend.onrender.com";
 
 // --- Añadir jugador ---
 document.getElementById("addPlayerForm").addEventListener("submit", async (e) => {
