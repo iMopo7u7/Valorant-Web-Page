@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Valorant Leaderboard - 10 Mans Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Colores principales */
+      --valorant-red: #ff4655;
+      --valorant-red-glow: rgba(255, 70, 85, 0.4);
+      --valorant-blue: #00d4ff;
+      --valorant-purple: #a855f7;
+      --valorant-pink: #ec4899;
+      --valorant-green: #10b981;
+      
+      /* Colores de fondo */
+      --bg-dark: #121212;
+      --bg-surface: #1e1e1e;
+      --bg-card: #2a2a2a;
+      --border-color: #333;
+      
+      /* Colores de texto */
+      --text-primary: #eee;
+      --text-secondary: #ccc;
+      --text-muted: #999;
+      
+      /* Colores de ranking */
+      --gold: #ffd700;
+      --silver: #c0c0c0;
+      --bronze: #cd7f32;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #0a0a0a 100%);
+      color: var(--text-primary);
+      font-family: 'Poppins', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Fondo animado */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(255, 70, 85, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.02) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.02) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Navegación */
+    .navbar {
+      background: rgba(30, 30, 30, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 2px solid var(--valorant-red);
+      padding: 1rem 0;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      box-shadow: 0 0 20px var(--valorant-red-glow);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 2rem;
+    }
+
+    .logo {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--valorant-red);
+      text-shadow: 0 0 10px var(--valorant-red-glow);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--valorant-red);
+      background: rgba(255, 70, 85, 0.1);
+      box-shadow: 0 0 15px var(--valorant-red-glow);
+      border: 1px solid var(--valorant-red);
+    }
+
+    /* Contenedor principal */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 6rem 2rem 2rem;
+      flex: 1;
+    }
+
+    /* Páginas */
+    .page {
+      display: none;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Título principal */
+    h1 {
+      text-align: center;
+      color: var(--valorant-red);
+      text-shadow: 0 0 8px var(--valorant-red-glow);
+      margin-bottom: 30px;
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 900;
+      letter-spacing: 2px;
+      animation: titleGlow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes titleGlow {
+      0%, 100% {
+        text-shadow: 
+          0 0 8px var(--valorant-red-glow),
+          0 0 16px var(--valorant-red-glow),
+          0 0 24px var(--valorant-red-glow);
+      }
+      50% {
+        text-shadow: 
+          0 0 4px var(--valorant-red-glow),
+          0 0 12px var(--valorant-red-glow),
+          0 0 20px var(--valorant-red-glow);
+      }
+    }
+
+    /* Tabla del leaderboard */
+    .table-container {
+      background: var(--bg-surface);
+      border-radius: 16px;
+      padding: 2rem;
+      border: 2px solid var(--valorant-red);
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        0 0 20px var(--valorant-red-glow),
+        inset 0 0 20px rgba(255, 70, 85, 0.05);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0;
+    }
+
+    th, td {
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: var(--bg-card);
+      color: var(--valorant-red);
+      font-weight: 700;
+      text-shadow: 0 0 5px var(--valorant-red-glow);
+      border-bottom: 2px solid var(--valorant-red);
+    }
+
+    tbody tr {
+      transition: all 0.3s ease;
+      animation: slideInRow 0.6s ease-out forwards;
+      opacity: 0;
+      transform: translateX(-50px);
+    }
+
+    tbody tr:nth-child(1) { animation-delay: 0.1s; }
+    tbody tr:nth-child(2) { animation-delay: 0.2s; }
+    tbody tr:nth-child(3) { animation-delay: 0.3s; }
+    tbody tr:nth-child(4) { animation-delay: 0.4s; }
+    tbody tr:nth-child(5) { animation-delay: 0.5s; }
+
+    @keyframes slideInRow {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    tbody tr:hover {
+      background-color: rgba(255, 70, 85, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Top 3 efectos especiales */
+    tbody tr:nth-child(1) {
+      background: linear-gradient(90deg, rgba(255, 215, 0, 0.1), transparent);
+      border-left: 4px solid var(--gold);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+    }
+
+    tbody tr:nth-child(2) {
+      background: linear-gradient(90deg, rgba(192, 192, 192, 0.1), transparent);
+      border-left: 4px solid var(--silver);
+      box-shadow: 0 0 15px rgba(192, 192, 192, 0.3);
+    }
+
+    tbody tr:nth-child(3) {
+      background: linear-gradient(90deg, rgba(205, 127, 50, 0.1), transparent);
+      border-left: 4px solid var(--bronze);
+      box-shadow: 0 0 15px rgba(205, 127, 50, 0.3);
+    }
+
+    .rank-number {
+      font-weight: 900;
+      font-size: 1.2rem;
+    }
+
+    tbody tr:nth-child(1) .rank-number {
+      color: var(--gold);
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    tbody tr:nth-child(2) .rank-number {
+      color: var(--silver);
+      text-shadow: 0 0 10px rgba(192, 192, 192, 0.5);
+    }
+
+    tbody tr:nth-child(3) .rank-number {
+      color: var(--bronze);
+      text-shadow: 0 0 10px rgba(205, 127, 50, 0.5);
+    }
+
+    /* Cards de eventos */
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .event-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 2rem;
+      border: 1px solid var(--valorant-red);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 
+        0 0 15px var(--valorant-red-glow),
+        inset 0 0 15px rgba(255, 70, 85, 0.05);
+    }
+
+    .event-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--valorant-red);
+      box-shadow: 0 0 10px var(--valorant-red-glow);
+    }
+
+    .event-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      border-color: var(--valorant-purple);
+    }
+
+    .event-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--valorant-red);
+      text-shadow: 0 0 10px var(--valorant-red-glow);
+    }
+
+    .event-type {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: rgba(255, 70, 85, 0.2);
+      color: var(--valorant-red);
+      border: 1px solid var(--valorant-red);
+      border-radius: 20px;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 0 10px var(--valorant-red-glow);
+    }
+
+    .event-date {
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .event-winner {
+      font-weight: 600;
+      color: var(--gold);
+      margin-bottom: 1.5rem;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, var(--valorant-red), #ff6b7a);
+      color: white;
+      border: 1px solid var(--valorant-red);
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+      box-shadow: 0 0 15px var(--valorant-red-glow);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px var(--valorant-red-glow);
+      background: linear-gradient(135deg, #ff6b7a, var(--valorant-red));
+    }
+
+    /* Panel de administrador */
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .admin-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 2rem;
+      border: 1px solid var(--valorant-red);
+      text-align: center;
+      transition: all 0.3s ease;
+      box-shadow: 
+        0 0 15px var(--valorant-red-glow),
+        inset 0 0 15px rgba(255, 70, 85, 0.05);
+      cursor: pointer;
+    }
+
+    .admin-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .admin-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: var(--valorant-red);
+      text-shadow: 0 0 15px var(--valorant-red-glow);
+    }
+
+    .admin-card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+
+    .admin-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Formularios */
+    .form-container {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 2rem;
+      border: 1px solid var(--valorant-red);
+      max-width: 500px;
+      margin: 0 auto;
+      box-shadow: 
+        0 0 20px var(--valorant-red-glow),
+        inset 0 0 20px rgba(255, 70, 85, 0.05);
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--valorant-red);
+      box-shadow: 0 0 15px var(--valorant-red-glow);
+    }
+
+    /* Login */
+    .login-container {
+      max-width: 400px;
+      margin: 5rem auto;
+    }
+
+    .login-title {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 900;
+      margin-bottom: 2rem;
+      color: var(--valorant-red);
+      text-shadow: 0 0 15px var(--valorant-red-glow);
+    }
+
+    .login-hint {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(255, 70, 85, 0.1);
+      border: 1px solid var(--valorant-red);
+      border-radius: 8px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    /* Alertas */
+    .alert {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .alert-success {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid var(--valorant-green);
+      color: var(--valorant-green);
+    }
+
+    .alert-error {
+      background: rgba(255, 70, 85, 0.2);
+      border: 1px solid var(--valorant-red);
+      color: var(--valorant-red);
+    }
+
+
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+      
+      .container {
+        padding: 6rem 1rem 2rem;
+      }
+      
+      .table-container {
+        padding: 1rem;
+        overflow-x: auto;
+      }
+      
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      
+      thead tr {
+        display: none;
+      }
+      
+      tbody tr {
+        margin-bottom: 15px;
+        border-radius: 10px;
+        background: var(--bg-card);
+        padding: 10px;
+        border: 1px solid var(--valorant-red);
+        box-shadow: 0 0 10px var(--valorant-red-glow);
+      }
+      
+      tbody td {
+        padding: 10px;
+        text-align: right;
+        position: relative;
+        border-bottom: 1px solid var(--border-color);
+      }
+      
+      tbody td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--valorant-red);
+      }
+      
+      .events-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .admin-grid {
+        grid-template-columns: 1fr;
+      }
+
+
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+      background: var(--bg-surface);
+      margin: 2% auto;
+      padding: 0;
+      border: 2px solid var(--valorant-red);
+      border-radius: 16px;
+      width: 95%;
+      max-width: 1200px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 0 30px var(--valorant-red-glow);
+    }
+
+    .modal-header {
+      background: var(--bg-card);
+      padding: 1.5rem 2rem;
+      border-bottom: 2px solid var(--valorant-red);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 14px 14px 0 0;
+    }
+
+    .modal-header h2 {
+      color: var(--valorant-red);
+      margin: 0;
+      font-family: 'Orbitron', monospace;
+      text-shadow: 0 0 10px var(--valorant-red-glow);
+    }
+
+    .close {
+      color: var(--text-muted);
+      font-size: 2rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .close:hover {
+      color: var(--valorant-red);
+      text-shadow: 0 0 10px var(--valorant-red-glow);
+    }
+
+    .modal-body {
+      padding: 2rem;
+    }
+
+    .event-details-container {
+      display: grid;
+      gap: 2rem;
+    }
+
+    .event-info, .bracket-section, .matches-section {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .event-info h3, .bracket-section h3, .matches-section h3 {
+      color: var(--valorant-red);
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+      text-shadow: 0 0 5px var(--valorant-red-glow);
+    }
+
+    .bracket-config {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .bracket-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .bracket-round {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .bracket-match {
+      background: var(--bg-dark);
+      border: 1px solid var(--valorant-red);
+      border-radius: 8px;
+      padding: 1rem;
+      min-width: 200px;
+      text-align: center;
+    }
+
+    .bracket-team {
+      padding: 0.5rem;
+      margin: 0.25rem 0;
+      background: rgba(255, 70, 85, 0.1);
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .match-form {
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .match-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .match-title {
+      color: var(--valorant-red);
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .teams-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    .team-section {
+      background: rgba(255, 70, 85, 0.05);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    .team-name {
+      color: var(--valorant-red);
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+
+    .player-stats {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .player-stats input {
+      padding: 0.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      text-align: center;
+    }
+
+    .stats-header {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .player-name-input {
+      grid-column: span 6;
+      margin-bottom: 0.5rem;
+      padding: 0.5rem;
+      border: 1px solid var(--valorant-red);
+      border-radius: 4px;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* Estilos para el nuevo sistema de admin */
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+      gap: 1rem;
+    }
+
+    .step {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--bg-dark);
+      border: 2px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      transition: all 0.3s ease;
+    }
+
+    .step.active {
+      background: var(--valorant-red);
+      border-color: var(--valorant-red);
+      color: white;
+      box-shadow: 0 0 15px var(--valorant-red-glow);
+    }
+
+    .step.completed {
+      background: var(--valorant-green);
+      border-color: var(--valorant-green);
+      color: white;
+    }
+
+    .team-name-input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--valorant-red);
+      border-radius: 8px;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .event-list-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .event-list-item:hover {
+      border-color: var(--valorant-red);
+      box-shadow: 0 0 15px var(--valorant-red-glow);
+    }
+
+    .event-list-info h4 {
+      color: var(--valorant-red);
+      margin-bottom: 0.5rem;
+      font-size: 1.2rem;
+    }
+
+    .event-list-info p {
+      color: var(--text-muted);
+      margin: 0.25rem 0;
+      font-size: 0.9rem;
+    }
+
+    .event-list-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .btn-small {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .match-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .match-card.completed {
+      border-color: var(--valorant-green);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .match-card.pending {
+      border-color: var(--valorant-red);
+      background: rgba(255, 70, 85, 0.05);
+    }
+
+    .match-status {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .match-status.completed {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--valorant-green);
+      border: 1px solid var(--valorant-green);
+    }
+
+    .match-status.pending {
+      background: rgba(255, 70, 85, 0.2);
+      color: var(--valorant-red);
+      border: 1px solid var(--valorant-red);
+    }
+
+    /* Iconos */
+    .icon-user::before { content: "👤"; }
+    .icon-event::before { content: "📅"; }
+    .icon-settings::before { content: "⚙️"; }
+    .icon-chart::before { content: "📊"; }
+    .icon-trophy::before { content: "🏆"; }
+  </style>
+</head>
+<body>
+  <!-- Navegación -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="logo">VALORANT 10 MANS</div>
+      <ul class="nav-links">
+        <li><a onclick="showPage('leaderboard')" class="active">Leaderboard</a></li>
+        <li><a onclick="showPage('events')">Eventos</a></li>
+        <li><a onclick="showPage('admin')">Admin</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Página Principal - Leaderboard -->
+    <div id="leaderboard" class="page active">
+      <h1>Leaderboard Valorant - 10 Mans</h1>
+      
+      <div class="table-container">
+        <table aria-label="Tabla del leaderboard">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Jugador</th>
+              <th>ACS Promedio</th>
+              <th>KDA Promedio</th>
+              <th>HS%</th>
+              <th>First Bloods Promedio</th>
+              <th>Winrate %</th>
+              <th>Score Compuesto</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody">
+            <tr>
+              <td class="rank-number" data-label="#">1</td>
+              <td data-label="Jugador">ShadowStrike</td>
+              <td data-label="ACS Promedio">287.5</td>
+              <td data-label="KDA Promedio">1.85</td>
+              <td data-label="HS%">28.4%</td>
+              <td data-label="First Bloods">2.3</td>
+              <td data-label="Winrate">73%</td>
+              <td data-label="Score">94.2</td>
+            </tr>
+            <tr>
+              <td class="rank-number" data-label="#">2</td>
+              <td data-label="Jugador">NeonBullet</td>
+              <td data-label="ACS Promedio">275.8</td>
+              <td data-label="KDA Promedio">1.72</td>
+              <td data-label="HS%">31.2%</td>
+              <td data-label="First Bloods">2.1</td>
+              <td data-label="Winrate">68%</td>
+              <td data-label="Score">91.7</td>
+            </tr>
+            <tr>
+              <td class="rank-number" data-label="#">3</td>
+              <td data-label="Jugador">VoidHunter</td>
+              <td data-label="ACS Promedio">268.3</td>
+              <td data-label="KDA Promedio">1.68</td>
+              <td data-label="HS%">26.8%</td>
+              <td data-label="First Bloods">1.9</td>
+              <td data-label="Winrate">71%</td>
+              <td data-label="Score">89.4</td>
+            </tr>
+            <tr>
+              <td class="rank-number" data-label="#">4</td>
+              <td data-label="Jugador">CyberPhoenix</td>
+              <td data-label="ACS Promedio">252.1</td>
+              <td data-label="KDA Promedio">1.54</td>
+              <td data-label="HS%">29.7%</td>
+              <td data-label="First Bloods">1.8</td>
+              <td data-label="Winrate">65%</td>
+              <td data-label="Score">85.9</td>
+            </tr>
+            <tr>
+              <td class="rank-number" data-label="#">5</td>
+              <td data-label="Jugador">QuantumRage</td>
+              <td data-label="ACS Promedio">248.7</td>
+              <td data-label="KDA Promedio">1.49</td>
+              <td data-label="HS%">25.3%</td>
+              <td data-label="First Bloods">1.7</td>
+              <td data-label="Winrate">62%</td>
+              <td data-label="Score">83.2</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Página de Eventos -->
+    <div id="events" class="page">
+      <h1>Eventos Especiales</h1>
+      
+      <div class="events-grid">
+        <div class="event-card">
+          <div class="event-type">Torneo</div>
+          <h3 class="event-title">Champions League Finals</h3>
+          <div class="event-date">📅 15 Diciembre 2024 - 20:00 GMT</div>
+          <div class="event-winner">🏆 Ganador: Team Phantom</div>
+          <p>El torneo más prestigioso del año con los mejores equipos compitiendo por el título de campeones.</p>
+          <button class="btn" onclick="openEventModal('champions', 'Champions League Finals', 'Torneo', '15 Diciembre 2024 - 20:00 GMT', 'Team Phantom', 'El torneo más prestigioso del año con los mejores equipos compitiendo por el título de campeones.')">Ver Detalles</button>
+        </div>
+
+        <div class="event-card">
+          <div class="event-type">10 Mans</div>
+          <h3 class="event-title">Spike Rush Weekend</h3>
+          <div class="event-date">📅 20-22 Diciembre 2024</div>
+          <div class="event-winner">🏆 Ganador: ShadowStrike</div>
+          <p>Fin de semana especial con partidas 10v10 y recompensas dobles para todos los participantes.</p>
+          <button class="btn" onclick="openEventModal('spike', 'Spike Rush Weekend', '10 Mans', '20-22 Diciembre 2024', 'ShadowStrike', 'Fin de semana especial con partidas 10v10 y recompensas dobles para todos los participantes.')">Ver Detalles</button>
+        </div>
+
+        <div class="event-card">
+          <div class="event-type">1v1</div>
+          <h3 class="event-title">Duelo de Ases</h3>
+          <div class="event-date">📅 28 Diciembre 2024 - 19:00 GMT</div>
+          <div class="event-winner">🏆 Ganador: NeonBullet</div>
+          <p>Competencia individual donde solo los mejores jugadores demuestran su habilidad en combates 1v1.</p>
+          <button class="btn" onclick="openEventModal('duel', 'Duelo de Ases', '1v1', '28 Diciembre 2024 - 19:00 GMT', 'NeonBullet', 'Competencia individual donde solo los mejores jugadores demuestran su habilidad en combates 1v1.')">Ver Detalles</button>
+        </div>
+
+        <div class="event-card">
+          <div class="event-type">Team</div>
+          <h3 class="event-title">Battle Royale Squad</h3>
+          <div class="event-date">📅 5 Enero 2025 - 21:00 GMT</div>
+          <div class="event-winner">🏆 Ganador: Team Viper</div>
+          <p>Equipos de 5 jugadores compiten en un formato eliminatorio hasta que solo quede uno.</p>
+          <button class="btn" onclick="openEventModal('royale', 'Battle Royale Squad', 'Team', '5 Enero 2025 - 21:00 GMT', 'Team Viper', 'Equipos de 5 jugadores compiten en un formato eliminatorio hasta que solo quede uno.')">Ver Detalles</button>
+        </div>
+
+        <div class="event-card">
+          <div class="event-type">Clasificatorio</div>
+          <h3 class="event-title">Road to Radiant</h3>
+          <div class="event-date">📅 12 Enero 2025 - 18:00 GMT</div>
+          <div class="event-winner">🏆 Ganador: VoidHunter</div>
+          <p>Serie de partidas clasificatorias para determinar los mejores jugadores del mes.</p>
+          <button class="btn" onclick="openEventModal('radiant', 'Road to Radiant', 'Clasificatorio', '12 Enero 2025 - 18:00 GMT', 'VoidHunter', 'Serie de partidas clasificatorias para determinar los mejores jugadores del mes.')">Ver Detalles</button>
+        </div>
+
+        <div class="event-card">
+          <div class="event-type">Especial</div>
+          <h3 class="event-title">Night Market Showdown</h3>
+          <div class="event-date">📅 18 Enero 2025 - 22:00 GMT</div>
+          <div class="event-winner">🏆 Ganador: CyberPhoenix</div>
+          <p>Evento nocturno especial con skins exclusivas como premio para los ganadores.</p>
+          <button class="btn" onclick="openEventModal('nightmarket', 'Night Market Showdown', 'Especial', '18 Enero 2025 - 22:00 GMT', 'CyberPhoenix', 'Evento nocturno especial con skins exclusivas como premio para los ganadores.')">Ver Detalles</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de Administrador -->
+    <div id="admin" class="page">
+      <div class="login-container" id="adminLoginForm">
+        <div class="form-container">
+          <h2 class="login-title">Admin Login</h2>
+          <form onsubmit="adminLogin(event)">
+            <div class="form-group">
+              <label for="adminUser">Usuario Admin</label>
+              <input type="text" id="adminUser" required>
+            </div>
+            <div class="form-group">
+              <label for="adminPass">Contraseña Admin</label>
+              <input type="password" id="adminPass" required>
+            </div>
+            <button type="submit" class="btn" style="width: 100%;">Acceder al Panel</button>
+          </form>
+          <div class="login-hint">
+            <p>💡 Credenciales de prueba: <strong>admin</strong> / <strong>admin123</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div id="adminContent" style="display: none;">
+        <h1>Panel de Administrador</h1>
+        
+        <!-- Vista principal del admin -->
+        <div id="adminMainView">
+          <div class="admin-grid">
+            <div class="admin-card">
+              <div class="admin-icon icon-user"></div>
+              <h3>Gestionar Jugadores</h3>
+              <p>Agregar, editar o eliminar jugadores del sistema</p>
+              <button class="btn">Gestionar</button>
+            </div>
+
+            <div class="admin-card" onclick="showEventManager()">
+              <div class="admin-icon icon-event"></div>
+              <h3>Gestionar Eventos</h3>
+              <p>Crear nuevos eventos y administrar partidas</p>
+              <button class="btn">Gestionar</button>
+            </div>
+
+            <div class="admin-card">
+              <div class="admin-icon icon-chart"></div>
+              <h3>Estadísticas</h3>
+              <p>Ver reportes y estadísticas generales</p>
+              <button class="btn">Ver Stats</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gestor de eventos -->
+        <div id="eventManager" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 style="color: var(--valorant-red); margin: 0;">Gestor de Eventos</h2>
+            <button class="btn" onclick="showAdminMain()" style="background: var(--bg-dark);">← Volver al Panel</button>
+          </div>
+          
+          <div class="admin-grid" style="margin-bottom: 2rem;">
+            <div class="admin-card" onclick="showEventCreator()">
+              <div class="admin-icon">➕</div>
+              <h3>Crear Nuevo Evento</h3>
+              <p>Configurar un nuevo torneo o evento</p>
+              <button class="btn">Crear</button>
+            </div>
+            
+            <div class="admin-card" onclick="showEventList()">
+              <div class="admin-icon">📋</div>
+              <h3>Eventos Existentes</h3>
+              <p>Ver y gestionar eventos creados</p>
+              <button class="btn">Ver Lista</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulario para crear eventos (Paso a paso) -->
+        <div id="eventCreatorForm" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 style="color: var(--valorant-red); margin: 0;">Crear Nuevo Evento</h2>
+            <button class="btn" onclick="hideEventCreator()" style="background: var(--bg-dark);">← Cancelar</button>
+          </div>
+
+          <!-- Paso 1: Información básica -->
+          <div id="eventStep1" class="form-container">
+            <h3 style="text-align: center; margin-bottom: 2rem;">📝 Paso 1: Información del Evento</h3>
+            <div class="form-group">
+              <label for="eventName">Nombre del Evento</label>
+              <input type="text" id="eventName" placeholder="Ej: Champions League Finals" required>
+            </div>
+            <div class="form-group">
+              <label for="eventTypeSelect">Tipo de Evento</label>
+              <select id="eventTypeSelect" required>
+                <option value="">Seleccionar tipo</option>
+                <option value="Torneo">Torneo</option>
+                <option value="10 Mans">10 Mans</option>
+                <option value="1v1">1v1</option>
+                <option value="Team">Team</option>
+                <option value="Clasificatorio">Clasificatorio</option>
+                <option value="Especial">Especial</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="eventDate">Fecha del Evento</label>
+              <input type="text" id="eventDate" placeholder="Ej: 15 Diciembre 2024 - 20:00 GMT" required>
+            </div>
+            <div class="form-group">
+              <label for="eventDescription">Descripción</label>
+              <textarea id="eventDescription" rows="3" placeholder="Descripción del evento..." required></textarea>
+            </div>
+            <button type="button" class="btn" onclick="goToStep2()" style="width: 100%;">Siguiente: Configurar Formato →</button>
+          </div>
+
+          <!-- Paso 2: Configuración del torneo -->
+          <div id="eventStep2" class="form-container" style="display: none;">
+            <h3 style="text-align: center; margin-bottom: 2rem;">⚙️ Paso 2: Formato del Torneo</h3>
+            <div class="form-group">
+              <label for="numTeams">Número de Equipos/Participantes</label>
+              <select id="numTeams" required onchange="updateTeamInputs()">
+                <option value="">Seleccionar cantidad</option>
+                <option value="2">2 Equipos</option>
+                <option value="4">4 Equipos</option>
+                <option value="8">8 Equipos</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="playersPerTeam">Jugadores por Equipo</label>
+              <select id="playersPerTeam" required onchange="updateTeamInputs()">
+                <option value="">Seleccionar cantidad</option>
+                <option value="1">1 Jugador (1v1)</option>
+                <option value="2">2 Jugadores</option>
+                <option value="3">3 Jugadores</option>
+                <option value="4">4 Jugadores</option>
+                <option value="5">5 Jugadores</option>
+              </select>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+              <button type="button" class="btn" onclick="goToStep1()" style="flex: 1; background: var(--bg-dark);">← Anterior</button>
+              <button type="button" class="btn" onclick="goToStep3()" style="flex: 1;">Siguiente: Equipos →</button>
+            </div>
+          </div>
+
+          <!-- Paso 3: Nombres de equipos -->
+          <div id="eventStep3" class="form-container" style="display: none;">
+            <h3 style="text-align: center; margin-bottom: 2rem;">👥 Paso 3: Nombres de Equipos</h3>
+            <div id="teamNamesContainer">
+              <!-- Se genera dinámicamente -->
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+              <button type="button" class="btn" onclick="goToStep2()" style="flex: 1; background: var(--bg-dark);">← Anterior</button>
+              <button type="button" class="btn" onclick="createEventFinal()" style="flex: 1;">✅ Crear Evento</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lista de eventos existentes -->
+        <div id="eventListView" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 style="color: var(--valorant-red); margin: 0;">Eventos Existentes</h2>
+            <button class="btn" onclick="showEventManager()" style="background: var(--bg-dark);">← Volver</button>
+          </div>
+          
+          <div id="existingEventsList">
+            <!-- Lista de eventos se genera dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Vista de gestión de partidas de un evento específico -->
+        <div id="matchManagementView" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 style="color: var(--valorant-red); margin: 0;" id="matchManagementTitle">Gestionar Partidas</h2>
+            <button class="btn" onclick="showEventList()" style="background: var(--bg-dark);">← Volver a Eventos</button>
+          </div>
+          
+          <div id="matchManagementContent">
+            <!-- Contenido de gestión de partidas -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para detalles del evento -->
+  <div id="eventModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalEventTitle">Detalles del Evento</h2>
+        <span class="close" onclick="closeEventModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="event-details-container">
+          <div class="event-info">
+            <h3>Información del Evento</h3>
+            <div id="modalEventInfo"></div>
+          </div>
+          
+          <div class="bracket-section">
+            <h3>Configurar Bracket</h3>
+            <div class="bracket-config">
+              <div class="form-group">
+                <label for="bracketTeams">Número de Equipos</label>
+                <select id="bracketTeams" onchange="updateBracket()">
+                  <option value="2">2 Equipos</option>
+                  <option value="4">4 Equipos</option>
+                  <option value="8">8 Equipos</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="teamSize">Jugadores por Equipo</label>
+                <select id="teamSize" onchange="updateBracket()">
+                  <option value="1">1 Jugador</option>
+                  <option value="2">2 Jugadores</option>
+                  <option value="3">3 Jugadores</option>
+                  <option value="4">4 Jugadores</option>
+                  <option value="5">5 Jugadores</option>
+                </select>
+              </div>
+            </div>
+            
+            <div id="bracketContainer">
+              <!-- Bracket se genera dinámicamente -->
+            </div>
+          </div>
+          
+          <div class="matches-section">
+            <h3>Registrar Partidas</h3>
+            <div id="matchesContainer">
+              <!-- Partidas se generan dinámicamente -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Navegación entre páginas
+    function showPage(pageId) {
+      // Ocultar todas las páginas
+      const pages = document.querySelectorAll('.page');
+      pages.forEach(page => page.classList.remove('active'));
+      
+      // Mostrar la página seleccionada
+      document.getElementById(pageId).classList.add('active');
+      
+      // Actualizar navegación activa
+      const navLinks = document.querySelectorAll('.nav-links a');
+      navLinks.forEach(link => link.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    // Login de administrador
+    function adminLogin(event) {
+      event.preventDefault();
+      const adminUser = document.getElementById('adminUser').value;
+      const adminPass = document.getElementById('adminPass').value;
+      
+      // Simulación de login admin (usuario: admin, contraseña: admin123)
+      if (adminUser === 'admin' && adminPass === 'admin123') {
+        document.getElementById('adminLoginForm').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+      } else {
+        alert('Credenciales incorrectas. Usa: admin / admin123');
+      }
+    }
+
+    // Variables globales para el sistema de eventos
+    let createdEvents = [];
+    let currentEventData = {};
+
+    // Navegación del panel de admin
+    function showAdminMain() {
+      document.getElementById('adminMainView').style.display = 'block';
+      document.getElementById('eventManager').style.display = 'none';
+      document.getElementById('eventCreatorForm').style.display = 'none';
+      document.getElementById('eventListView').style.display = 'none';
+      document.getElementById('matchManagementView').style.display = 'none';
+    }
+
+    function showEventManager() {
+      document.getElementById('adminMainView').style.display = 'none';
+      document.getElementById('eventManager').style.display = 'block';
+      document.getElementById('eventCreatorForm').style.display = 'none';
+      document.getElementById('eventListView').style.display = 'none';
+      document.getElementById('matchManagementView').style.display = 'none';
+    }
+
+    function showEventCreator() {
+      document.getElementById('eventManager').style.display = 'none';
+      document.getElementById('eventCreatorForm').style.display = 'block';
+      document.getElementById('eventStep1').style.display = 'block';
+      document.getElementById('eventStep2').style.display = 'none';
+      document.getElementById('eventStep3').style.display = 'none';
+      currentEventData = {};
+    }
+
+    function hideEventCreator() {
+      document.getElementById('eventCreatorForm').style.display = 'none';
+      document.getElementById('eventManager').style.display = 'block';
+      // Limpiar formularios
+      document.getElementById('eventName').value = '';
+      document.getElementById('eventTypeSelect').value = '';
+      document.getElementById('eventDate').value = '';
+      document.getElementById('eventDescription').value = '';
+    }
+
+    function showEventList() {
+      document.getElementById('eventManager').style.display = 'none';
+      document.getElementById('eventListView').style.display = 'block';
+      loadEventList();
+    }
+
+    // Navegación entre pasos del creador de eventos
+    function goToStep1() {
+      document.getElementById('eventStep1').style.display = 'block';
+      document.getElementById('eventStep2').style.display = 'none';
+      document.getElementById('eventStep3').style.display = 'none';
+    }
+
+    function goToStep2() {
+      // Validar paso 1
+      const name = document.getElementById('eventName').value;
+      const type = document.getElementById('eventTypeSelect').value;
+      const date = document.getElementById('eventDate').value;
+      const description = document.getElementById('eventDescription').value;
+
+      if (!name || !type || !date || !description) {
+        alert('Por favor completa todos los campos antes de continuar.');
+        return;
+      }
+
+      // Guardar datos del paso 1
+      currentEventData.name = name;
+      currentEventData.type = type;
+      currentEventData.date = date;
+      currentEventData.description = description;
+
+      document.getElementById('eventStep1').style.display = 'none';
+      document.getElementById('eventStep2').style.display = 'block';
+      document.getElementById('eventStep3').style.display = 'none';
+    }
+
+    function goToStep3() {
+      // Validar paso 2
+      const numTeams = document.getElementById('numTeams').value;
+      const playersPerTeam = document.getElementById('playersPerTeam').value;
+
+      if (!numTeams || !playersPerTeam) {
+        alert('Por favor selecciona el número de equipos y jugadores por equipo.');
+        return;
+      }
+
+      // Guardar datos del paso 2
+      currentEventData.numTeams = parseInt(numTeams);
+      currentEventData.playersPerTeam = parseInt(playersPerTeam);
+
+      // Generar inputs para nombres de equipos
+      generateTeamNameInputs();
+
+      document.getElementById('eventStep1').style.display = 'none';
+      document.getElementById('eventStep2').style.display = 'none';
+      document.getElementById('eventStep3').style.display = 'block';
+    }
+
+    function updateTeamInputs() {
+      // Esta función se puede usar para actualizaciones en tiempo real si es necesario
+    }
+
+    function generateTeamNameInputs() {
+      const container = document.getElementById('teamNamesContainer');
+      container.innerHTML = '';
+
+      for (let i = 0; i < currentEventData.numTeams; i++) {
+        const teamInput = document.createElement('div');
+        teamInput.className = 'form-group';
+        teamInput.innerHTML = `
+          <label for="teamName${i}">Nombre del Equipo ${i + 1}</label>
+          <input type="text" id="teamName${i}" class="team-name-input" placeholder="Ej: Team Phoenix" required>
+        `;
+        container.appendChild(teamInput);
+      }
+    }
+
+    function createEventFinal() {
+      // Recopilar nombres de equipos
+      const teamNames = [];
+      for (let i = 0; i < currentEventData.numTeams; i++) {
+        const teamName = document.getElementById(`teamName${i}`).value;
+        if (!teamName) {
+          alert(`Por favor ingresa el nombre del Equipo ${i + 1}.`);
+          return;
+        }
+        teamNames.push(teamName);
+      }
+
+      // Completar datos del evento
+      currentEventData.teams = teamNames;
+      currentEventData.id = Date.now(); // ID único
+      currentEventData.matches = generateMatches(currentEventData.numTeams, teamNames);
+      currentEventData.status = 'pending';
+      currentEventData.winner = 'Por determinar';
+
+      // Guardar evento
+      createdEvents.push({...currentEventData});
+
+      // Crear tarjeta en la sección de eventos públicos
+      createEventCard(currentEventData);
+
+      // Mostrar confirmación
+      alert(`¡Evento "${currentEventData.name}" creado exitosamente!\n\nEquipos: ${teamNames.join(', ')}\nPartidas generadas: ${currentEventData.matches.length}`);
+
+      // Volver al gestor de eventos
+      hideEventCreator();
+    }
+
+    function generateMatches(numTeams, teamNames) {
+      const matches = [];
+      let matchId = 1;
+
+      // Generar partidas de eliminación directa
+      const rounds = Math.log2(numTeams);
+      let currentRoundTeams = [...teamNames];
+
+      for (let round = 0; round < rounds; round++) {
+        const roundMatches = [];
+        const nextRoundTeams = [];
+
+        for (let i = 0; i < currentRoundTeams.length; i += 2) {
+          const match = {
+            id: matchId++,
+            round: round + 1,
+            team1: currentRoundTeams[i],
+            team2: currentRoundTeams[i + 1],
+            winner: null,
+            completed: false,
+            stats: null
+          };
+          roundMatches.push(match);
+          matches.push(match);
+          nextRoundTeams.push(`Ganador Partida ${match.id}`);
+        }
+
+        currentRoundTeams = nextRoundTeams;
+      }
+
+      return matches;
+    }
+
+    function createEventCard(eventData) {
+      const eventsGrid = document.querySelector('.events-grid');
+      const newEventCard = document.createElement('div');
+      newEventCard.className = 'event-card';
+      newEventCard.innerHTML = `
+        <div class="event-type">${eventData.type}</div>
+        <h3 class="event-title">${eventData.name}</h3>
+        <div class="event-date">📅 ${eventData.date}</div>
+        <div class="event-winner">🏆 Ganador: ${eventData.winner}</div>
+        <p>${eventData.description}</p>
+        <button class="btn" onclick="openEventModal('${eventData.id}', '${eventData.name}', '${eventData.type}', '${eventData.date}', '${eventData.winner}', '${eventData.description}')">Ver Detalles</button>
+      `;
+      
+      eventsGrid.appendChild(newEventCard);
+    }
+
+    function loadEventList() {
+      const container = document.getElementById('existingEventsList');
+      container.innerHTML = '';
+
+      if (createdEvents.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+            <h3>No hay eventos creados</h3>
+            <p>Crea tu primer evento para comenzar a gestionar partidas.</p>
+            <button class="btn" onclick="showEventCreator()" style="margin-top: 1rem;">Crear Primer Evento</button>
+          </div>
+        `;
+        return;
+      }
+
+      createdEvents.forEach(event => {
+        const eventItem = document.createElement('div');
+        eventItem.className = 'event-list-item';
+        
+        const completedMatches = event.matches.filter(m => m.completed).length;
+        const totalMatches = event.matches.length;
+        
+        eventItem.innerHTML = `
+          <div class="event-list-info">
+            <h4>${event.name}</h4>
+            <p><strong>Tipo:</strong> ${event.type} | <strong>Fecha:</strong> ${event.date}</p>
+            <p><strong>Equipos:</strong> ${event.teams.join(', ')}</p>
+            <p><strong>Progreso:</strong> ${completedMatches}/${totalMatches} partidas completadas</p>
+          </div>
+          <div class="event-list-actions">
+            <button class="btn btn-small" onclick="manageEventMatches(${event.id})">Gestionar Partidas</button>
+            <button class="btn btn-small" onclick="deleteEvent(${event.id})" style="background: var(--bg-dark);">Eliminar</button>
+          </div>
+        `;
+        
+        container.appendChild(eventItem);
+      });
+    }
+
+    function manageEventMatches(eventId) {
+      const event = createdEvents.find(e => e.id === eventId);
+      if (!event) return;
+
+      document.getElementById('eventListView').style.display = 'none';
+      document.getElementById('matchManagementView').style.display = 'block';
+      document.getElementById('matchManagementTitle').textContent = `Gestionar Partidas - ${event.name}`;
+      
+      loadMatchManagement(event);
+    }
+
+    function loadMatchManagement(event) {
+      const container = document.getElementById('matchManagementContent');
+      container.innerHTML = '';
+
+      // Información del evento
+      const eventInfo = document.createElement('div');
+      eventInfo.className = 'match-card';
+      eventInfo.innerHTML = `
+        <h3 style="color: var(--valorant-red); margin-bottom: 1rem;">📋 Información del Evento</h3>
+        <p><strong>Equipos:</strong> ${event.teams.join(', ')}</p>
+        <p><strong>Formato:</strong> ${event.numTeams} equipos, ${event.playersPerTeam} jugador(es) por equipo</p>
+        <p><strong>Total de partidas:</strong> ${event.matches.length}</p>
+      `;
+      container.appendChild(eventInfo);
+
+      // Lista de partidas
+      event.matches.forEach(match => {
+        const matchCard = document.createElement('div');
+        matchCard.className = `match-card ${match.completed ? 'completed' : 'pending'}`;
+        
+        matchCard.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h4>Ronda ${match.round} - Partida ${match.id}</h4>
+            <span class="match-status ${match.completed ? 'completed' : 'pending'}">
+              ${match.completed ? '✅ Completada' : '⏳ Pendiente'}
+            </span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <p><strong>${match.team1}</strong> vs <strong>${match.team2}</strong></p>
+              ${match.winner ? `<p style="color: var(--valorant-green);">🏆 Ganador: ${match.winner}</p>` : ''}
+            </div>
+            <div>
+              ${!match.completed ? 
+                `<button class="btn btn-small" onclick="addMatchStats(${event.id}, ${match.id})">Agregar Resultado</button>` :
+                `<button class="btn btn-small" onclick="viewMatchStats(${event.id}, ${match.id})" style="background: var(--valorant-green);">Ver Estadísticas</button>`
+              }
+            </div>
+          </div>
+        `;
+        
+        container.appendChild(matchCard);
+      });
+    }
+
+    function addMatchStats(eventId, matchId) {
+      const event = createdEvents.find(e => e.id === eventId);
+      const match = event.matches.find(m => m.id === matchId);
+      
+      // Aquí se abriría un modal o formulario para agregar las estadísticas
+      // Por simplicidad, usaremos un prompt básico
+      const winner = prompt(`¿Cuál equipo ganó?\n1. ${match.team1}\n2. ${match.team2}\n\nEscribe 1 o 2:`);
+      
+      if (winner === '1' || winner === '2') {
+        match.winner = winner === '1' ? match.team1 : match.team2;
+        match.completed = true;
+        match.stats = {
+          // Aquí se guardarían las estadísticas detalladas
+          // Por ahora solo marcamos como completada
+          timestamp: new Date().toISOString()
+        };
+        
+        alert(`¡Partida completada! Ganador: ${match.winner}`);
+        loadMatchManagement(event);
+      }
+    }
+
+    function viewMatchStats(eventId, matchId) {
+      const event = createdEvents.find(e => e.id === eventId);
+      const match = event.matches.find(m => m.id === matchId);
+      
+      alert(`Estadísticas de la Partida ${matchId}:\n\n${match.team1} vs ${match.team2}\nGanador: ${match.winner}\nCompletada: ${new Date(match.stats.timestamp).toLocaleString()}`);
+    }
+
+    function deleteEvent(eventId) {
+      if (confirm('¿Estás seguro de que quieres eliminar este evento? Esta acción no se puede deshacer.')) {
+        createdEvents = createdEvents.filter(e => e.id !== eventId);
+        loadEventList();
+        alert('Evento eliminado exitosamente.');
+      }
+    }
+
+    // Abrir modal de detalles del evento
+    function openEventModal(eventId, title, type, date, winner, description) {
+      document.getElementById('modalEventTitle').textContent = title;
+      document.getElementById('modalEventInfo').innerHTML = `
+        <p><strong>Tipo:</strong> ${type}</p>
+        <p><strong>Fecha:</strong> ${date}</p>
+        <p><strong>Ganador:</strong> ${winner}</p>
+        <p><strong>Descripción:</strong> ${description}</p>
+      `;
+      
+      document.getElementById('eventModal').style.display = 'block';
+      updateBracket();
+    }
+
+    // Cerrar modal
+    function closeEventModal() {
+      document.getElementById('eventModal').style.display = 'none';
+    }
+
+    // Actualizar bracket
+    function updateBracket() {
+      const numTeams = parseInt(document.getElementById('bracketTeams').value);
+      const teamSize = parseInt(document.getElementById('teamSize').value);
+      
+      generateBracket(numTeams);
+      generateMatches(numTeams, teamSize);
+    }
+
+    // Generar bracket visual
+    function generateBracket(numTeams) {
+      const bracketContainer = document.getElementById('bracketContainer');
+      bracketContainer.innerHTML = '';
+      
+      const rounds = Math.log2(numTeams);
+      
+      for (let round = 0; round < rounds; round++) {
+        const roundDiv = document.createElement('div');
+        roundDiv.className = 'bracket-round';
+        
+        const matchesInRound = numTeams / Math.pow(2, round + 1);
+        
+        for (let match = 0; match < matchesInRound; match++) {
+          const matchDiv = document.createElement('div');
+          matchDiv.className = 'bracket-match';
+          matchDiv.innerHTML = `
+            <h4>Ronda ${round + 1} - Partida ${match + 1}</h4>
+            <div class="bracket-team">Equipo A</div>
+            <div class="bracket-team">Equipo B</div>
+          `;
+          roundDiv.appendChild(matchDiv);
+        }
+        
+        bracketContainer.appendChild(roundDiv);
+      }
+    }
+
+    // Generar formularios de partidas
+    function generateMatches(numTeams, teamSize) {
+      const matchesContainer = document.getElementById('matchesContainer');
+      matchesContainer.innerHTML = '';
+      
+      const totalMatches = numTeams - 1; // Total de partidas en eliminación directa
+      
+      for (let i = 0; i < totalMatches; i++) {
+        const matchForm = document.createElement('div');
+        matchForm.className = 'match-form';
+        
+        let matchHTML = `
+          <div class="match-header">
+            <div class="match-title">Partida ${i + 1}</div>
+            <button class="btn" onclick="saveMatchData(${i})" style="padding: 0.5rem 1rem;">Guardar Partida</button>
+          </div>
+          <div class="teams-container">
+        `;
+        
+        // Generar formularios para 2 equipos
+        for (let team = 0; team < 2; team++) {
+          matchHTML += `
+            <div class="team-section">
+              <div class="team-name">Equipo ${team === 0 ? 'A' : 'B'}</div>
+              <div class="stats-header">
+                <div>K</div><div>D</div><div>A</div><div>ACS</div><div>FB</div><div>HS%</div>
+              </div>
+          `;
+          
+          // Generar inputs para cada jugador
+          for (let player = 0; player < teamSize; player++) {
+            matchHTML += `
+              <input type="text" class="player-name-input" placeholder="Nombre Jugador ${player + 1}" id="match${i}_team${team}_player${player}_name">
+              <div class="player-stats">
+                <input type="number" placeholder="0" id="match${i}_team${team}_player${player}_kills">
+                <input type="number" placeholder="0" id="match${i}_team${team}_player${player}_deaths">
+                <input type="number" placeholder="0" id="match${i}_team${team}_player${player}_assists">
+                <input type="number" placeholder="0" id="match${i}_team${team}_player${player}_acs">
+                <input type="number" placeholder="0" id="match${i}_team${team}_player${player}_fb">
+                <input type="number" placeholder="0" step="0.1" id="match${i}_team${team}_player${player}_hs">
+              </div>
+            `;
+          }
+          
+          matchHTML += '</div>';
+        }
+        
+        matchHTML += '</div>';
+        matchForm.innerHTML = matchHTML;
+        matchesContainer.appendChild(matchForm);
+      }
+    }
+
+    // Guardar datos de partida
+    function saveMatchData(matchIndex) {
+      const numTeams = parseInt(document.getElementById('bracketTeams').value);
+      const teamSize = parseInt(document.getElementById('teamSize').value);
+      
+      let matchData = {
+        match: matchIndex + 1,
+        teams: []
+      };
+      
+      // Recopilar datos de ambos equipos
+      for (let team = 0; team < 2; team++) {
+        let teamData = {
+          teamName: `Equipo ${team === 0 ? 'A' : 'B'}`,
+          players: []
+        };
+        
+        for (let player = 0; player < teamSize; player++) {
+          const playerData = {
+            name: document.getElementById(`match${matchIndex}_team${team}_player${player}_name`).value,
+            kills: document.getElementById(`match${matchIndex}_team${team}_player${player}_kills`).value,
+            deaths: document.getElementById(`match${matchIndex}_team${team}_player${player}_deaths`).value,
+            assists: document.getElementById(`match${matchIndex}_team${team}_player${player}_assists`).value,
+            acs: document.getElementById(`match${matchIndex}_team${team}_player${player}_acs`).value,
+            firstBloods: document.getElementById(`match${matchIndex}_team${team}_player${player}_fb`).value,
+            headshots: document.getElementById(`match${matchIndex}_team${team}_player${player}_hs`).value
+          };
+          
+          teamData.players.push(playerData);
+        }
+        
+        matchData.teams.push(teamData);
+      }
+      
+      console.log('Datos de la partida guardados:', matchData);
+      alert(`¡Datos de la Partida ${matchIndex + 1} guardados exitosamente!`);
+    }
+
+    // Animación inicial de las filas de la tabla
+    document.addEventListener('DOMContentLoaded', function() {
+      const tableRows = document.querySelectorAll('tbody tr');
+      tableRows.forEach((row, index) => {
+        row.style.animationDelay = `${index * 0.1}s`;
+      });
+    });
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96f5112330ccefc4',t:'MTc1NTIyMjg5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
