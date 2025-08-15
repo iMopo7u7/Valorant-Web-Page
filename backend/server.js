@@ -1,18 +1,23 @@
-// server.js combinado y funcional
-const express = require("express");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const fs = require("fs");
-const path = require("path");
+// server.js en ES Modules
+import express from "express";
+import cors from "cors";
+import bodyParser from "body-parser";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// __dirname en ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public"))); // sirve archivos estáticos si tienes frontend en /public
+app.use(express.static(path.join(__dirname, "public"))); // si tienes frontend en /public
 
 // Archivo de datos
 const DATA_FILE = path.join(__dirname, "players.json");
@@ -29,22 +34,18 @@ function writePlayers(players) {
 }
 
 // --- Rutas públicas ---
-// Obtener leaderboard
 app.get("/leaderboard", (req, res) => {
   const players = readPlayers();
-  // Ordenar por KDA o como tengas definido
   players.sort((a, b) => (b.kda || 0) - (a.kda || 0));
   res.json(players);
 });
 
 // --- Rutas admin ---
-// Obtener todos los jugadores (para admin)
 app.get("/admin/players", (req, res) => {
   const players = readPlayers();
   res.json(players);
 });
 
-// Añadir jugador
 app.post("/admin/add-player", (req, res) => {
   const { name, kills, deaths, assists } = req.body;
   if (!name || kills == null || deaths == null || assists == null) {
@@ -66,7 +67,6 @@ app.post("/admin/add-player", (req, res) => {
   res.json({ success: true, player: newPlayer });
 });
 
-// Editar jugador
 app.put("/admin/edit-player/:id", (req, res) => {
   const { id } = req.params;
   const { name, kills, deaths, assists } = req.body;
@@ -84,7 +84,6 @@ app.put("/admin/edit-player/:id", (req, res) => {
   res.json({ success: true, player });
 });
 
-// Eliminar jugador
 app.delete("/admin/delete-player/:id", (req, res) => {
   const { id } = req.params;
   let players = readPlayers();
