@@ -427,6 +427,88 @@
       margin-bottom: 1.5rem;
     }
 
+    /* Estilos específicos para inputs en tabla de jugadores */
+    #playersTableBody .edit-name,
+    #playersTableBody .edit-tag {
+      width: 100%;
+      max-width: 120px;
+      padding: 0.4rem 0.6rem;
+      margin: 0;
+      font-size: 0.8rem;
+      border: 1px solid var(--border-secondary);
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    #playersTableBody .edit-tag {
+      max-width: 80px;
+    }
+
+    #playersTableBody .btn-update,
+    #playersTableBody .btn-delete {
+      padding: 0.3rem 0.6rem;
+      margin: 0.2rem;
+      font-size: 0.7rem;
+      border-radius: 4px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    #playersTableBody .btn-update {
+      background: linear-gradient(135deg, var(--success), #059669);
+      color: white;
+      border: none;
+    }
+
+    #playersTableBody .btn-delete {
+      background: linear-gradient(135deg, var(--error), #dc2626);
+      color: white;
+      border: none;
+    }
+
+    #playersTableBody .btn-update:hover {
+      background: linear-gradient(135deg, #059669, var(--success));
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    #playersTableBody .btn-delete:hover {
+      background: linear-gradient(135deg, #dc2626, var(--error));
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    /* Ajustar anchos de columnas en tabla de jugadores */
+    #players table {
+      table-layout: fixed;
+    }
+
+    #players th:nth-child(1),
+    #players td:nth-child(1) {
+      width: 140px;
+    }
+
+    #players th:nth-child(2),
+    #players td:nth-child(2) {
+      width: 100px;
+    }
+
+    #players th:nth-child(3),
+    #players th:nth-child(4),
+    #players th:nth-child(5),
+    #players th:nth-child(6),
+    #players td:nth-child(3),
+    #players td:nth-child(4),
+    #players td:nth-child(5),
+    #players td:nth-child(6) {
+      width: 80px;
+    }
+
+    #players th:nth-child(7),
+    #players td:nth-child(7) {
+      width: 160px;
+    }
+
     @media (max-width: 768px) {
       nav ul {
         flex-direction: column;
@@ -492,6 +574,52 @@
       .team-section th:not(:first-child):not(:nth-child(2)),
       .team-section td:not(:first-child):not(:nth-child(2)) {
         width: 40px;
+      }
+
+      /* Ajustes móviles para tabla de jugadores */
+      #playersTableBody .edit-name {
+        max-width: 90px;
+        font-size: 0.7rem;
+        padding: 0.3rem 0.4rem;
+      }
+
+      #playersTableBody .edit-tag {
+        max-width: 60px;
+        font-size: 0.7rem;
+        padding: 0.3rem 0.4rem;
+      }
+
+      #playersTableBody .btn-update,
+      #playersTableBody .btn-delete {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.6rem;
+        margin: 0.1rem;
+      }
+
+      #players th:nth-child(1),
+      #players td:nth-child(1) {
+        width: 100px;
+      }
+
+      #players th:nth-child(2),
+      #players td:nth-child(2) {
+        width: 70px;
+      }
+
+      #players th:nth-child(3),
+      #players th:nth-child(4),
+      #players th:nth-child(5),
+      #players th:nth-child(6),
+      #players td:nth-child(3),
+      #players td:nth-child(4),
+      #players td:nth-child(5),
+      #players td:nth-child(6) {
+        width: 50px;
+      }
+
+      #players th:nth-child(7),
+      #players td:nth-child(7) {
+        width: 120px;
       }
     }
   </style>
@@ -615,5 +743,5 @@
     });
   </script>
   <script src="admin.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96fc882835dea634',t:'MTc1NTMwMTE3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96fc8d7aa312a634',t:'MTc1NTMwMTM5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
