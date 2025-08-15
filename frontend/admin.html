@@ -2,21 +2,19 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>PANEL DE ADMINISTRADOR</title>
+  <title>Admin Panel</title>
   <style>
-    /* Minimal para organizar las tablas y formularios */
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; margin:0; padding:0; }
     header, nav, main { padding: 1rem; }
-    nav ul { list-style: none; display: flex; gap: 1rem; padding: 0; }
-    nav a { text-decoration: none; color: blue; }
-    section { margin-top: 2rem; }
-    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: center; }
-    select, input { padding: 0.3rem; width: 100%; }
-    .team-section { margin-top: 1rem; }
-    .player-row { display: flex; gap: 0.5rem; margin-bottom: 0.3rem; }
-    .player-row > * { flex: 1; }
-    button { padding: 0.5rem 1rem; margin-top: 1rem; }
+    nav ul { list-style: none; display:flex; gap:1rem; padding:0; }
+    section { margin-top:2rem; }
+    table { width:100%; border-collapse: collapse; margin-top:1rem; }
+    th, td { border:1px solid #ccc; padding:0.5rem; text-align:center; }
+    input, select, textarea, button { margin:0.25rem 0; padding:0.25rem; }
+    .team-section { margin-top:1rem; }
+    .player-row { display:flex; gap:0.5rem; margin-bottom:0.25rem; }
+    .player-row select, .player-row input { flex:1; }
+    .stats { display:flex; gap:1rem; margin-top:1rem; }
   </style>
 </head>
 <body>
@@ -38,8 +36,10 @@
     <!-- Dashboard -->
     <section id="dashboard">
       <h2>Dashboard / Resumen</h2>
-      <p>Total Jugadores: <span id="totalPlayers">0</span></p>
-      <p>Partidas Registradas: <span id="totalMatches">0</span></p>
+      <div class="stats">
+        <p>Total Jugadores: <span id="totalPlayers">0</span></p>
+        <p>Partidas Registradas: <span id="totalMatches">0</span></p>
+      </div>
     </section>
 
     <!-- Players -->
@@ -60,11 +60,12 @@
             <th>Kills</th>
             <th>Deaths</th>
             <th>Assists</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="playersTableBody">
           <tr>
-            <td colspan="6">No hay jugadores registrados</td>
+            <td colspan="7" style="text-align:center">No hay jugadores registrados</td>
           </tr>
         </tbody>
       </table>
@@ -79,27 +80,22 @@
     <!-- Matches -->
     <section id="matches">
       <h2>Añadir Partidas</h2>
-
+      <div class="team-section">
+        <h3>Equipo A</h3>
+        <div id="teamA"></div>
+      </div>
+      <div class="team-section">
+        <h3>Equipo B</h3>
+        <div id="teamB"></div>
+      </div>
       <label>Equipo Ganador:</label>
-      <select id="winnerTeam" required>
+      <select id="winnerTeam">
         <option value="">Seleccionar ganador</option>
         <option value="A">Equipo A</option>
         <option value="B">Equipo B</option>
       </select>
-
-      <!-- Team A -->
-      <div class="team-section">
-        <h3>Team A</h3>
-        <div id="teamAContainer"></div>
-      </div>
-
-      <!-- Team B -->
-      <div class="team-section">
-        <h3>Team B</h3>
-        <div id="teamBContainer"></div>
-      </div>
-
-      <button id="submitMatch">Registrar Partida</button>
+      <br>
+      <button id="submitMatchBtn">Registrar Partida</button>
     </section>
 
     <!-- Settings -->
