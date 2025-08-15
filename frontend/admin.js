@@ -100,12 +100,14 @@ function populateTeamSelectors() {
   teamA.innerHTML = "";
   teamB.innerHTML = "";
 
-  for (let i = 0; i < 5; i++) {
-    // Equipo A
-    const rowA = document.createElement("div");
-    rowA.className = "player-row";
-    rowA.innerHTML = `
-      <select class="player-select">${allPlayers.map(p => `<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join("")}</select>
+  const createRow = () => {
+    const row = document.createElement("div");
+    row.className = "player-row";
+    row.innerHTML = `
+      <select class="player-select">
+        <option value="">-- Selecciona jugador --</option>
+        ${allPlayers.map(p => `<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join("")}
+      </select>
       <input type="number" placeholder="Kills" class="kill" min="0">
       <input type="number" placeholder="Deaths" class="death" min="0">
       <input type="number" placeholder="Assists" class="assist" min="0">
@@ -113,14 +115,30 @@ function populateTeamSelectors() {
       <input type="number" placeholder="FirstBloods" class="fb" min="0">
       <input type="number" placeholder="HS%" class="hs" min="0" max="100">
     `;
-    teamA.appendChild(rowA);
+    return row;
+  };
 
-    // Equipo B
-    const rowB = document.createElement("div");
-    rowB.className = "player-row";
-    rowB.innerHTML = rowA.innerHTML;
-    teamB.appendChild(rowB);
+  for (let i = 0; i < 5; i++) {
+    teamA.appendChild(createRow());
+    teamB.appendChild(createRow());
   }
+
+  // Evitar duplicados en selects del mismo equipo
+  const updateSelectOptions = (team) => {
+    const selects = Array.from(team.querySelectorAll(".player-select"));
+    const selectedValues = selects.map(s => s.value).filter(v => v !== "");
+    selects.forEach(s => {
+      Array.from(s.options).forEach(opt => {
+        if (opt.value === "") return;
+        opt.disabled = selectedValues.includes(opt.value) && s.value !== opt.value;
+      });
+    });
+  };
+
+  [teamA, teamB].forEach(team => {
+    const selects = Array.from(team.querySelectorAll(".player-select"));
+    selects.forEach(s => s.addEventListener("change", () => updateSelectOptions(team)));
+  });
 }
 
 // --- Registrar partida ---
