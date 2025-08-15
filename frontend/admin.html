@@ -3,18 +3,428 @@
 <head>
   <meta charset="UTF-8">
   <title>Admin Panel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; margin:0; padding:0; }
-    header, nav, main { padding: 1rem; }
-    nav ul { list-style: none; display:flex; gap:1rem; padding:0; }
-    section { margin-top:2rem; }
-    table { width:100%; border-collapse: collapse; margin-top:1rem; }
-    th, td { border:1px solid #ccc; padding:0.5rem; text-align:center; }
-    input, select, textarea, button { margin:0.25rem 0; padding:0.25rem; }
-    .team-section { margin-top:1rem; }
-    .player-row { display:flex; gap:0.5rem; margin-bottom:0.25rem; }
-    .player-row select, .player-row input { flex:1; }
-    .stats { display:flex; gap:1rem; margin-top:1rem; }
+    :root {
+      --valorant-purple: #a855f7;
+      --valorant-purple-dark: #7c3aed;
+      --valorant-purple-light: #c084fc;
+      --valorant-purple-glow: rgba(168, 85, 247, 0.4);
+      --valorant-red: #ff4655;
+      --valorant-cyan: #00d4ff;
+      
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #141419;
+      --bg-tertiary: #1e1e26;
+      --bg-card: #18181f;
+      --bg-surface: #242430;
+      
+      --border-primary: #2d2d3d;
+      --border-secondary: #3d3d4d;
+      --border-accent: #4d4d5d;
+      
+      --text-primary: #ffffff;
+      --text-secondary: #d1d5db;
+      --text-muted: #9ca3af;
+      --text-accent: #c084fc;
+      
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #06b6d4;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body { 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #0a0a0a 100%);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 70, 85, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(0, 212, 255, 0.02) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
+      animation: pulse 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.8; }
+      100% { opacity: 1; }
+    }
+
+    header { 
+      background: rgba(26, 26, 26, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-primary);
+      padding: 1.5rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 1px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--valorant-purple-light);
+      text-align: center;
+      letter-spacing: -0.025em;
+      text-shadow: 0 0 20px var(--valorant-purple-glow);
+      background: linear-gradient(135deg, var(--valorant-purple), var(--valorant-purple-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    nav { 
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-primary);
+      padding: 0;
+      position: sticky;
+      top: 73px;
+      z-index: 999;
+    }
+
+    nav ul { 
+      list-style: none; 
+      display: flex; 
+      justify-content: center;
+      gap: 0;
+      padding: 0;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    nav li {
+      flex: 1;
+    }
+
+    nav a {
+      display: block;
+      padding: 1rem 1.5rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      border-bottom: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    nav a::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.15), transparent);
+      transition: left 0.5s ease;
+    }
+
+    nav a:hover,
+    nav a.active {
+      color: var(--valorant-purple-light);
+      background: rgba(168, 85, 247, 0.08);
+      border-bottom-color: var(--valorant-purple);
+      box-shadow: 0 0 15px var(--valorant-purple-glow);
+    }
+
+    nav a:hover::before {
+      left: 100%;
+    }
+
+    main { 
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    section { 
+      display: none;
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-primary);
+      padding: 2rem;
+      margin-top: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    section h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-secondary);
+      position: relative;
+    }
+
+    section h2::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 60px;
+      height: 2px;
+      background: var(--valorant-purple);
+      box-shadow: 0 0 10px var(--valorant-purple-glow);
+    }
+
+    section h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin-top: 1.5rem;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td { 
+      border: none;
+      padding: 1rem 0.75rem; 
+      text-align: center;
+      border-bottom: 1px solid var(--border-primary);
+    }
+
+    th {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    tbody tr {
+      transition: all 0.2s ease;
+    }
+
+    tbody tr:hover {
+      background: rgba(168, 85, 247, 0.08);
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    input, select, textarea, button { 
+      font-family: inherit;
+      font-size: 0.9rem;
+      margin: 0.5rem 0; 
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-secondary);
+      border-radius: 6px;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--valorant-purple);
+      box-shadow: 0 0 0 3px var(--valorant-purple-glow);
+      background: var(--bg-surface);
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    button {
+      background: linear-gradient(135deg, var(--valorant-purple), var(--valorant-purple-dark));
+      color: white;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 15px var(--valorant-purple-glow);
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, var(--valorant-purple-dark), var(--valorant-purple));
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px var(--valorant-purple-glow);
+    }
+
+    button:hover::before {
+      left: 100%;
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .team-section { 
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      border: 1px solid var(--border-secondary);
+    }
+
+    .player-row { 
+      display: flex; 
+      gap: 0.75rem; 
+      margin-bottom: 0.75rem;
+      align-items: center;
+    }
+
+    .player-row select, .player-row input { 
+      flex: 1;
+      margin: 0;
+    }
+
+    .stats { 
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem; 
+      margin-top: 1.5rem;
+    }
+
+    .stats p {
+      background: var(--bg-secondary);
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-secondary);
+      text-align: center;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stats p::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--valorant-purple);
+      box-shadow: 0 0 10px var(--valorant-purple-glow);
+    }
+
+    .stats p:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(168, 85, 247, 0.3);
+      border-color: var(--valorant-purple);
+    }
+
+    .stats span {
+      display: block;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--valorant-purple-light);
+      margin-top: 0.5rem;
+      text-shadow: 0 0 10px var(--valorant-purple-glow);
+    }
+
+    form {
+      background: var(--bg-secondary);
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      nav ul {
+        flex-direction: column;
+      }
+      
+      nav a {
+        border-bottom: none;
+        border-left: 3px solid transparent;
+      }
+      
+      nav a:hover,
+      nav a.active {
+        border-left-color: var(--valorant-purple);
+        border-bottom: none;
+      }
+      
+      main {
+        padding: 1rem;
+      }
+      
+      section {
+        padding: 1.5rem;
+      }
+      
+      .stats {
+        grid-template-columns: 1fr;
+      }
+      
+      .player-row {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      th, td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -105,6 +515,36 @@
     </section>
   </main>
 
+  <script>
+    // Navigation functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const navLinks = document.querySelectorAll('nav a');
+      const sections = document.querySelectorAll('section');
+
+      // Show dashboard by default
+      document.getElementById('dashboard').classList.add('active');
+      document.querySelector('nav a[href="#dashboard"]').classList.add('active');
+
+      navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          // Remove active class from all links
+          navLinks.forEach(l => l.classList.remove('active'));
+          
+          // Add active class to clicked link
+          this.classList.add('active');
+          
+          // Hide all sections
+          sections.forEach(section => section.classList.remove('active'));
+          
+          // Show target section
+          const targetSection = this.getAttribute('href').substring(1);
+          document.getElementById(targetSection).classList.add('active');
+        });
+      });
+    });
+  </script>
   <script src="admin.js"></script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96fc791075d6c478',t:'MTc1NTMwMDU1NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
