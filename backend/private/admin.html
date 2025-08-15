@@ -1329,12 +1329,29 @@
   
   <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const API_URL = 'http://localhost:3000';
-  
+  const API_URL = 'http://localhost:3000/api/admin/players'; // Cambia a tu URL de Render si no es localhost
+
   // Elementos del DOM
   const navLinks = document.querySelectorAll('.nav-link');
   const sections = document.querySelectorAll('.page-section');
-  
+
+  // Verificar sesión al cargar la página
+  async function checkSession() {
+    try {
+      const res = await fetch(API_URL, { method: 'GET', credentials: 'include' });
+      if (res.status === 401) {
+        window.location.href = '/login.html';
+      } else {
+        loadPlayersList();
+      }
+    } catch {
+      alert('No se pudo verificar la sesión. Redirigiendo al login.');
+      window.location.href = '/login.html';
+    }
+  }
+
+  checkSession();
+
   // Navegación entre secciones
   navLinks.forEach(link => {
     link.addEventListener('click', function(e) {
@@ -1345,51 +1362,28 @@ document.addEventListener('DOMContentLoaded', function() {
       const targetSection = this.getAttribute('data-section');
       document.getElementById(targetSection).classList.add('active');
       
-      // Cargar datos dinámicos
-      if (targetSection === 'dashboard') loadDashboardStats();
       if (targetSection === 'players') loadPlayersList();
     });
   });
-
-  // Cargar estadísticas del dashboard
-  async function loadDashboardStats() {
-    try {
-      const response = await fetch(`${API_URL}/api/dashboard/stats`);
-      const data = await response.json();
-      
-      // Actualizar UI
-      document.querySelector('.stat-card:nth-child(1) .stat-number').textContent = data.totalPlayers;
-      document.querySelector('.stat-card:nth-child(2) .stat-number').textContent = data.totalMatches;
-      document.querySelector('.stat-card:nth-child(3) .stat-number').textContent = data.activeEvents;
-      document.querySelector('.stat-card:nth-child(4) .stat-number').textContent = data.completedTournaments;
-    } catch (err) {
-      console.error('Error cargando dashboard:', err);
-      // Mostrar valores por defecto en caso de error
-      document.querySelector('.stat-card:nth-child(1) .stat-number').textContent = '247';
-      document.querySelector('.stat-card:nth-child(2) .stat-number').textContent = '1,432';
-    }
-  }
 
   // Registrar nuevo jugador
   document.querySelector('#players .btn-success')?.addEventListener('click', async function() {
     const nameInput = document.querySelector('#players input[placeholder="Ej: ShadowStrike"]');
     const tagInput = document.querySelector('#players input[placeholder="Ej: SHDW#1337"]');
-    
+
     if (!nameInput.value || !tagInput.value) {
       alert('Nombre y tag son requeridos');
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/players`, {
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          name: nameInput.value, 
-          tag: tagInput.value 
-        })
+        credentials: 'include',
+        body: JSON.stringify({ name: nameInput.value, tag: tagInput.value })
       });
-      
+
       if (response.ok) {
         alert('Jugador registrado con éxito');
         nameInput.value = '';
@@ -1407,12 +1401,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // Cargar lista de jugadores
   async function loadPlayersList() {
     try {
-      const response = await fetch(`${API_URL}/players`);
+      const response = await fetch(API_URL, { method: 'GET', credentials: 'include' });
       const players = await response.json();
-      
+
       const tbody = document.querySelector('#players .data-table tbody');
       tbody.innerHTML = '';
-      
+
       players.forEach((player, index) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -1421,72 +1415,55 @@ document.addEventListener('DOMContentLoaded', function() {
           <td>${player.tag}</td>
           <td>${player.matchesPlayed || 0}</td>
           <td>
-            <button class="btn btn-small btn-secondary" onclick="editPlayer('${player.name}', '${player.tag}')">Editar</button>
-            <button class="btn btn-small btn-warning" onclick="viewProfile('${player.name}', '${player.tag}')">Ver Perfil</button>
-            <button class="btn btn-small btn-danger" onclick="deletePlayer('${player.name}', '${player.tag}')">Eliminar</button>
+            <button class="btn btn-small btn-secondary" onclick="editPlayer('${player.id}', '${player.name}', '${player.tag}')">Editar</button>
+            <button class="btn btn-small btn-warning" onclick="viewProfile('${player.id}', '${player.name}', '${player.tag}')">Ver Perfil</button>
+            <button class="btn btn-small btn-danger" onclick="deletePlayer('${player.id}')">Eliminar</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
     } catch (err) {
       console.error('Error cargando jugadores:', err);
-      // Mostrar datos de ejemplo si hay error
-      const tbody = document.querySelector('#players .data-table tbody');
-      tbody.innerHTML = `
-        <tr>
-          <td>#001</td>
-          <td>ShadowStrike</td>
-          <td>SHDW#1337</td>
-          <td>45</td>
-          <td>
-            <button class="btn btn-small btn-secondary">Editar</button>
-            <button class="btn btn-small btn-warning">Ver Perfil</button>
-            <button class="btn btn-small btn-danger">Eliminar</button>
-          </td>
-        </tr>
-      `;
+      alert('No se pudo cargar la lista de jugadores');
     }
   }
 
   // Inicialización
-  if (document.getElementById('dashboard').classList.contains('active')) {
-    loadDashboardStats();
-  }
   if (document.getElementById('players').classList.contains('active')) {
     loadPlayersList();
   }
 });
 
-// Funciones globales para los botones
-async function deletePlayer(name, tag) {
-  if (!confirm(`¿Eliminar a ${name} (${tag})? Esta acción no se puede deshacer.`)) return;
-  
+// Funciones globales
+async function deletePlayer(id) {
+  if (!confirm('¿Eliminar este jugador? Esta acción no se puede deshacer.')) return;
+
   try {
-    const response = await fetch(`http://localhost:3000/players/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`, {
+    const response = await fetch(`http://localhost:3000/api/admin/players/${id}`, {
       method: 'DELETE',
       credentials: 'include'
     });
-    
+
     if (response.ok) {
       alert('Jugador eliminado');
-      document.querySelector('[data-section="players"]').click(); // Recargar lista
+      document.querySelector('[data-section="players"]').click(); // recargar lista
     } else {
       const error = await response.json();
-      throw new Error(error.error || 'Error al eliminar');
+      throw new Error(error.error || 'Error al eliminar jugador');
     }
   } catch (err) {
     alert('Error: ' + err.message);
   }
 }
 
-function editPlayer(name, tag) {
+function editPlayer(id, name, tag) {
   alert(`Editar jugador: ${name} (${tag})\n\n(Esta función está en desarrollo)`);
 }
 
-function viewProfile(name, tag) {
+function viewProfile(id, name, tag) {
   alert(`Perfil de: ${name} (${tag})\n\n(Esta función está en desarrollo)`);
 }
-  </script>
+</script>
   
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96f7880742a5525f',t:'MTc1NTI0ODczOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
