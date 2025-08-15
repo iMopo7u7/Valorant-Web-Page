@@ -210,6 +210,17 @@ app.get("/matches/:name/:tag", async (req, res) => {
   }
 });
 
+// Contador de partidas
+app.get("/matches-count", async (req, res) => {
+  try {
+    const count = await matchesCollection.countDocuments();
+    res.json({ count });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener total de partidas" });
+  }
+});
+
 // Iniciar servidor
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
