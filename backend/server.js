@@ -24,7 +24,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || "clave-super-secreta",
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // HTTPS -> true
+  cookie: { secure: false } // Cambiar a true si usas HTTPS
 }));
 
 // --- LOGIN ADMIN ---
@@ -209,11 +209,11 @@ app.get("/matches/:name/:tag", async (req,res)=>{
 
 // --- SERVIR ADMIN PROTEGIDO ---
 app.get("/admin.html", authMiddleware, (req,res)=>{
-  res.sendFile(path.join(__dirname,"public","admin.html"));
+  res.sendFile(path.join(__dirname,"private","admin.html"));
 });
 
-// --- SERVIR DEMÁS ARCHIVOS ESTÁTICOS ---
-app.use(express.static(path.join(__dirname,"public")));
+// --- SERVIR FRONTEND PÚBLICO ---
+app.use(express.static(path.join(__dirname,"../frontend")));
 
 // --- INICIO ---
 connectDB().then(()=>{
