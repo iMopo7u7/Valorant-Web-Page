@@ -19,6 +19,7 @@ document.getElementById("addPlayerForm").addEventListener("submit", async (e) =>
     alert(data.message);
     e.target.reset();
     loadPlayers();
+    loadTotalMatches();
   } catch (err) {
     alert(err.message);
   }
@@ -30,13 +31,13 @@ async function loadPlayers() {
     const res = await fetch(`${API_URL}/players`);
     const players = await res.json();
 
-    // Tabla de jugadores
     const tbody = document.getElementById("playersTableBody");
     tbody.innerHTML = "";
+
     if (!players.length) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center">No hay jugadores registrados</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center">No hay jugadores registrados</td></tr>`;
     } else {
-      players.forEach(p => {
+      players.forEach((p, i) => {
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${p.name}</td>
@@ -45,14 +46,53 @@ async function loadPlayers() {
           <td>${p.totalKills || 0}</td>
           <td>${p.totalDeaths || 0}</td>
           <td>${p.totalAssists || 0}</td>
+          <td>
+            <button class="editBtn">Editar</button>
+            <button class="deleteBtn">Eliminar</button>
+          </td>
         `;
         tbody.appendChild(row);
+
+        // --- Editar jugador ---
+        row.querySelector(".editBtn").addEventListener("click", async () => {
+          const newName = prompt("Nuevo nombre:", p.name);
+          const newTag = prompt("Nuevo tag:", p.tag);
+          if (!newName || !newTag) return;
+
+          try {
+            const res = await fetch(`${API_URL}/players/${p._id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: newName, tag: newTag })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Error al actualizar jugador");
+            alert(data.message);
+            loadPlayers();
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+
+        // --- Eliminar jugador ---
+        row.querySelector(".deleteBtn").addEventListener("click", async () => {
+          if (!confirm(`¿Eliminar al jugador ${p.name}#${p.tag}?`)) return;
+          try {
+            const res = await fetch(`${API_URL}/players/${p._id}`, { method: "DELETE" });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Error al eliminar jugador");
+            alert(data.message);
+            loadPlayers();
+          } catch (err) {
+            alert(err.message);
+          }
+        });
       });
     }
 
     document.getElementById("totalPlayers").textContent = players.length;
 
-    // Cargar jugadores en selects de Team A y B
+    // --- Cargar jugadores en selects de Team A y B ---
     ["teamAContainer", "teamBContainer"].forEach(teamId => {
       const container = document.getElementById(teamId);
       container.innerHTML = "";
@@ -77,6 +117,17 @@ async function loadPlayers() {
 
   } catch (err) {
     console.error("Error cargando jugadores:", err);
+  }
+}
+
+// --- Total de partidas ---
+async function loadTotalMatches() {
+  try {
+    const res = await fetch(`${API_URL}/matches`);
+    const matches = await res.json();
+    document.getElementById("totalMatches").textContent = matches.length;
+  } catch (err) {
+    console.error("Error cargando partidas:", err);
   }
 }
 
@@ -116,7 +167,8 @@ document.getElementById("submitMatch").addEventListener("click", async () => {
     if (!res.ok) throw new Error(data.error || "Error al añadir partida");
 
     alert(data.message);
-    loadPlayers(); // recarga stats
+    loadPlayers();
+    loadTotalMatches();
   } catch (err) {
     alert(err.message);
   }
@@ -124,3 +176,4 @@ document.getElementById("submitMatch").addEventListener("click", async () => {
 
 // --- Inicializar ---
 loadPlayers();
+loadTotalMatches();
