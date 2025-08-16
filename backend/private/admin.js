@@ -4,7 +4,7 @@ const API_URL = "https://valorant-10-mans.onrender.com";
 let allPlayers = [];
 async function loadPlayers() {
   try {
-    const res = await fetch(`${API_URL}/players`);
+    const res = await fetch(`${API_URL}/players`, { credentials: 'include' });
     allPlayers = await res.json();
     updatePlayersTable();
     populateTeamSelectors();
@@ -16,7 +16,7 @@ async function loadPlayers() {
 
 // --- Añadir jugador ---
 document.getElementById("addPlayerForm").addEventListener("submit", async (e) => {
-  e.preventDefault(); // evita recargar la página
+  e.preventDefault();
   const name = document.getElementById("playerName").value.trim();
   const tag = document.getElementById("playerTag").value.trim();
   if (!name || !tag) return alert("Nombre y tag requeridos");
@@ -24,6 +24,7 @@ document.getElementById("addPlayerForm").addEventListener("submit", async (e) =>
   try {
     const res = await fetch(`${API_URL}/players`, {
       method: "POST",
+      credentials: 'include',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, tag })
     });
@@ -71,6 +72,7 @@ function updatePlayersTable() {
       try {
         const res = await fetch(`${API_URL}/players`, {
           method: "PUT",
+          credentials: 'include',
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ oldName: p.name, oldTag: p.tag, newName, newTag })
         });
@@ -89,6 +91,7 @@ function updatePlayersTable() {
       try {
         const res = await fetch(`${API_URL}/players`, {
           method: "DELETE",
+          credentials: 'include',
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: p.name, tag: p.tag })
         });
@@ -108,7 +111,7 @@ async function updateDashboard() {
   document.getElementById("totalPlayers").innerText = allPlayers.length;
 
   try {
-    const matchesRes = await fetch(`${API_URL}/matches-count`);
+    const matchesRes = await fetch(`${API_URL}/matches-count`, { credentials: 'include' });
     const matchesData = await matchesRes.json();
     document.getElementById("totalMatches").innerText = matchesData.count || 0;
   } catch {
@@ -175,7 +178,7 @@ document.getElementById("submitMatchBtn").addEventListener("click", async () => 
 
   for (const row of [...teamA, ...teamB]) {
     const select = row.querySelector(".player-select");
-    if (!select.value) continue; // ignora filas vacías
+    if (!select.value) continue;
     const [name, tag] = select.value.split("||");
     const kills = parseInt(row.querySelector(".kill").value) || 0;
     const deaths = parseInt(row.querySelector(".death").value) || 0;
@@ -192,6 +195,7 @@ document.getElementById("submitMatchBtn").addEventListener("click", async () => 
   try {
     const res = await fetch(`${API_URL}/matches`, {
       method: "POST",
+      credentials: 'include',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ match, winnerTeam })
     });
