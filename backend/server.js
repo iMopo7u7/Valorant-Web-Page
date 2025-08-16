@@ -56,8 +56,8 @@ app.use(express.static(path.join(__dirname, "../frontend")));
 app.use("/private", express.static(path.join(__dirname, "private")));
 
 // --- Login / Admin ---
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "1234";
+const ADMIN_USER = process.env.ADMIN_USER || "admin";
+const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
 
 app.get("/login.html", (req, res) => {
   res.sendFile(path.join(__dirname, "private/login.html"));
