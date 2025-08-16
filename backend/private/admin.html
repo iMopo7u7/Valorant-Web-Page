@@ -665,6 +665,7 @@
       <li><a href="#events">Eventos / Torneos</a></li>
       <li><a href="#matches">Añadir Partidas</a></li>
       <li><a href="#settings">Configuración</a></li>
+      <li><a href="#" id="logoutBtn">Cerrar Sesión</a></li>
     </ul>
   </nav>
 
@@ -742,35 +743,63 @@
   </main>
 
   <script>
-    // Navigation functionality
-    document.addEventListener('DOMContentLoaded', function() {
-      const navLinks = document.querySelectorAll('nav a');
-      const sections = document.querySelectorAll('section');
-
-      // Show dashboard by default
-      document.getElementById('dashboard').classList.add('active');
-      document.querySelector('nav a[href="#dashboard"]').classList.add('active');
-
-      navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          
-          // Remove active class from all links
-          navLinks.forEach(l => l.classList.remove('active'));
-          
-          // Add active class to clicked link
-          this.classList.add('active');
-          
-          // Hide all sections
-          sections.forEach(section => section.classList.remove('active'));
-          
-          // Show target section
-          const targetSection = this.getAttribute('href').substring(1);
-          document.getElementById(targetSection).classList.add('active');
+    // Redirigir si no hay cookie de sesión
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/check-session', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (!data.loggedIn) window.location.href = '/login.html';
         });
+    });
+
+    // Navigation functionality
+    const navLinks = document.querySelectorAll('nav a:not(#logoutBtn)');
+    const sections = document.querySelectorAll('section');
+
+    // Mostrar dashboard por defecto
+    document.getElementById('dashboard').classList.add('active');
+    document.querySelector('nav a[href="#dashboard"]').classList.add('active');
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        navLinks.forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+        sections.forEach(section => section.classList.remove('active'));
+        const targetSection = this.getAttribute('href').substring(1);
+        document.getElementById(targetSection).classList.add('active');
       });
     });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      await fetch('/logout', { method: 'POST', credentials: 'include' });
+      window.location.href = '/login.html';
+    });
   </script>
+
   <script src="admin.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96fc91d513d0a634',t:'MTc1NTMwMTU2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  
+  <script>
+    (function(){
+      function c(){
+        var b=a.contentDocument||a.contentWindow.document;
+        if(b){
+          var d=b.createElement('script');
+          d.innerHTML="window.__CF$cv$params={r:'96fc91d513d0a634',t:'MTc1NTMwMTU2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+          b.getElementsByTagName('head')[0].appendChild(d)
+        }
+      }
+      if(document.body){
+        var a=document.createElement('iframe');
+        a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';
+        document.body.appendChild(a);
+        if('loading'!==document.readyState)c();
+        else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);
+        else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}
+      }
+    })();
+  </script>
+</body>
 </html>
