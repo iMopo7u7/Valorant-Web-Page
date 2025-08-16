@@ -49,20 +49,20 @@ async function connectDB() {
   }
 }
 
-// --- Rutas estáticas frontend (no tocar) ---
+// --- Rutas estáticas frontend ---
 app.use(express.static(path.join(__dirname, "../frontend")));
 
+// --- Servir archivos privados (admin.js, login.html, admin.html) ---
+app.use("/private", express.static(path.join(__dirname, "private")));
+
 // --- Login / Admin ---
-// Constantes de login
 const ADMIN_USER = "admin";
 const ADMIN_PASS = "1234";
 
-// Mostrar login
 app.get("/login.html", (req, res) => {
   res.sendFile(path.join(__dirname, "private/login.html"));
 });
 
-// Procesar login
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
   if (username === ADMIN_USER && password === ADMIN_PASS) {
@@ -79,12 +79,11 @@ function requireAdmin(req, res, next) {
   else res.status(403).send("Acceso denegado");
 }
 
-// Mostrar admin
 app.get("/admin.html", requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, "private/admin.html"));
 });
 
-// --- API de players, matches, leaderboard (lo que ya tenías) ---
+// --- API de players ---
 
 // Añadir jugador
 app.post("/players", async (req, res) => {
@@ -175,6 +174,8 @@ app.delete("/players", async (req, res) => {
     res.status(500).json({ error: "Error al eliminar jugador" });
   }
 });
+
+// --- API de matches ---
 
 // Añadir partida
 app.post("/matches", async (req, res) => {
