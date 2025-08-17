@@ -1,5 +1,20 @@
 const API_URL = "https://valorant-10-mans.onrender.com";
 
+// --- Verificar sesión de admin ---
+fetch(`${API_URL}/check-session`, { credentials: "include" })
+  .then(res => {
+    if (!res.ok) throw new Error("No autorizado");
+    return res.json();
+  })
+  .then(data => {
+    if (!data.loggedIn) {
+      window.location.href = "/login.html"; // Redirige si no hay sesión
+    }
+  })
+  .catch(() => {
+    window.location.href = "/login.html"; // Redirige si error
+  });
+
 // --- Cargar jugadores ---
 let allPlayers = [];
 async function loadPlayers() {
