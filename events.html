@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torneo Valorant - Generador de Brackets</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .neon-glow {
+            box-shadow: 0 0 20px rgba(255, 20, 147, 0.5), 0 0 40px rgba(255, 20, 147, 0.3);
+        }
+        
+        .neon-green {
+            box-shadow: 0 0 20px rgba(0, 255, 127, 0.5), 0 0 40px rgba(0, 255, 127, 0.3);
+        }
+        
+        .neon-orange {
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.5), 0 0 40px rgba(255, 165, 0, 0.3);
+        }
+        
+        .team-card {
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.1), rgba(75, 0, 130, 0.2));
+            border: 2px solid rgba(255, 20, 147, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .team-card:hover {
+            border-color: rgba(255, 20, 147, 0.8);
+            transform: translateY(-5px);
+        }
+        
+        .match-card {
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(60, 30, 60, 0.8));
+            border: 2px solid rgba(0, 255, 127, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .match-card:hover {
+            border-color: rgba(0, 255, 127, 0.8);
+            transform: translateY(-2px);
+        }
+        
+        .player-animate {
+            animation: playerDrop 0.8s ease-out forwards;
+        }
+        
+        @keyframes playerDrop {
+            0% {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .map-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #ff1493, #00ff7f);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: black;
+            font-size: 12px;
+        }
+        
+        .valorant-bg {
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 20, 147, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 255, 127, 0.1) 0%, transparent 50%),
+                linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 50%, #0a0a0a 100%);
+        }
+    </style>
+</head>
+<body class="valorant-bg min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-400 mb-4">
+                VALORANT TOURNAMENT
+            </h1>
+            <p class="text-xl text-orange-300">Generador de Brackets y Torneos</p>
+        </div>
+
+        <!-- Configuración del Torneo -->
+        <div class="bg-black/50 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-orange-500/30">
+            <h2 class="text-3xl font-bold text-orange-400 mb-6">
+                Configuración del Torneo
+            </h2>
+            
+            <div class="grid md:grid-cols-2 gap-8 mb-8">
+                <div>
+                    <label class="block text-lg font-bold text-orange-300 mb-3">Jugadores por Equipo</label>
+                    <select id="playersPerTeam" class="w-full bg-gray-900/80 border-2 border-orange-500/50 rounded-lg px-4 py-3 text-white focus:border-orange-400 focus:outline-none">
+                        <option value="1">1v1 (Solo)</option>
+                        <option value="2">2v2 (Dúos)</option>
+                        <option value="3">3v3 (Tríos)</option>
+                        <option value="4">4v4 (Cuartetos)</option>
+                        <option value="5" selected>5v5 (Equipos Completos)</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-lg font-bold text-orange-300 mb-3">Número de Equipos</label>
+                    <select id="numberOfTeams" class="w-full bg-gray-900/80 border-2 border-orange-500/50 rounded-lg px-4 py-3 text-white focus:border-orange-400 focus:outline-none">
+                        <option value="2">2 Equipos (Final Directa)</option>
+                        <option value="4">4 Equipos (Semifinales)</option>
+                        <option value="8" selected>8 Equipos (Cuartos de Final)</option>
+                        <option value="16">16 Equipos (Octavos de Final)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-lg font-bold text-orange-300 mb-3">Nombre del Torneo</label>
+                <input 
+                    type="text" 
+                    id="tournamentName" 
+                    placeholder="Ej: Copa Valorant 2024, Torneo Navideño..."
+                    class="w-full bg-gray-900/80 border-2 border-orange-500/50 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none"
+                >
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-lg font-bold text-orange-300 mb-3">Formación de Equipos</label>
+                <div class="grid grid-cols-2 gap-4">
+                    <label class="flex items-center space-x-3 cursor-pointer p-4 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors border-2 border-transparent" id="randomTeamsOption">
+                        <input type="radio" name="teamFormation" value="random" checked class="text-orange-500">
+                        <div>
+                            <div class="font-bold text-orange-400">Equipos Aleatorios</div>
+                            <div class="text-sm text-gray-400">Mezcla automáticamente todos los jugadores</div>
+                        </div>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer p-4 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors border-2 border-transparent" id="predefinedTeamsOption">
+                        <input type="radio" name="teamFormation" value="predefined" class="text-orange-500">
+                        <div>
+                            <div class="font-bold text-orange-400">Equipos Predefinidos</div>
+                            <div class="text-sm text-gray-400">Crea equipos con nombres específicos</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección Agregar Jugadores (Equipos Aleatorios) -->
+        <div id="randomPlayersSection" class="bg-black/50 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-purple-500/30">
+            <h2 class="text-3xl font-bold text-pink-400 mb-6">
+                Agregar Jugadores
+            </h2>
+            
+            <div class="flex gap-4 mb-6">
+                <input 
+                    type="text" 
+                    id="playerInput" 
+                    placeholder="Nombre del jugador..."
+                    class="flex-1 bg-gray-900/80 border-2 border-purple-500/50 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:border-pink-500 focus:outline-none transition-colors"
+                    onkeypress="handleEnter(event)"
+                >
+                <button 
+                    onclick="addPlayer()" 
+                    class="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 px-8 py-3 rounded-lg font-bold transition-all neon-glow"
+                >
+                    AGREGAR
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <span class="text-green-400 font-bold">Jugadores: <span id="playerCount">0</span></span>
+                <span class="text-gray-400 ml-4">Necesarios: <span id="playersNeeded">40</span></span>
+            </div>
+            
+            <div id="playersList" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <!-- Jugadores aparecerán aquí -->
+            </div>
+        </div>
+
+        <!-- Sección Equipos Predefinidos -->
+        <div id="predefinedTeamsSection" class="bg-black/50 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-blue-500/30 hidden">
+            <h2 class="text-3xl font-bold text-blue-400 mb-6">
+                Crear Equipos Predefinidos
+            </h2>
+            
+            <div class="mb-6">
+                <div class="flex gap-4 mb-4">
+                    <input 
+                        type="text" 
+                        id="teamNameInput" 
+                        placeholder="Nombre del equipo..."
+                        class="flex-1 bg-gray-900/80 border-2 border-blue-500/50 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none transition-colors"
+                    >
+                    <button 
+                        onclick="addTeam()" 
+                        class="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 px-8 py-3 rounded-lg font-bold transition-all"
+                    >
+                        CREAR EQUIPO
+                    </button>
+                </div>
+                
+                <div class="flex gap-4">
+                    <input 
+                        type="text" 
+                        id="teamPlayerInput" 
+                        placeholder="Agregar jugador al equipo..."
+                        class="flex-1 bg-gray-900/80 border-2 border-cyan-500/50 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none transition-colors"
+                        onkeypress="handleTeamPlayerEnter(event)"
+                    >
+                    <select id="teamSelector" class="bg-gray-900/80 border-2 border-cyan-500/50 rounded-lg px-4 py-3 text-white focus:border-cyan-400 focus:outline-none">
+                        <option value="">Seleccionar equipo...</option>
+                    </select>
+                    <button 
+                        onclick="addPlayerToTeam()" 
+                        class="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 px-8 py-3 rounded-lg font-bold transition-all"
+                    >
+                        AGREGAR
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <span class="text-green-400 font-bold">Equipos Creados: <span id="teamsCount">0</span></span>
+                <span class="text-gray-400 ml-4">Necesarios: <span id="teamsNeeded">8</span></span>
+            </div>
+            
+            <div id="teamsList" class="grid gap-4">
+                <!-- Equipos aparecerán aquí -->
+            </div>
+        </div>
+
+        <!-- Sección Configuración de Mapas -->
+        <div class="bg-black/50 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-green-500/30">
+            <h2 class="text-3xl font-bold text-green-400 mb-6">
+                Configuración de Mapas
+            </h2>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <input type="checkbox" class="map-checkbox" value="Bind" checked>
+                    <div class="map-icon">BI</div>
+                    <span>Bind</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <input type="checkbox" class="map-checkbox" value="Haven" checked>
+                    <div class="map-icon">HA</div>
+                    <span>Haven</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <input type="checkbox" class="map-checkbox" value="Split" checked>
+                    <div class="map-icon">SP</div>
+                    <span>Split</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <input type="checkbox" class="map-checkbox" value="Ascent" checked>
+                    <div class="map-icon">AS</div>
+                    <span>Ascent</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <input type="checkbox" class="map-checkbox" value="Icebox" checked>
+                    <div class="map-icon">IC</div>
+                    <span>Icebox</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <input type="checkbox" class="map-checkbox" value="Breeze" checked>
+                    <div class="map-icon">BR</div>
+                    <span>Breeze</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <input type="checkbox" class="map-checkbox" value="Fracture" checked>
+                    <div class="map-icon">FR</div>
+                    <span>Fracture</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <input type="checkbox" class="map-checkbox" value="Pearl" checked>
+                    <div class="map-icon">PE</div>
+                    <span>Pearl</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <input type="checkbox" class="map-checkbox" value="Lotus" checked>
+                    <div class="map-icon">LO</div>
+                    <span>Lotus</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <input type="checkbox" class="map-checkbox" value="Sunset" checked>
+                    <div class="map-icon">SU</div>
+                    <span>Sunset</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <input type="checkbox" class="map-checkbox" value="Abyss" checked>
+                    <div class="map-icon">AB</div>
+                    <span>Abyss</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <input type="checkbox" class="map-checkbox" value="Corrode" checked>
+                    <div class="map-icon">CO</div>
+                    <span>Corrode</span>
+                </label>
+            </div>
+            
+            <div class="text-center">
+                <button 
+                    onclick="generateTournament()" 
+                    id="generateBtn"
+                    class="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 px-12 py-4 rounded-xl font-black text-xl transition-all neon-orange transform hover:scale-105"
+                >
+                    GENERAR TORNEO
+                </button>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div id="resultsSection" class="hidden">
+            <div class="bg-black/50 backdrop-blur-sm rounded-2xl p-8 border border-orange-500/30">
+                <h2 class="text-3xl font-bold text-yellow-400 mb-8 text-center">
+                    BRACKET DEL TORNEO
+                </h2>
+                
+                <div id="resultsContent">
+                    <!-- Los resultados aparecerán aquí -->
+                </div>
+                
+                <div class="text-center mt-8">
+                    <button 
+                        onclick="copyResults()" 
+                        class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 px-8 py-3 rounded-lg font-bold transition-all neon-glow"
+                    >
+                        COPIAR PARA DISCORD
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let players = [];
+        let predefinedTeams = [];
+        let currentResults = '';
+
+        function updatePlayersNeeded() {
+            const playersPerTeam = parseInt(document.getElementById('playersPerTeam').value);
+            const numberOfTeams = parseInt(document.getElementById('numberOfTeams').value);
+            const needed = playersPerTeam * numberOfTeams;
+            document.getElementById('playersNeeded').textContent = needed;
+            document.getElementById('teamsNeeded').textContent = numberOfTeams;
+        }
+
+        function toggleTeamFormation() {
+            const randomSection = document.getElementById('randomPlayersSection');
+            const predefinedSection = document.getElementById('predefinedTeamsSection');
+            const randomOption = document.getElementById('randomTeamsOption');
+            const predefinedOption = document.getElementById('predefinedTeamsOption');
+            
+            const isRandom = document.querySelector('input[name="teamFormation"]:checked').value === 'random';
+            
+            if (isRandom) {
+                randomSection.classList.remove('hidden');
+                predefinedSection.classList.add('hidden');
+                randomOption.classList.add('border-orange-500');
+                predefinedOption.classList.remove('border-orange-500');
+            } else {
+                randomSection.classList.add('hidden');
+                predefinedSection.classList.remove('hidden');
+                randomOption.classList.remove('border-orange-500');
+                predefinedOption.classList.add('border-orange-500');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('playersPerTeam').addEventListener('change', updatePlayersNeeded);
+        document.getElementById('numberOfTeams').addEventListener('change', updatePlayersNeeded);
+        document.querySelectorAll('input[name="teamFormation"]').forEach(radio => {
+            radio.addEventListener('change', toggleTeamFormation);
+        });
+
+        function handleEnter(event) {
+            if (event.key === 'Enter') {
+                addPlayer();
+            }
+        }
+
+        function handleTeamPlayerEnter(event) {
+            if (event.key === 'Enter') {
+                addPlayerToTeam();
+            }
+        }
+
+        function addTeam() {
+            const input = document.getElementById('teamNameInput');
+            const teamName = input.value.trim();
+            
+            if (!teamName) return;
+            
+            if (predefinedTeams.find(team => team.name === teamName)) {
+                alert('Ya existe un equipo con ese nombre');
+                return;
+            }
+            
+            const numberOfTeams = parseInt(document.getElementById('numberOfTeams').value);
+            if (predefinedTeams.length >= numberOfTeams) {
+                alert(`Máximo ${numberOfTeams} equipos permitidos`);
+                return;
+            }
+            
+            predefinedTeams.push({
+                name: teamName,
+                players: []
+            });
+            
+            input.value = '';
+            updateTeamsList();
+            updateTeamSelector();
+        }
+
+        function addPlayerToTeam() {
+            const playerInput = document.getElementById('teamPlayerInput');
+            const teamSelector = document.getElementById('teamSelector');
+            const playerName = playerInput.value.trim();
+            const selectedTeamName = teamSelector.value;
+            
+            if (!playerName || !selectedTeamName) return;
+            
+            const team = predefinedTeams.find(t => t.name === selectedTeamName);
+            if (!team) return;
+            
+            const playersPerTeam = parseInt(document.getElementById('playersPerTeam').value);
+            if (team.players.length >= playersPerTeam) {
+                alert(`El equipo ya tiene ${playersPerTeam} jugadores`);
+                return;
+            }
+            
+            // Verificar si el jugador ya está en algún equipo
+            const existingTeam = predefinedTeams.find(t => t.players.includes(playerName));
+            if (existingTeam) {
+                alert(`${playerName} ya está en el equipo ${existingTeam.name}`);
+                return;
+            }
+            
+            team.players.push(playerName);
+            playerInput.value = '';
+            updateTeamsList();
+        }
+
+        function removeTeam(teamName) {
+            predefinedTeams = predefinedTeams.filter(t => t.name !== teamName);
+            updateTeamsList();
+            updateTeamSelector();
+        }
+
+        function removePlayerFromTeam(teamName, playerName) {
+            const team = predefinedTeams.find(t => t.name === teamName);
+            if (team) {
+                team.players = team.players.filter(p => p !== playerName);
+                updateTeamsList();
+            }
+        }
+
+        function updateTeamSelector() {
+            const selector = document.getElementById('teamSelector');
+            selector.innerHTML = '<option value="">Seleccionar equipo...</option>';
+            
+            predefinedTeams.forEach(team => {
+                const option = document.createElement('option');
+                option.value = team.name;
+                option.textContent = team.name;
+                selector.appendChild(option);
+            });
+        }
+
+        function updateTeamsList() {
+            const teamsList = document.getElementById('teamsList');
+            const teamsCount = document.getElementById('teamsCount');
+            
+            teamsCount.textContent = predefinedTeams.length;
+            
+            teamsList.innerHTML = predefinedTeams.map(team => `
+                <div class="bg-gradient-to-r from-blue-900/50 to-cyan-900/50 rounded-lg p-4 border border-blue-500/30">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-lg font-bold text-blue-400">${team.name}</h4>
+                        <button onclick="removeTeam('${team.name}')" class="text-red-400 hover:text-red-300">✕</button>
+                    </div>
+                    <div class="space-y-2">
+                        ${team.players.map(player => `
+                            <div class="bg-gray-800/50 rounded p-2 flex items-center justify-between">
+                                <span class="font-bold">${player}</span>
+                                <button onclick="removePlayerFromTeam('${team.name}', '${player}')" class="text-red-400 hover:text-red-300 text-sm">✕</button>
+                            </div>
+                        `).join('')}
+                        ${team.players.length === 0 ? '<div class="text-gray-500 text-center py-2">Sin jugadores</div>' : ''}
+                    </div>
+                    <div class="mt-2 text-sm text-gray-400">
+                        Jugadores: ${team.players.length}/${document.getElementById('playersPerTeam').value}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addPlayer() {
+            const input = document.getElementById('playerInput');
+            const playerName = input.value.trim();
+            
+            if (!playerName) return;
+            
+            if (players.includes(playerName)) {
+                alert('Este jugador ya está en la lista');
+                return;
+            }
+            
+            const playersPerTeam = parseInt(document.getElementById('playersPerTeam').value);
+            const numberOfTeams = parseInt(document.getElementById('numberOfTeams').value);
+            const maxPlayers = playersPerTeam * numberOfTeams;
+            
+            if (players.length >= maxPlayers) {
+                alert(`Máximo ${maxPlayers} jugadores permitidos para esta configuración`);
+                return;
+            }
+            
+            players.push(playerName);
+            input.value = '';
+            updatePlayersList();
+        }
+
+        function removePlayer(playerName) {
+            players = players.filter(p => p !== playerName);
+            updatePlayersList();
+        }
+
+        function updatePlayersList() {
+            const playersList = document.getElementById('playersList');
+            const playerCount = document.getElementById('playerCount');
+            
+            playerCount.textContent = players.length;
+            
+            playersList.innerHTML = players.map(player => `
+                <div class="bg-gradient-to-r from-purple-900/50 to-pink-900/50 rounded-lg p-3 flex items-center justify-between border border-purple-500/30">
+                    <span class="font-bold">${player}</span>
+                    <button onclick="removePlayer('${player}')" class="text-red-400 hover:text-red-300 ml-2">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function getSelectedMaps() {
+            const checkboxes = document.querySelectorAll('.map-checkbox:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function generateTournament() {
+            const playersPerTeam = parseInt(document.getElementById('playersPerTeam').value);
+            const numberOfTeams = parseInt(document.getElementById('numberOfTeams').value);
+            const tournamentName = document.getElementById('tournamentName').value.trim() || 'Torneo Valorant';
+            const teamFormation = document.querySelector('input[name="teamFormation"]:checked').value;
+            
+            const selectedMaps = getSelectedMaps();
+            if (selectedMaps.length === 0) {
+                alert('Selecciona al menos un mapa');
+                return;
+            }
+            
+            let teams = [];
+            
+            if (teamFormation === 'random') {
+                const requiredPlayers = playersPerTeam * numberOfTeams;
+                
+                if (players.length !== requiredPlayers) {
+                    alert(`Necesitas exactamente ${requiredPlayers} jugadores para esta configuración`);
+                    return;
+                }
+                
+                const shuffledPlayers = shuffleArray(players);
+                
+                // Crear equipos aleatorios
+                for (let i = 0; i < numberOfTeams; i++) {
+                    const teamStart = i * playersPerTeam;
+                    const teamPlayers = shuffledPlayers.slice(teamStart, teamStart + playersPerTeam);
+                    teams.push({
+                        name: `Team ${String.fromCharCode(65 + i)}`, // A, B, C, D...
+                        players: teamPlayers
+                    });
+                }
+            } else {
+                // Usar equipos predefinidos
+                if (predefinedTeams.length !== numberOfTeams) {
+                    alert(`Necesitas exactamente ${numberOfTeams} equipos`);
+                    return;
+                }
+                
+                // Verificar que todos los equipos tengan el número correcto de jugadores
+                for (let team of predefinedTeams) {
+                    if (team.players.length !== playersPerTeam) {
+                        alert(`El equipo "${team.name}" debe tener exactamente ${playersPerTeam} jugadores`);
+                        return;
+                    }
+                }
+                
+                teams = [...predefinedTeams];
+            }
+            
+            // Generar bracket
+            const bracket = generateBracket(teams, selectedMaps);
+            
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            resultsSection.classList.remove('hidden');
+            displayBracket(bracket, resultsContent, tournamentName, playersPerTeam);
+            generateDiscordMessage(bracket, tournamentName, playersPerTeam);
+        }
+
+        function generateBracket(teams, maps) {
+            const rounds = [];
+            let currentRound = teams.map((team, index) => ({
+                team1: team,
+                team2: null,
+                map: null,
+                roundName: '',
+                matchNumber: index + 1
+            }));
+            
+            // Emparejar equipos para la primera ronda
+            const firstRoundMatches = [];
+            for (let i = 0; i < teams.length; i += 2) {
+                const map = maps[Math.floor(Math.random() * maps.length)];
+                const side = Math.random() < 0.5 ? 'ATK' : 'DEF';
+                firstRoundMatches.push({
+                    team1: teams[i],
+                    team2: teams[i + 1],
+                    map: map,
+                    team1Side: side,
+                    team2Side: side === 'ATK' ? 'DEF' : 'ATK',
+                    roundName: getRoundName(teams.length, 1),
+                    matchNumber: Math.floor(i / 2) + 1
+                });
+            }
+            
+            rounds.push(firstRoundMatches);
+            
+            // Generar rondas siguientes
+            let teamsInRound = teams.length / 2;
+            let roundNumber = 2;
+            
+            while (teamsInRound > 1) {
+                const roundMatches = [];
+                for (let i = 0; i < teamsInRound; i += 2) {
+                    const map = maps[Math.floor(Math.random() * maps.length)];
+                    const side = Math.random() < 0.5 ? 'ATK' : 'DEF';
+                    roundMatches.push({
+                        team1: { name: `Ganador Match ${Math.floor(i / 2) * 2 + 1}`, players: [] },
+                        team2: { name: `Ganador Match ${Math.floor(i / 2) * 2 + 2}`, players: [] },
+                        map: map,
+                        team1Side: side,
+                        team2Side: side === 'ATK' ? 'DEF' : 'ATK',
+                        roundName: getRoundName(teams.length, roundNumber),
+                        matchNumber: Math.floor(i / 2) + 1
+                    });
+                }
+                rounds.push(roundMatches);
+                teamsInRound = teamsInRound / 2;
+                roundNumber++;
+            }
+            
+            return rounds;
+        }
+
+        function getRoundName(totalTeams, roundNumber) {
+            const roundNames = {
+                2: ['Final'],
+                4: ['Semifinales', 'Final'],
+                8: ['Cuartos de Final', 'Semifinales', 'Final'],
+                16: ['Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final']
+            };
+            
+            return roundNames[totalTeams][roundNumber - 1] || `Ronda ${roundNumber}`;
+        }
+
+        function displayBracket(bracket, container, tournamentName, playersPerTeam) {
+            let html = `
+                <div class="text-center mb-8">
+                    <h3 class="text-3xl font-bold text-orange-400 mb-2">${tournamentName}</h3>
+                    <p class="text-lg text-orange-300">Formato: ${playersPerTeam}v${playersPerTeam}</p>
+                </div>
+            `;
+            
+            bracket.forEach((round, roundIndex) => {
+                html += `
+                    <div class="mb-12">
+                        <h4 class="text-2xl font-bold text-center mb-6 text-yellow-400">${round[0].roundName}</h4>
+                        <div class="grid gap-6 ${round.length <= 2 ? 'max-w-4xl mx-auto' : round.length <= 4 ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3'}">
+                `;
+                
+                round.forEach((match, matchIndex) => {
+                    html += `
+                        <div class="match-card rounded-xl p-6">
+                            <h5 class="text-lg font-bold text-center mb-4 text-green-400">
+                                Match ${match.matchNumber} - ${match.map}
+                            </h5>
+                            
+                            <div class="space-y-4">
+                                <div class="team-card rounded-lg p-4 ${match.team1Side === 'ATK' ? 'neon-glow' : ''}">
+                                    <h6 class="font-bold text-pink-400 mb-2 text-center">
+                                        ${match.team1.name} (${match.team1Side})
+                                    </h6>
+                                    ${match.team1.players.length > 0 ? `
+                                        <div class="text-sm space-y-1">
+                                            ${match.team1.players.map(player => `
+                                                <div class="bg-gray-800/50 rounded p-1 text-center">${player}</div>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                
+                                <div class="text-center text-orange-400 font-bold">VS</div>
+                                
+                                <div class="team-card rounded-lg p-4 ${match.team2Side === 'ATK' ? 'neon-glow' : ''}">
+                                    <h6 class="font-bold text-green-400 mb-2 text-center">
+                                        ${match.team2.name} (${match.team2Side})
+                                    </h6>
+                                    ${match.team2.players.length > 0 ? `
+                                        <div class="text-sm space-y-1">
+                                            ${match.team2.players.map(player => `
+                                                <div class="bg-gray-800/50 rounded p-1 text-center">${player}</div>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function generateDiscordMessage(bracket, tournamentName, playersPerTeam) {
+            let message = `**${tournamentName.toUpperCase()}**\nFormato: ${playersPerTeam}v${playersPerTeam}\n\n`;
+            
+            bracket.forEach((round, roundIndex) => {
+                message += `**${round[0].roundName.toUpperCase()}**\n`;
+                
+                round.forEach((match, matchIndex) => {
+                    message += `**Match ${match.matchNumber}** | ${match.map}\n`;
+                    message += `${match.team1.name} (${match.team1Side})`;
+                    if (match.team1.players.length > 0) {
+                        message += `: ${match.team1.players.join(', ')}`;
+                    }
+                    message += `\n${match.team2.name} (${match.team2Side})`;
+                    if (match.team2.players.length > 0) {
+                        message += `: ${match.team2.players.join(', ')}`;
+                    }
+                    message += `\n\n`;
+                });
+            });
+            
+            currentResults = message.trim();
+        }
+
+        function copyResults() {
+            navigator.clipboard.writeText(currentResults).then(() => {
+                alert('¡Bracket copiado al portapapeles!');
+            });
+        }
+
+        // Inicializar
+        updatePlayersNeeded();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97053ad876dfb20e',t:'MTc1NTM5MjM3Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
