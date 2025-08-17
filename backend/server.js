@@ -49,6 +49,9 @@ async function connectDB() {
   }
 }
 
+// --- Rutas estáticas frontend ---
+app.use(express.static(path.join(__dirname, "../frontend")));
+
 // --- Servir archivos privados (admin.js, login.html, admin.html) ---
 app.use("/private", express.static(path.join(__dirname, "private")));
 
@@ -76,15 +79,22 @@ function requireAdmin(req, res, next) {
   else res.status(403).send("Acceso denegado");
 }
 
-// RUTA ADMIN
+// --- Ruta para verificar sesión de admin ---
+app.get("/check-session", (req, res) => {
+  if (req.session.isAdmin) {
+    res.json({ loggedIn: true });
+  } else {
+    res.json({ loggedIn: false });
+  }
+});
+
+// Mostrar admin solo si está logueado
 app.get("/admin.html", requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, "private/admin.html"));
 });
 
-// --- Luego rutas estáticas frontend (después de las privadas para seguridad) ---
-app.use(express.static(path.join(__dirname, "../frontend")));
-
 // --- API de players ---
+// Añadir jugador
 app.post("/players", async (req, res) => {
   try {
     const { name, tag } = req.body;
@@ -113,6 +123,7 @@ app.post("/players", async (req, res) => {
   }
 });
 
+// Listar jugadores
 app.get("/players", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
@@ -122,6 +133,7 @@ app.get("/players", async (req, res) => {
   }
 });
 
+// Editar jugador
 app.put("/players", async (req, res) => {
   try {
     const { oldName, oldTag, newName, newTag } = req.body;
@@ -153,6 +165,7 @@ app.put("/players", async (req, res) => {
   }
 });
 
+// Eliminar jugador
 app.delete("/players", async (req, res) => {
   try {
     const { name, tag } = req.body;
@@ -172,6 +185,7 @@ app.delete("/players", async (req, res) => {
 });
 
 // --- API de matches ---
+// Añadir partida
 app.post("/matches", async (req, res) => {
   try {
     const { match, winnerTeam } = req.body;
@@ -206,6 +220,7 @@ app.post("/matches", async (req, res) => {
   }
 });
 
+// Leaderboard
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
@@ -227,20 +242,7 @@ app.get("/leaderboard", async (req, res) => {
       const reliabilityFactor = Math.min(matches / 5, 1);
       const consistencyBonus = 1 + (Math.min(matches, 20) / 100);
 
-      return {
-        name: p.name,
-        tag: p.tag,
-        avgKills,
-        avgDeaths,
-        avgACS,
-        avgFirstBloods,
-        avgAssists,
-        hsPercent,
-        winrate,
-        avgKDA,
-        score: scoreRaw * consistencyBonus * reliabilityFactor,
-        matchesPlayed: matches
-      };
+      return { name: p.name, tag: p.tag, avgKills, avgDeaths, avgACS, avgFirstBloods, avgAssists, hsPercent, winrate, avgKDA, score: scoreRaw * consistencyBonus * reliabilityFactor, matchesPlayed: matches };
     });
 
     withScores.sort((a, b) => b.score - a.score);
@@ -250,6 +252,7 @@ app.get("/leaderboard", async (req, res) => {
   }
 });
 
+// Historial de un jugador
 app.get("/matches/:name/:tag", async (req, res) => {
   try {
     const { name, tag } = req.params;
@@ -260,6 +263,7 @@ app.get("/matches/:name/:tag", async (req, res) => {
   }
 });
 
+// Contador de partidas
 app.get("/matches-count", async (req, res) => {
   try {
     const count = await matchesCollection.countDocuments();
