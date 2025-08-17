@@ -49,19 +49,29 @@ async function connectDB() {
   }
 }
 
-// --- Rutas estáticas frontend ---
-app.use(express.static(path.join(__dirname, "../frontend")));
+// --- Middleware de protección admin ---
+function requireAdmin(req, res, next) {
+  if (req.session.isAdmin) next();
+  else res.status(403).send("Acceso denegado");
+}
 
-// --- Servir archivos privados (admin.js, login.html, admin.html) ---
-app.use("/private", express.static(path.join(__dirname, "private")));
+// --- Servir archivos privados (admin.js, login.html, admin.html) con protección ---
+app.get("/login.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "private/login.html"));
+});
+
+app.get("/admin.html", requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, "private/admin.html"));
+});
+
+app.get("/private/:file", requireAdmin, (req, res) => {
+  const fileName = req.params.file;
+  res.sendFile(path.join(__dirname, "private", fileName));
+});
 
 // --- Login / Admin ---
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
-
-app.get("/login.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "private/login.html"));
-});
 
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
@@ -73,14 +83,13 @@ app.post("/login", (req, res) => {
   }
 });
 
-// Middleware de protección admin
-function requireAdmin(req, res, next) {
-  if (req.session.isAdmin) next();
-  else res.status(403).send("Acceso denegado");
-}
+// --- Rutas estáticas frontend (después de las privadas) ---
+app.use(express.static(path.join(__dirname, "../frontend")));
 
-app.get("/admin.html", requireAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, "private/admin.html"));
+// --- Bloquear acceso a admin.html desde frontend por static ---
+app.use((req, res, next) => {
+  if (req.path === "/admin.html") return res.status(404).send("Not found");
+  next();
 });
 
 // --- API de players ---
