@@ -3,6 +3,7 @@ import cors from "cors";
 import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
 import session from "express-session";
+import MongoStore from "connect-mongo";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -19,14 +20,6 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
-
-// --- Sesiones para admin ---
-app.use(session({
-  secret: process.env.SESSION_SECRET || "valorantsecret",
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 60 * 60 * 1000 } // 1 hora
-}));
 
 // --- Conexión MongoDB ---
 if (!process.env.MONGODB_URI) {
@@ -49,10 +42,23 @@ async function connectDB() {
   }
 }
 
+// --- Sesiones con MongoStore (producción) ---
+app.use(session({
+  secret: process.env.SESSION_SECRET || "valorantsecret",
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    dbName: "valorantDB",
+    collectionName: "sessions"
+  }),
+  cookie: { maxAge: 60 * 60 * 1000 } // 1 hora
+}));
+
 // --- Rutas estáticas frontend ---
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// --- Servir archivos privados (admin.js, login.html, admin.html) ---
+// --- Servir archivos privados ---
 app.use("/private", express.static(path.join(__dirname, "private")));
 
 // --- Login / Admin ---
@@ -79,13 +85,9 @@ function requireAdmin(req, res, next) {
   else res.status(403).send("Acceso denegado");
 }
 
-// --- Ruta para verificar sesión de admin ---
+// Ruta para verificar sesión de admin
 app.get("/check-session", (req, res) => {
-  if (req.session.isAdmin) {
-    res.json({ loggedIn: true });
-  } else {
-    res.json({ loggedIn: false });
-  }
+  res.json({ loggedIn: !!req.session.isAdmin });
 });
 
 // Mostrar admin solo si está logueado
@@ -94,8 +96,7 @@ app.get("/admin.html", requireAdmin, (req, res) => {
 });
 
 // --- API de players ---
-// Añadir jugador
-app.post("/players", async (req, res) => {
+app.post("/players", requireAdmin, async (req, res) => {
   try {
     const { name, tag } = req.body;
     if (!name || !tag) return res.status(400).json({ error: "Nombre y tag requeridos" });
@@ -123,8 +124,7 @@ app.post("/players", async (req, res) => {
   }
 });
 
-// Listar jugadores
-app.get("/players", async (req, res) => {
+app.get("/players", requireAdmin, async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
     res.json(players);
@@ -133,8 +133,7 @@ app.get("/players", async (req, res) => {
   }
 });
 
-// Editar jugador
-app.put("/players", async (req, res) => {
+app.put("/players", requireAdmin, async (req, res) => {
   try {
     const { oldName, oldTag, newName, newTag } = req.body;
     if (!oldName || !oldTag || !newName || !newTag)
@@ -165,8 +164,7 @@ app.put("/players", async (req, res) => {
   }
 });
 
-// Eliminar jugador
-app.delete("/players", async (req, res) => {
+app.delete("/players", requireAdmin, async (req, res) => {
   try {
     const { name, tag } = req.body;
     if (!name || !tag) return res.status(400).json({ error: "Nombre y tag requeridos" });
@@ -185,8 +183,7 @@ app.delete("/players", async (req, res) => {
 });
 
 // --- API de matches ---
-// Añadir partida
-app.post("/matches", async (req, res) => {
+app.post("/matches", requireAdmin, async (req, res) => {
   try {
     const { match, winnerTeam } = req.body;
     if (!Array.isArray(match) || match.length !== 10) return res.status(400).json({ error: "Formato inválido" });
@@ -220,7 +217,6 @@ app.post("/matches", async (req, res) => {
   }
 });
 
-// Leaderboard
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
@@ -252,7 +248,6 @@ app.get("/leaderboard", async (req, res) => {
   }
 });
 
-// Historial de un jugador
 app.get("/matches/:name/:tag", async (req, res) => {
   try {
     const { name, tag } = req.params;
@@ -263,7 +258,6 @@ app.get("/matches/:name/:tag", async (req, res) => {
   }
 });
 
-// Contador de partidas
 app.get("/matches-count", async (req, res) => {
   try {
     const count = await matchesCollection.countDocuments();
