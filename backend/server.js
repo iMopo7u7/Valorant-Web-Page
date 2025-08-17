@@ -49,29 +49,19 @@ async function connectDB() {
   }
 }
 
-// --- Middleware de protección admin ---
-function requireAdmin(req, res, next) {
-  if (req.session.isAdmin) next();
-  else res.status(403).send("Acceso denegado");
-}
+// --- Rutas estáticas frontend ---
+app.use(express.static(path.join(__dirname, "../frontend")));
 
-// --- Servir archivos privados (admin.js, login.html, admin.html) con protección ---
-app.get("/login.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "private/login.html"));
-});
-
-app.get("/admin.html", requireAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, "private/admin.html"));
-});
-
-app.get("/private/:file", requireAdmin, (req, res) => {
-  const fileName = req.params.file;
-  res.sendFile(path.join(__dirname, "private", fileName));
-});
+// --- Servir archivos privados (admin.js, login.html, admin.html) ---
+app.use("/private", express.static(path.join(__dirname, "private")));
 
 // --- Login / Admin ---
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
+
+app.get("/login.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "private/login.html"));
+});
 
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
@@ -83,13 +73,23 @@ app.post("/login", (req, res) => {
   }
 });
 
-// --- Rutas estáticas frontend (después de las privadas) ---
-app.use(express.static(path.join(__dirname, "../frontend")));
+// Middleware de protección admin
+function requireAdmin(req, res, next) {
+  if (req.session.isAdmin) next();
+  else res.status(403).send("Acceso denegado");
+}
 
-// --- Bloquear acceso a admin.html desde frontend por static ---
-app.use((req, res, next) => {
-  if (req.path === "/admin.html") return res.status(404).send("Not found");
-  next();
+app.get("/admin.html", requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, "private/admin.html"));
+});
+
+// --- Check session ---
+app.get("/check-session", (req, res) => {
+  if (req.session.isAdmin) {
+    res.json({ loggedIn: true });
+  } else {
+    res.status(401).json({ loggedIn: false });
+  }
 });
 
 // --- API de players ---
@@ -243,7 +243,20 @@ app.get("/leaderboard", async (req, res) => {
       const reliabilityFactor = Math.min(matches / 5, 1);
       const consistencyBonus = 1 + (Math.min(matches, 20) / 100);
 
-      return { name: p.name, tag: p.tag, avgKills, avgDeaths, avgACS, avgFirstBloods, avgAssists, hsPercent, winrate, avgKDA, score: scoreRaw * consistencyBonus * reliabilityFactor, matchesPlayed: matches };
+      return {
+        name: p.name,
+        tag: p.tag,
+        avgKills,
+        avgDeaths,
+        avgACS,
+        avgFirstBloods,
+        avgAssists,
+        hsPercent,
+        winrate,
+        avgKDA,
+        score: scoreRaw * consistencyBonus * reliabilityFactor,
+        matchesPlayed: matches
+      };
     });
 
     withScores.sort((a, b) => b.score - a.score);
