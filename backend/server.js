@@ -14,16 +14,32 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- Middlewares ---
+// --- Middleware CORS ---
 app.use(cors({
   origin: "https://valorant-10-mans-frontend.onrender.com",
-  credentials: true
+  credentials: true,
 }));
+
 app.use(express.json());
+
+// --- Sesiones con MongoStore ---
+const sessionStore = MongoStore.create({
+  mongoUrl: process.env.MONGODB_URI,
+  collectionName: "sessions",
+  ttl: 60 * 60, // 1 hora
+});
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || "valorantsecret",
+  resave: false,
+  saveUninitialized: false,
+  store: sessionStore,
+  cookie: { maxAge: 60 * 60 * 1000 } // 1 hora
+}));
 
 // --- Conexión MongoDB ---
 if (!process.env.MONGODB_URI) {
-  console.error("❌ ERROR: MONGODB_URI no está definido en las variables de entorno.");
+  console.error("❌ ERROR: MONGODB_URI no está definido.");
   process.exit(1);
 }
 
@@ -42,60 +58,53 @@ async function connectDB() {
   }
 }
 
-// --- Sesiones con MongoStore (producción) ---
-app.use(session({
-  secret: process.env.SESSION_SECRET || "valorantsecret",
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    dbName: "valorantDB",
-    collectionName: "sessions"
-  }),
-  cookie: { maxAge: 60 * 60 * 1000 } // 1 hora
-}));
-
 // --- Rutas estáticas frontend ---
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// --- Servir archivos privados ---
+// --- Rutas privadas (login/admin) ---
 app.use("/private", express.static(path.join(__dirname, "private")));
 
-// --- Login / Admin ---
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
 
+// --- Login ---
 app.get("/login.html", (req, res) => {
   res.sendFile(path.join(__dirname, "private/login.html"));
 });
 
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-  if (username === ADMIN_USER && password === ADMIN_PASS) {
-    req.session.isAdmin = true;
-    res.json({ success: true });
-  } else {
-    res.status(401).json({ error: "Usuario o contraseña incorrectos" });
+app.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (username === ADMIN_USER && password === ADMIN_PASS) {
+      req.session.isAdmin = true;
+      res.json({ success: true });
+    } else {
+      res.status(401).json({ error: "Usuario o contraseña incorrectos" });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error interno en login" });
   }
 });
 
 // Middleware de protección admin
 function requireAdmin(req, res, next) {
   if (req.session.isAdmin) next();
-  else res.status(403).send("Acceso denegado");
+  else res.status(403).json({ error: "Acceso denegado" });
 }
 
-// Ruta para verificar sesión de admin
+// Verificar sesión
 app.get("/check-session", (req, res) => {
   res.json({ loggedIn: !!req.session.isAdmin });
 });
 
-// Mostrar admin solo si está logueado
+// Servir admin.html solo si está logueado
 app.get("/admin.html", requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, "private/admin.html"));
 });
 
-// --- API de players ---
+// --- CRUD Players ---
+// Añadir jugador
 app.post("/players", requireAdmin, async (req, res) => {
   try {
     const { name, tag } = req.body;
@@ -119,20 +128,24 @@ app.post("/players", requireAdmin, async (req, res) => {
 
     await playersCollection.insertOne(newPlayer);
     res.json({ message: "Jugador añadido exitosamente" });
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Error al añadir jugador" });
   }
 });
 
+// Listar jugadores
 app.get("/players", requireAdmin, async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
     res.json(players);
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Error al obtener jugadores" });
   }
 });
 
+// Editar jugador
 app.put("/players", requireAdmin, async (req, res) => {
   try {
     const { oldName, oldTag, newName, newTag } = req.body;
@@ -164,6 +177,7 @@ app.put("/players", requireAdmin, async (req, res) => {
   }
 });
 
+// Eliminar jugador
 app.delete("/players", requireAdmin, async (req, res) => {
   try {
     const { name, tag } = req.body;
@@ -182,7 +196,7 @@ app.delete("/players", requireAdmin, async (req, res) => {
   }
 });
 
-// --- API de matches ---
+// --- CRUD Matches ---
 app.post("/matches", requireAdmin, async (req, res) => {
   try {
     const { match, winnerTeam } = req.body;
@@ -212,11 +226,13 @@ app.post("/matches", requireAdmin, async (req, res) => {
     }
 
     res.json({ message: "Partida añadida exitosamente" });
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Error al añadir partida" });
   }
 });
 
+// Leaderboard público
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
@@ -243,21 +259,25 @@ app.get("/leaderboard", async (req, res) => {
 
     withScores.sort((a, b) => b.score - a.score);
     res.json(withScores);
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Error al generar leaderboard" });
   }
 });
 
+// Historial de un jugador
 app.get("/matches/:name/:tag", async (req, res) => {
   try {
     const { name, tag } = req.params;
     const matches = await matchesCollection.find({ match: { $elemMatch: { name, tag } } }).toArray();
     res.json(matches);
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Error al obtener historial" });
   }
 });
 
+// Contador de partidas
 app.get("/matches-count", async (req, res) => {
   try {
     const count = await matchesCollection.countDocuments();
