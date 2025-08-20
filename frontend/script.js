@@ -1,27 +1,30 @@
 const grid = document.getElementById("leaderboardGrid");
-const API_URL = "https://valorant-10-mans-backend.onrender.com"; // tu backend
+const API_URL = "https://valorant-10-mans-backend.onrender.com";
 
 if (grid) {
   async function loadLeaderboard() {
-    // Cabecera del grid
-    grid.innerHTML = `
-      <div class="grid-header">
-        <div class="header-cell">#</div>
-        <div class="header-cell">Jugador</div>
-        <div class="header-cell">ACS Promedio</div>
-        <div class="header-cell">KDA Promedio</div>
-        <div class="header-cell">HS%</div>
-        <div class="header-cell">First Bloods Promedio</div>
-        <div class="header-cell">Winrate %</div>
-        <div class="header-cell">Score Compuesto</div>
-      </div>
-    `;
+    // Mostrar loader
+    grid.innerHTML = `<div class="loading-state">Cargando leaderboard...</div>`;
 
     try {
-      const res = await fetch(`${API_URL}/leaderboard`);
+      const res = await fetch(`${API_URL}/leaderboard`, { credentials: 'include' });
       if (!res.ok) throw new Error("Error en la respuesta del servidor");
 
       const players = await res.json();
+
+      // Limpiar grid
+      grid.innerHTML = `
+        <div class="grid-header">
+          <div class="header-cell">#</div>
+          <div class="header-cell">Jugador</div>
+          <div class="header-cell">ACS Promedio</div>
+          <div class="header-cell">KDA Promedio</div>
+          <div class="header-cell">HS%</div>
+          <div class="header-cell">First Bloods</div>
+          <div class="header-cell">Winrate %</div>
+          <div class="header-cell">Score Compuesto</div>
+        </div>
+      `;
 
       if (!players || players.length === 0) {
         const emptyDiv = document.createElement("div");
@@ -36,13 +39,11 @@ if (grid) {
         const row = document.createElement("div");
         row.className = `grid-row rank-${i + 1}`;
 
-        // redes sociales (si existen)
         const socialLinks = [];
         if (p.twitter) socialLinks.push(`<a href="${p.twitter}" target="_blank">🐦</a>`);
         if (p.twitch) socialLinks.push(`<a href="${p.twitch}" target="_blank">🎥</a>`);
         if (p.instagram) socialLinks.push(`<a href="${p.instagram}" target="_blank">📸</a>`);
 
-        // insignias/trofeos (array en BD: p.badges)
         const badges = (p.badges || []).map(b => `<span class="badge">${b}</span>`).join(" ");
 
         row.innerHTML = `
@@ -60,7 +61,7 @@ if (grid) {
           <div class="data-cell stat-score" data-label="Score">${(p.score || 0).toFixed(2)}</div>
         `;
 
-        // evento: clic en el jugador -> redirige a perfil
+        // Clic en jugador -> perfil
         row.querySelector(".player-name").addEventListener("click", () => {
           window.location.href = `/player/${p.id}`;
         });
@@ -70,12 +71,11 @@ if (grid) {
 
     } catch (err) {
       console.error("Error cargando leaderboard:", err);
-      grid.innerHTML = `
-        <div class="loading-state">Error cargando leaderboard</div>
-      `;
+      grid.innerHTML = `<div class="loading-state">Error cargando leaderboard</div>`;
     }
   }
 
-  // Cargar al inicio
+  // Cargar al inicio y refrescar cada 60s
   document.addEventListener("DOMContentLoaded", loadLeaderboard);
+  setInterval(loadLeaderboard, 60000); // refresco automático
 }
