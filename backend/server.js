@@ -152,9 +152,10 @@ app.post("/players", requireAdmin, async (req, res) => {
   }
 });
 
-app.get("/players", requireAdmin, async (req, res) => {
+app.get("/players", async (req, res) => {
   try {
-    const players = await playersCollection.find().toArray();
+    // Solo devuelve nombre y tag públicamente
+    const players = await playersCollection.find({}, { projection: { name: 1, tag: 1 } }).toArray();
     res.json(players);
   } catch (err) {
     console.error(err);
@@ -247,7 +248,7 @@ app.post("/matches", requireAdmin, async (req, res) => {
   }
 });
 
-// Leaderboard público
+// --- Leaderboard público ---
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
@@ -269,20 +270,10 @@ app.get("/leaderboard", async (req, res) => {
       const reliabilityFactor = Math.min(matches / 5, 1);
       const consistencyBonus = 1 + (Math.min(matches, 20) / 100);
 
-      return { 
-        name: p.name, 
-        tag: p.tag, 
-        ACS: Math.round(avgACS), 
-        KDA: avgKDA.toFixed(2), 
-        HS: hsPercent.toFixed(1), 
-        FK: Math.round(avgFirstBloods), 
-        WR: winrate.toFixed(1), 
-        Score: Math.round(scoreRaw * consistencyBonus * reliabilityFactor), 
-        matchesPlayed: matches 
-      };
+      return { name: p.name, tag: p.tag, avgKills, avgDeaths, avgACS, avgFirstBloods, avgAssists, hsPercent, winrate, avgKDA, score: scoreRaw * consistencyBonus * reliabilityFactor, matchesPlayed: matches };
     });
 
-    withScores.sort((a, b) => b.Score - a.Score);
+    withScores.sort((a, b) => b.score - a.score);
     res.json(withScores);
   } catch (err) {
     console.error(err);
@@ -313,11 +304,28 @@ app.get("/matches-count", async (req, res) => {
   }
 });
 
+// --- NUEVAS RUTAS PÚBLICAS PARA FRONTEND ---
+// Lista de jugadores públicos
+app.get("/players", async (req, res) => {
+  try {
+    const players = await playersCollection.find({}, { projection: { name: 1, tag: 1 } }).toArray();
+    res.json(players);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener jugadores" });
+  }
+});
+
 // Última partida
 app.get("/last-match", async (req, res) => {
   try {
-    const lastMatch = await matchesCollection.find().sort({ date: -1 }).limit(1).toArray();
-    if (!lastMatch || lastMatch.length === 0) return res.json({ date: null });
+    const lastMatch = await matchesCollection
+      .find()
+      .sort({ date: -1 })
+      .limit(1)
+      .toArray();
+
+    if (!lastMatch[0]) return res.json({ date: null });
     res.json({ date: lastMatch[0].date });
   } catch (err) {
     console.error(err);
