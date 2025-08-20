@@ -14,10 +14,23 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- Middleware CORS ---
+// --- Middleware CORS actualizado ---
+const allowedOrigins = [
+  "https://valorant-10-mans-frontend.onrender.com", // producción
+  "http://127.0.0.1:5500",                           // localhost
+  "http://localhost:5500"
+];
+
 app.use(cors({
-  origin: "https://valorant-10-mans-frontend.onrender.com",
-  credentials: true,
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true); // para requests desde Postman o curl
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = "CORS policy error";
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
 }));
 
 app.use(express.json());
