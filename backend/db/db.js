@@ -1,6 +1,4 @@
 import { MongoClient } from "mongodb";
-import dotenv from "dotenv";
-dotenv.config();
 
 let db, playersCollection, matchesCollection;
 
@@ -9,7 +7,6 @@ export async function connectDB() {
     console.error("❌ ERROR: MONGODB_URI no está definido.");
     process.exit(1);
   }
-
   try {
     const client = new MongoClient(process.env.MONGODB_URI);
     await client.connect();
