@@ -152,9 +152,10 @@ app.post("/players", requireAdmin, async (req, res) => {
   }
 });
 
-app.get("/players", requireAdmin, async (req, res) => {
+app.get("/players", async (req, res) => {
   try {
-    const players = await playersCollection.find().toArray();
+    // Solo devuelve nombre y tag públicamente
+    const players = await playersCollection.find({}, { projection: { name: 1, tag: 1 } }).toArray();
     res.json(players);
   } catch (err) {
     console.error(err);
@@ -247,7 +248,7 @@ app.post("/matches", requireAdmin, async (req, res) => {
   }
 });
 
-// Leaderboard público
+// --- Leaderboard público ---
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
@@ -300,6 +301,35 @@ app.get("/matches-count", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al obtener total de partidas" });
+  }
+});
+
+// --- NUEVAS RUTAS PÚBLICAS PARA FRONTEND ---
+// Lista de jugadores públicos
+app.get("/players", async (req, res) => {
+  try {
+    const players = await playersCollection.find({}, { projection: { name: 1, tag: 1 } }).toArray();
+    res.json(players);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener jugadores" });
+  }
+});
+
+// Última partida
+app.get("/last-match", async (req, res) => {
+  try {
+    const lastMatch = await matchesCollection
+      .find()
+      .sort({ date: -1 })
+      .limit(1)
+      .toArray();
+
+    if (!lastMatch[0]) return res.json({ date: null });
+    res.json({ date: lastMatch[0].date });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener última partida" });
   }
 });
 
