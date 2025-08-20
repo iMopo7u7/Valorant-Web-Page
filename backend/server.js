@@ -14,23 +14,29 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- Middleware CORS actualizado ---
+// --- Middleware CORS robusto ---
 const allowedOrigins = [
-  "https://valorant-10-mans-frontend.onrender.com", // producción
-  "http://127.0.0.1:5500",                           // localhost
+  "https://valorant-10-mans-frontend.onrender.com",
+  "http://127.0.0.1:5500",
   "http://localhost:5500"
 ];
 
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true); // para requests desde Postman o curl
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = "CORS policy error";
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("CORS policy error"), false);
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization']
+}));
+
+app.options('*', cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization']
 }));
 
 app.use(express.json());
@@ -39,7 +45,7 @@ app.use(express.json());
 const sessionStore = MongoStore.create({
   mongoUrl: process.env.MONGODB_URI,
   collectionName: "sessions",
-  ttl: 60 * 60, // 1 hora
+  ttl: 60 * 60,
 });
 
 app.use(session({
@@ -47,7 +53,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: sessionStore,
-  cookie: { maxAge: 60 * 60 * 1000 } // 1 hora
+  cookie: { maxAge: 60 * 60 * 1000 }
 }));
 
 // --- Conexión MongoDB ---
@@ -117,7 +123,6 @@ app.get("/admin.html", requireAdmin, (req, res) => {
 });
 
 // --- CRUD Players ---
-// Añadir jugador
 app.post("/players", requireAdmin, async (req, res) => {
   try {
     const { name, tag } = req.body;
@@ -147,7 +152,6 @@ app.post("/players", requireAdmin, async (req, res) => {
   }
 });
 
-// Listar jugadores
 app.get("/players", requireAdmin, async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
@@ -158,7 +162,6 @@ app.get("/players", requireAdmin, async (req, res) => {
   }
 });
 
-// Editar jugador
 app.put("/players", requireAdmin, async (req, res) => {
   try {
     const { oldName, oldTag, newName, newTag } = req.body;
@@ -190,7 +193,6 @@ app.put("/players", requireAdmin, async (req, res) => {
   }
 });
 
-// Eliminar jugador
 app.delete("/players", requireAdmin, async (req, res) => {
   try {
     const { name, tag } = req.body;
