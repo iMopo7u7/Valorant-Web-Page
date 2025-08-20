@@ -745,7 +745,7 @@
   <script>
     // Redirigir si no hay cookie de sesión
     document.addEventListener('DOMContentLoaded', () => {
-      fetch('/check-session', { credentials: 'include' })
+      fetch('/auth/check-session', { credentials: 'include' })
         .then(res => res.json())
         .then(data => {
           if (!data.loggedIn) window.location.href = '/login.html';
@@ -774,7 +774,7 @@
     // Logout
     document.getElementById('logoutBtn').addEventListener('click', async (e) => {
       e.preventDefault();
-      await fetch('/logout', { method: 'POST', credentials: 'include' });
+      await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
       window.location.href = '/login.html';
     });
   </script>
