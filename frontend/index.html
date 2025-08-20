@@ -737,15 +737,15 @@
   <div class="stats-grid">
     <div class="stat-card">
       <h3>Total Partidas</h3>
-      <div class="value">247</div>
+      <div class="value" id="stat-matches">0</div>
     </div>
     <div class="stat-card">
       <h3>Jugadores Activos</h3>
-      <div class="value">156</div>
+      <div class="value" id="stat-players">0</div>
     </div>
     <div class="stat-card">
       <h3>Última Actualización</h3>
-      <div class="value">Hoy</div>
+      <div class="value" id="stat-update">Cargando...</div>
     </div>
   </div>
 
@@ -777,114 +777,96 @@
 </div>
 
 <script>
-// API Configuration - Cambia esta URL según donde esté alojado tu backend
-const API_BASE_URL = 'https://valorant-10-mans.onrender.com'; // El puerto debe coincidir con tu server.js
+// ==========================
+// 🔧 API CONFIG
+// ==========================
+const API_BASE_URL = "https://valorant-10-mans.onrender.com"; 
 
-// Global state
-let playersData = [];
-let statsData = {
-  totalMatches: 0,
-  activePlayers: 0,
-  lastUpdate: 'Cargando...'
-};
+// ==========================
+// 🔧 UTILS
+// ==========================
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" });
+}
 
-// API Service Functions
+// ==========================
+// 🔧 API SERVICE
+// ==========================
 class ApiService {
-  static async fetchWithAuth(url, options = {}) {
-    try {
-      const response = await fetch(url, {
-        ...options,
-        credentials: 'include', // Include cookies for session management
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
-    }
+  static async fetchJson(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Error ${res.status} en ${url}`);
+    return res.json();
   }
 
-  // Get leaderboard data - RUTA ACTUALIZADA
-  static async getLeaderboard(filters = {}) {
-    const queryParams = new URLSearchParams(filters).toString();
-    const url = `${API_BASE_URL}/leaderboard${queryParams ? `?${queryParams}` : ''}`;
-    return await this.fetchWithAuth(url);
+  static async getLeaderboard() {
+    return this.fetchJson(`${API_BASE_URL}/leaderboard`);
   }
 
-  // Get general statistics - NUEVA FUNCIÓN para obtener estadísticas
   static async getStats() {
-    try {
-      // Obtener total de partidas
-      const matchesCount = await this.fetchWithAuth(`${API_BASE_URL}/matches-count`);
-      
-      // Obtener total de jugadores (necesitarías implementar esta ruta en el backend)
-      const players = await this.fetchWithAuth(`${API_BASE_URL}/players`);
-      
-      // Obtener última actualización (necesitarías implementar esta ruta en el backend)
-      const lastMatch = await this.fetchWithAuth(`${API_BASE_URL}/last-match`);
-      
-      return {
-        totalMatches: matchesCount.count || 0,
-        activePlayers: players.length || 0,
-        lastUpdate: lastMatch.date ? formatDate(lastMatch.date) : 'No disponible'
-      };
-    } catch (error) {
-      console.error('Error getting stats:', error);
-      return {
-        totalMatches: 0,
-        activePlayers: 0,
-        lastUpdate: 'Error'
-      };
-    }
-  }
-
-  // Get player details - RUTA ACTUALIZADA
-  static async getPlayer(playerName, playerTag) {
-    // Necesitarías implementar esta ruta en tu backend
-    return await this.fetchWithAuth(`${API_BASE_URL}/player/${playerName}/${playerTag}`);
-  }
-
-  // Get matches data - RUTA ACTUALIZADA
-  static async getMatches(filters = {}) {
-    const queryParams = new URLSearchParams(filters).toString();
-    const url = `${API_BASE_URL}/matches${queryParams ? `?${queryParams}` : ''}`;
-    return await this.fetchWithAuth(url);
-  }
-
-  // Get events data - Esta ruta no existe en tu backend actual
-  static async getEvents(filters = {}) {
-    console.log('Events endpoint not implemented in backend');
-    return { events: [] };
-  }
-}
-
-// ... (el resto de las funciones se mantienen igual hasta initializeApp)
-
-// Initialize Application
-async function initializeApp() {
-  try {
-    // Load initial data
-    await Promise.all([
-      loadStats(),
-      loadLeaderboard()
+    const [matchesCount, players, lastMatch] = await Promise.all([
+      this.fetchJson(`${API_BASE_URL}/matches-count`),
+      this.fetchJson(`${API_BASE_URL}/players`),        // <- asegúrate de tener esta ruta
+      this.fetchJson(`${API_BASE_URL}/last-match`)     // <- asegúrate de tener esta ruta
     ]);
-    
-    console.log('Application initialized successfully');
-  } catch (error) {
-    console.error('Error initializing application:', error);
+
+    return {
+      totalMatches: matchesCount.count || 0,
+      activePlayers: players.length || 0,
+      lastUpdate: lastMatch.date ? formatDate(lastMatch.date) : "No disponible"
+    };
   }
 }
 
-// Start the application when DOM is loaded
-document.addEventListener('DOMContentLoaded', initializeApp);
+// ==========================
+// 🔧 UI RENDER
+// ==========================
+async function loadStats() {
+  try {
+    const stats = await ApiService.getStats();
+    document.getElementById("stat-matches").textContent = stats.totalMatches;
+    document.getElementById("stat-players").textContent = stats.activePlayers;
+    document.getElementById("stat-update").textContent = stats.lastUpdate;
+  } catch (err) {
+    console.error("Error cargando stats:", err);
+  }
+}
+
+async function loadLeaderboard() {
+  try {
+    const data = await ApiService.getLeaderboard();
+    const tbody = document.getElementById("leaderboard-body");
+
+    tbody.innerHTML = data.map((p, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${p.name}#${p.tag}</td>
+        <td>${p.avgACS?.toFixed(0) || "-"}</td>
+        <td>${p.avgKDA?.toFixed(2) || "-"}</td>
+        <td>${p.hsPercent?.toFixed(1) || "-"}%</td>
+        <td>${p.firstKills || 0}</td>
+        <td>${p.winrate?.toFixed(1) || "-"}%</td>
+        <td>${p.score || 0}</td>
+      </tr>
+    `).join("");
+  } catch (err) {
+    console.error("Error cargando leaderboard:", err);
+  }
+}
+
+// ==========================
+// 🔧 INIT
+// ==========================
+async function initializeApp() {
+  await Promise.all([
+    loadStats(),
+    loadLeaderboard()
+  ]);
+  console.log("Frontend conectado al backend ✅");
+}
+
+document.addEventListener("DOMContentLoaded", initializeApp);
 </script>
 
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9725664c370a1f76',t:'MTc1NTcyOTcwMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
