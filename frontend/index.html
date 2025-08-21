@@ -842,10 +842,10 @@ async function loadLeaderboard() {
       <tr>
         <td>${i + 1}</td>
         <td>${p.name}#${p.tag}</td>
-        <td>${p.avgACS || 0}</td>
+        <td>${Math.round(p.avgACS) || 0}</td>
         <td>${p.avgKDA.toFixed(2)}</td>
         <td>${p.hsPercent.toFixed(1)}%</td>
-        <td>${p.fk || 0}</td>
+        <td>${p.fk.toFixed(1)}</td>
         <td>${p.winrate.toFixed(1)}%</td>
         <td>${p.score}</td>
       </tr>
