@@ -253,33 +253,27 @@ app.get("/leaderboard", async (req, res) => {
       const avgKills = matches ? p.totalKills / matches : 0;
       const avgDeaths = matches ? p.totalDeaths / matches : 1;
       const avgACS = matches ? p.totalACS / matches : 0;
-      const avgFirstBloods = matches ? p.totalFirstBloods / matches : 0;
       const avgAssists = matches ? p.totalAssists / matches : 0;
       const winrate = matches ? (p.wins / matches) * 100 : 0;
       const hsPercent = p.totalKills ? (p.totalHeadshotKills / p.totalKills) * 100 : 0;
-
       const avgKDA = avgDeaths === 0 ? avgKills : avgKills / avgDeaths;
       const cappedKills = Math.min(avgKills, 30);
-      const impactKillsScore = (avgFirstBloods * 1.5) + (cappedKills - avgFirstBloods);
+      const impactKillsScore = (p.totalFirstBloods * 1.5) + (cappedKills - p.totalFirstBloods);
 
       const scoreRaw = (avgACS * 1.5) + (impactKillsScore * 1.2) + (avgAssists * 0.8) + (hsPercent) + (winrate) - (avgDeaths);
       const reliabilityFactor = Math.min(matches / 5, 1);
       const consistencyBonus = 1 + (Math.min(matches, 20) / 100);
 
-      return { 
-        name: p.name, 
-        tag: p.tag, 
-        avgKills, 
-        avgDeaths, 
-        avgACS, 
-        avgFirstBloods, 
-        avgAssists, 
-        hsPercent, 
-        winrate, 
-        avgKDA, 
-        score: Math.round(scoreRaw * consistencyBonus * reliabilityFactor), // redondeado
-        fk: matches ? Math.round(avgFirstBloods) : 0, // FK promedio
-        matchesPlayed: matches 
+      return {
+        name: p.name,
+        tag: p.tag,
+        avgACS,
+        avgKDA,
+        hsPercent,
+        fk: matches ? (p.totalFirstBloods / matches) : 0, // <--- FK promedio por partida
+        winrate,
+        score: Math.round(scoreRaw * consistencyBonus * reliabilityFactor),
+        matchesPlayed: matches
       };
     });
 
