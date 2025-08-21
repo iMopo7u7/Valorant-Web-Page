@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- Middleware CORS robusto ---
+// --- Middleware CORS ---
 const allowedOrigins = [
   "https://valorant-10-mans-frontend.onrender.com",
   "http://127.0.0.1:5500",
@@ -79,14 +79,12 @@ async function connectDB() {
 
 // --- Rutas estáticas frontend ---
 app.use(express.static(path.join(__dirname, "../frontend")));
-
-// --- Rutas privadas (login/admin) ---
 app.use("/private", express.static(path.join(__dirname, "private")));
 
+// --- Login/admin ---
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
 
-// --- Login ---
 app.get("/login.html", (req, res) => {
   res.sendFile(path.join(__dirname, "private/login.html"));
 });
@@ -112,12 +110,10 @@ function requireAdmin(req, res, next) {
   else res.status(403).json({ error: "Acceso denegado" });
 }
 
-// Verificar sesión
 app.get("/check-session", (req, res) => {
   res.json({ loggedIn: !!req.session.isAdmin });
 });
 
-// Servir admin.html solo si está logueado
 app.get("/admin.html", requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, "private/admin.html"));
 });
@@ -152,10 +148,9 @@ app.post("/players", requireAdmin, async (req, res) => {
   }
 });
 
-app.get("/players", async (req, res) => {
+app.get("/players", requireAdmin, async (req, res) => {
   try {
-    // Solo devuelve nombre y tag públicamente
-    const players = await playersCollection.find({}, { projection: { name: 1, tag: 1 } }).toArray();
+    const players = await playersCollection.find().toArray();
     res.json(players);
   } catch (err) {
     console.error(err);
@@ -248,7 +243,8 @@ app.post("/matches", requireAdmin, async (req, res) => {
   }
 });
 
-// --- Leaderboard público ---
+// --- Rutas públicas para frontend ---
+// Leaderboard público
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
@@ -270,7 +266,21 @@ app.get("/leaderboard", async (req, res) => {
       const reliabilityFactor = Math.min(matches / 5, 1);
       const consistencyBonus = 1 + (Math.min(matches, 20) / 100);
 
-      return { name: p.name, tag: p.tag, avgKills, avgDeaths, avgACS, avgFirstBloods, avgAssists, hsPercent, winrate, avgKDA, score: scoreRaw * consistencyBonus * reliabilityFactor, matchesPlayed: matches };
+      return { 
+        name: p.name, 
+        tag: p.tag, 
+        avgKills, 
+        avgDeaths, 
+        avgACS, 
+        avgFirstBloods, 
+        avgAssists, 
+        hsPercent, 
+        winrate, 
+        avgKDA, 
+        score: Math.round(scoreRaw * consistencyBonus * reliabilityFactor), // redondeado
+        fk: matches ? Math.round(avgFirstBloods) : 0, // FK promedio
+        matchesPlayed: matches 
+      };
     });
 
     withScores.sort((a, b) => b.score - a.score);
@@ -304,28 +314,22 @@ app.get("/matches-count", async (req, res) => {
   }
 });
 
-// --- NUEVAS RUTAS PÚBLICAS PARA FRONTEND ---
-// Lista de jugadores públicos
-app.get("/players", async (req, res) => {
+// Contador de jugadores (público)
+app.get("/players-count", async (req, res) => {
   try {
-    const players = await playersCollection.find({}, { projection: { name: 1, tag: 1 } }).toArray();
-    res.json(players);
+    const count = await playersCollection.countDocuments();
+    res.json({ count });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error al obtener jugadores" });
+    res.status(500).json({ error: "Error al obtener total de jugadores" });
   }
 });
 
-// Última partida
+// Última partida (pública)
 app.get("/last-match", async (req, res) => {
   try {
-    const lastMatch = await matchesCollection
-      .find()
-      .sort({ date: -1 })
-      .limit(1)
-      .toArray();
-
-    if (!lastMatch[0]) return res.json({ date: null });
+    const lastMatch = await matchesCollection.find().sort({ date: -1 }).limit(1).toArray();
+    if (lastMatch.length === 0) return res.json({ date: null });
     res.json({ date: lastMatch[0].date });
   } catch (err) {
     console.error(err);
