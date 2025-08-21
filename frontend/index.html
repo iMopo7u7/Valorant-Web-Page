@@ -805,15 +805,15 @@ class ApiService {
   }
 
   static async getStats() {
-    const [matchesCount, players, lastMatch] = await Promise.all([
+    const [matchesCount, playersCount, lastMatch] = await Promise.all([
       this.fetchJson(`${API_BASE_URL}/matches-count`),
-      this.fetchJson(`${API_BASE_URL}/players`),        // <- asegúrate de tener esta ruta
-      this.fetchJson(`${API_BASE_URL}/last-match`)     // <- asegúrate de tener esta ruta
+      this.fetchJson(`${API_BASE_URL}/players-count`),
+      this.fetchJson(`${API_BASE_URL}/last-match`)
     ]);
 
     return {
       totalMatches: matchesCount.count || 0,
-      activePlayers: players.length || 0,
+      activePlayers: playersCount.count || 0,
       lastUpdate: lastMatch.date ? formatDate(lastMatch.date) : "No disponible"
     };
   }
@@ -842,12 +842,12 @@ async function loadLeaderboard() {
       <tr>
         <td>${i + 1}</td>
         <td>${p.name}#${p.tag}</td>
-        <td>${p.avgACS?.toFixed(0) || "-"}</td>
-        <td>${p.avgKDA?.toFixed(2) || "-"}</td>
-        <td>${p.hsPercent?.toFixed(1) || "-"}%</td>
-        <td>${p.firstKills || 0}</td>
-        <td>${p.winrate?.toFixed(1) || "-"}%</td>
-        <td>${p.score || 0}</td>
+        <td>${p.avgACS || 0}</td>
+        <td>${p.avgKDA.toFixed(2)}</td>
+        <td>${p.hsPercent.toFixed(1)}%</td>
+        <td>${p.fk || 0}</td>
+        <td>${p.winrate.toFixed(1)}%</td>
+        <td>${p.score}</td>
       </tr>
     `).join("");
   } catch (err) {
