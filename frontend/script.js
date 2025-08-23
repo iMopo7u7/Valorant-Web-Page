@@ -55,19 +55,25 @@ function createSocialLinks(social) {
   
   if (social.twitter) {
     html += `<a href="${social.twitter}" target="_blank" title="Twitter">
-      <img src="assets/twitter-icon.png" alt="Twitter" class="social-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="social-icon" width="16" height="16">
+        <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
+      </svg>
     </a>`;
   }
   
   if (social.valorantTracker) {
     html += `<a href="${social.valorantTracker}" target="_blank" title="Valorant Tracker">
-      <img src="assets/tracker-icon.png" alt="Tracker" class="social-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="social-icon" width="16" height="16">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6m4-3h6v6m-11 5L21 3"/>
+      </svg>
     </a>`;
   }
   
   if (social.twitch) {
     html += `<a href="${social.twitch}" target="_blank" title="Twitch">
-      <img src="assets/twitch-icon.png" alt="Twitch" class="social-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="social-icon" width="16" height="16">
+        <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
+      </svg>
     </a>`;
   }
   
