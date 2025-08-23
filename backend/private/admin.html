@@ -696,6 +696,8 @@
       <option value="A">Equipo A</option>
       <option value="B">Equipo B</option>
     </select>
+    <label>Marcador final:</label>
+    <input type="text" id="matchScore" placeholder="Ej: 13-8">
     <button id="submitMatchBtn">Registrar Partida</button>
   </section>
 </main>
@@ -837,13 +839,17 @@ function populateTeams(){
 document.getElementById('submitMatchBtn').addEventListener('click', async ()=>{
   const winnerTeam = document.getElementById('winnerTeam').value;
   if(!winnerTeam) return alert('Selecciona ganador');
-  const match=[];
 
+  const score = document.getElementById('matchScore').value.trim();
+  if(!score) return alert('Debes ingresar el marcador final');
+
+  const match=[];
   const teamA = document.getElementById('teamA').querySelectorAll('.form-inline');
   const teamB = document.getElementById('teamB').querySelectorAll('.form-inline');
 
   for(const row of [...teamA,...teamB]){
-    const select=row.querySelector('.player-select'); if(!select.value) continue;
+    const select=row.querySelector('.player-select');
+    if(!select.value) return alert("Debes seleccionar los 10 jugadores");
     const [name, tag] = select.value.split('||');
     const kills = parseInt(row.querySelector('.kill').value)||0;
     const deaths = parseInt(row.querySelector('.death').value)||0;
@@ -853,9 +859,7 @@ document.getElementById('submitMatchBtn').addEventListener('click', async ()=>{
     const hsPercent = parseFloat(row.querySelector('.hs').value)||0;
     match.push({name,tag,kills,deaths,assists,acs,firstBloods,hsPercent});
   }
-  if(match.length===0) return alert('No hay jugadores seleccionados');
 
-  const score = '16-10'; // placeholder
   try{
     const res = await fetch('/matches',{
       method:'POST',
