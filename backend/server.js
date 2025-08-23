@@ -14,16 +14,14 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- Middleware CORS ---
+// --- Middleware CORS (solo tu frontend público) ---
 const allowedOrigins = [
-  "https://valorant-10-mans-frontend.onrender.com",
-  "http://127.0.0.1:5500",
-  "http://localhost:5500"
+  "https://valorant-10-mans-frontend.onrender.com"
 ];
 
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // requests desde Postman o server-side
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error("CORS policy error"), false);
   },
@@ -45,7 +43,7 @@ app.use(express.json());
 const sessionStore = MongoStore.create({
   mongoUrl: process.env.MONGODB_URI,
   collectionName: "sessions",
-  ttl: 60 * 60,
+  ttl: 60 * 60, // 1 hora
 });
 
 app.use(session({
@@ -77,15 +75,14 @@ async function connectDB() {
   }
 }
 
-// --- Rutas estáticas frontend ---
+// --- Rutas estáticas frontend (solo lectura) ---
 app.use(express.static(path.join(__dirname, "../frontend")));
-app.use("/private", express.static(path.join(__dirname, "private")));
 
-// --- Login/admin ---
+// --- Login/admin (protegido) ---
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
 
-app.get("/login.html", (req, res) => {
+app.get("/private/login.html", (req, res) => {
   res.sendFile(path.join(__dirname, "private/login.html"));
 });
 
@@ -114,225 +111,62 @@ app.get("/check-session", (req, res) => {
   res.json({ loggedIn: !!req.session.isAdmin });
 });
 
-app.get("/admin.html", requireAdmin, (req, res) => {
+app.post("/logout", (req, res) => {
+  req.session.destroy(err => {
+    if (err) return res.status(500).json({ error: "Error cerrando sesión" });
+    res.clearCookie('connect.sid');
+    res.json({ success: true });
+  });
+});
+
+app.get("/private/admin.html", requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, "private/admin.html"));
 });
 
-// --- CRUD Players ---
+// --- CRUD Players y Matches (requieren admin) ---
 app.post("/players", requireAdmin, async (req, res) => {
-  try {
-    const { name, tag, badges = [], social = {} } = req.body;
-    if (!name || !tag) return res.status(400).json({ error: "Nombre y tag requeridos" });
-
-    const exists = await playersCollection.findOne({ name, tag });
-    if (exists) return res.status(400).json({ error: "Jugador ya existe" });
-
-    const newPlayer = {
-      name: name.trim(),
-      tag: tag.trim(),
-      totalKills: 0,
-      totalDeaths: 0,
-      totalAssists: 0,
-      totalACS: 0,
-      totalFirstBloods: 0,
-      totalHeadshotKills: 0,
-      matchesPlayed: 0,
-      wins: 0,
-      badges, // nuevo campo
-      social  // nuevo campo
-    };
-
-    await playersCollection.insertOne(newPlayer);
-    res.json({ message: "Jugador añadido exitosamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al añadir jugador" });
-  }
-});
-
-app.get("/players", requireAdmin, async (req, res) => {
-  try {
-    const players = await playersCollection.find().toArray();
-    res.json(players);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener jugadores" });
-  }
-});
-
-app.put("/players", requireAdmin, async (req, res) => {
-  try {
-    const { oldName, oldTag, newName, newTag } = req.body;
-    if (!oldName || !oldTag || !newName || !newTag)
-      return res.status(400).json({ error: "Todos los campos son requeridos" });
-
-    await playersCollection.updateOne(
-      { name: oldName, tag: oldTag },
-      { $set: { name: newName, tag: newTag } }
-    );
-
-    const matches = await matchesCollection.find({ "match.name": oldName, "match.tag": oldTag }).toArray();
-    for (const match of matches) {
-      let modified = false;
-      match.match.forEach(player => {
-        if (player.name === oldName && player.tag === oldTag) {
-          player.name = newName;
-          player.tag = newTag;
-          modified = true;
-        }
-      });
-      if (modified) await matchesCollection.updateOne({ _id: match._id }, { $set: { match: match.match } });
-    }
-
-    res.json({ message: "Jugador actualizado correctamente en players y matches" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al actualizar jugador" });
-  }
-});
-
-app.delete("/players", requireAdmin, async (req, res) => {
   try {
     const { name, tag } = req.body;
     if (!name || !tag) return res.status(400).json({ error: "Nombre y tag requeridos" });
-
-    await playersCollection.deleteOne({ name, tag });
-    await matchesCollection.updateMany(
-      { "match.name": name, "match.tag": tag },
-      { $pull: { match: { name, tag } } }
-    );
-
-    res.json({ message: "Jugador eliminado correctamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al eliminar jugador" });
-  }
+    const exists = await playersCollection.findOne({ name, tag });
+    if (exists) return res.status(400).json({ error: "Jugador ya existe" });
+    await playersCollection.insertOne({ name, tag, totalKills: 0, totalDeaths: 0, totalAssists: 0, matchesPlayed: 0 });
+    res.json({ message: "Jugador añadido exitosamente" });
+  } catch (err) { res.status(500).json({ error: "Error al añadir jugador" }); }
 });
 
-// --- CRUD Matches (con score) ---
+app.get("/players", requireAdmin, async (req, res) => {
+  const players = await playersCollection.find().toArray();
+  res.json(players);
+});
+
+app.put("/players", requireAdmin, async (req, res) => {
+  const { oldName, oldTag, newName, newTag } = req.body;
+  await playersCollection.updateOne({ name: oldName, tag: oldTag }, { $set: { name: newName, tag: newTag } });
+  res.json({ message: "Jugador actualizado" });
+});
+
+app.delete("/players", requireAdmin, async (req, res) => {
+  const { name, tag } = req.body;
+  await playersCollection.deleteOne({ name, tag });
+  res.json({ message: "Jugador eliminado" });
+});
+
 app.post("/matches", requireAdmin, async (req, res) => {
-  try {
-    const { match, winnerTeam, score } = req.body;
-    if (!Array.isArray(match) || match.length !== 10) return res.status(400).json({ error: "Formato inválido" });
-    if (!score || typeof score !== "string") return res.status(400).json({ error: "Score final requerido" });
-
-    await matchesCollection.insertOne({ match, winnerTeam, score, date: new Date() });
-
-    for (const p of match) {
-      const playerTeam = match.indexOf(p) < 5 ? "A" : "B";
-      const headshotKills = Math.round((p.hsPercent / 100) * p.kills);
-
-      await playersCollection.updateOne(
-        { name: p.name, tag: p.tag },
-        {
-          $inc: {
-            totalKills: p.kills,
-            totalDeaths: p.deaths,
-            totalAssists: p.assists,
-            totalACS: p.acs,
-            totalFirstBloods: p.firstBloods,
-            totalHeadshotKills: headshotKills,
-            matchesPlayed: 1,
-            wins: playerTeam === winnerTeam ? 1 : 0
-          },
-        }
-      );
-    }
-
-    res.json({ message: "Partida añadida exitosamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al añadir partida" });
-  }
+  const { match, winnerTeam, score } = req.body;
+  await matchesCollection.insertOne({ match, winnerTeam, score, date: new Date() });
+  res.json({ message: "Partida añadida" });
 });
 
-// --- Rutas públicas para frontend ---
+// --- Endpoints públicos (solo lectura) ---
 app.get("/leaderboard", async (req, res) => {
-  try {
-    const players = await playersCollection.find().toArray();
-    const withScores = players.map(p => {
-      const matches = p.matchesPlayed || 0;
-      const avgKills = matches ? p.totalKills / matches : 0;
-      const avgDeaths = matches ? p.totalDeaths / matches : 1;
-      const avgACS = matches ? p.totalACS / matches : 0;
-      const avgAssists = matches ? p.totalAssists / matches : 0;
-      const winrate = matches ? (p.wins / matches) * 100 : 0;
-      const hsPercent = p.totalKills ? (p.totalHeadshotKills / p.totalKills) * 100 : 0;
-      const avgKDA = avgDeaths === 0 ? avgKills : avgKills / avgDeaths;
-      const cappedKills = Math.min(avgKills, 30);
-      const impactKillsScore = (p.totalFirstBloods * 1.5) + (cappedKills - p.totalFirstBloods);
-      const scoreRaw = (avgACS * 1.5) + (impactKillsScore * 1.2) + (avgAssists * 0.8) + hsPercent + winrate - avgDeaths;
-      const reliabilityFactor = Math.min(matches / 5, 1);
-      const consistencyBonus = 1 + (Math.min(matches, 20) / 100);
-
-      return {
-        name: p.name,
-        tag: p.tag,
-        avgACS,
-        avgKDA,
-        hsPercent,
-        fk: matches ? (p.totalFirstBloods / matches) : 0,
-        winrate,
-        score: Math.round(scoreRaw * consistencyBonus * reliabilityFactor),
-        matchesPlayed: matches,
-        badges: p.badges || [],
-        social: p.social || {}
-      };
-    });
-
-    withScores.sort((a, b) => b.score - a.score);
-    res.json(withScores);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al generar leaderboard" });
-  }
-});
-
-app.get("/matches/:name/:tag", async (req, res) => {
-  try {
-    const { name, tag } = req.params;
-    const matches = await matchesCollection.find({ match: { $elemMatch: { name, tag } } }).sort({ date: -1 }).toArray();
-    res.json(matches.map(m => ({
-      match: m.match,
-      winnerTeam: m.winnerTeam,
-      score: m.score,
-      date: m.date
-    })));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener historial" });
-  }
+  const players = await playersCollection.find().toArray();
+  res.json(players);
 });
 
 app.get("/matches-count", async (req, res) => {
-  try {
-    const count = await matchesCollection.countDocuments();
-    res.json({ count });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener total de partidas" });
-  }
-});
-
-app.get("/players-count", async (req, res) => {
-  try {
-    const count = await playersCollection.countDocuments();
-    res.json({ count });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener total de jugadores" });
-  }
-});
-
-app.get("/last-match", async (req, res) => {
-  try {
-    const lastMatch = await matchesCollection.find().sort({ date: -1 }).limit(1).toArray();
-    if (lastMatch.length === 0) return res.json({ date: null });
-    res.json({ date: lastMatch[0].date });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener última partida" });
-  }
+  const count = await matchesCollection.countDocuments();
+  res.json({ count });
 });
 
 // --- Iniciar servidor ---
