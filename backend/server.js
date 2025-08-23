@@ -121,7 +121,7 @@ app.get("/admin.html", requireAdmin, (req, res) => {
 // --- CRUD Players ---
 app.post("/players", requireAdmin, async (req, res) => {
   try {
-    const { name, tag } = req.body;
+    const { name, tag, badges = [], social = {} } = req.body;
     if (!name || !tag) return res.status(400).json({ error: "Nombre y tag requeridos" });
 
     const exists = await playersCollection.findOne({ name, tag });
@@ -138,6 +138,8 @@ app.post("/players", requireAdmin, async (req, res) => {
       totalHeadshotKills: 0,
       matchesPlayed: 0,
       wins: 0,
+      badges, // nuevo campo
+      social  // nuevo campo
     };
 
     await playersCollection.insertOne(newPlayer);
@@ -207,13 +209,14 @@ app.delete("/players", requireAdmin, async (req, res) => {
   }
 });
 
-// --- CRUD Matches ---
+// --- CRUD Matches (con score) ---
 app.post("/matches", requireAdmin, async (req, res) => {
   try {
-    const { match, winnerTeam } = req.body;
+    const { match, winnerTeam, score } = req.body;
     if (!Array.isArray(match) || match.length !== 10) return res.status(400).json({ error: "Formato inválido" });
+    if (!score || typeof score !== "string") return res.status(400).json({ error: "Score final requerido" });
 
-    await matchesCollection.insertOne({ match, winnerTeam, date: new Date() });
+    await matchesCollection.insertOne({ match, winnerTeam, score, date: new Date() });
 
     for (const p of match) {
       const playerTeam = match.indexOf(p) < 5 ? "A" : "B";
@@ -230,7 +233,7 @@ app.post("/matches", requireAdmin, async (req, res) => {
             totalFirstBloods: p.firstBloods,
             totalHeadshotKills: headshotKills,
             matchesPlayed: 1,
-            wins: playerTeam === winnerTeam ? 1 : 0,
+            wins: playerTeam === winnerTeam ? 1 : 0
           },
         }
       );
@@ -244,7 +247,6 @@ app.post("/matches", requireAdmin, async (req, res) => {
 });
 
 // --- Rutas públicas para frontend ---
-// Leaderboard público
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
@@ -259,8 +261,7 @@ app.get("/leaderboard", async (req, res) => {
       const avgKDA = avgDeaths === 0 ? avgKills : avgKills / avgDeaths;
       const cappedKills = Math.min(avgKills, 30);
       const impactKillsScore = (p.totalFirstBloods * 1.5) + (cappedKills - p.totalFirstBloods);
-
-      const scoreRaw = (avgACS * 1.5) + (impactKillsScore * 1.2) + (avgAssists * 0.8) + (hsPercent) + (winrate) - (avgDeaths);
+      const scoreRaw = (avgACS * 1.5) + (impactKillsScore * 1.2) + (avgAssists * 0.8) + hsPercent + winrate - avgDeaths;
       const reliabilityFactor = Math.min(matches / 5, 1);
       const consistencyBonus = 1 + (Math.min(matches, 20) / 100);
 
@@ -270,10 +271,12 @@ app.get("/leaderboard", async (req, res) => {
         avgACS,
         avgKDA,
         hsPercent,
-        fk: matches ? (p.totalFirstBloods / matches) : 0, // <--- FK promedio por partida
+        fk: matches ? (p.totalFirstBloods / matches) : 0,
         winrate,
         score: Math.round(scoreRaw * consistencyBonus * reliabilityFactor),
-        matchesPlayed: matches
+        matchesPlayed: matches,
+        badges: p.badges || [],
+        social: p.social || {}
       };
     });
 
@@ -285,19 +288,22 @@ app.get("/leaderboard", async (req, res) => {
   }
 });
 
-// Historial de un jugador
 app.get("/matches/:name/:tag", async (req, res) => {
   try {
     const { name, tag } = req.params;
-    const matches = await matchesCollection.find({ match: { $elemMatch: { name, tag } } }).toArray();
-    res.json(matches);
+    const matches = await matchesCollection.find({ match: { $elemMatch: { name, tag } } }).sort({ date: -1 }).toArray();
+    res.json(matches.map(m => ({
+      match: m.match,
+      winnerTeam: m.winnerTeam,
+      score: m.score,
+      date: m.date
+    })));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al obtener historial" });
   }
 });
 
-// Contador de partidas
 app.get("/matches-count", async (req, res) => {
   try {
     const count = await matchesCollection.countDocuments();
@@ -308,7 +314,6 @@ app.get("/matches-count", async (req, res) => {
   }
 });
 
-// Contador de jugadores (público)
 app.get("/players-count", async (req, res) => {
   try {
     const count = await playersCollection.countDocuments();
@@ -319,7 +324,6 @@ app.get("/players-count", async (req, res) => {
   }
 });
 
-// Última partida (pública)
 app.get("/last-match", async (req, res) => {
   try {
     const lastMatch = await matchesCollection.find().sort({ date: -1 }).limit(1).toArray();
