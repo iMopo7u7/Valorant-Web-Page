@@ -14,20 +14,20 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- Middleware CORS ---
+// -------------------
+// --- CORS
+// -------------------
 const allowedOrigins = [
-  "https://valorant-10-mans-frontend.onrender.com",
-  "http://127.0.0.1:5500",
-  "http://localhost:5500"
+  "https://valorant-10-mans-frontend.onrender.com"
 ];
 
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // permite Postman o requests sin origin
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error("CORS policy error"), false);
   },
-  credentials: true,
+  credentials: true, // permite enviar cookies
   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization']
 }));
@@ -39,9 +39,14 @@ app.options('*', cors({
   allowedHeaders: ['Content-Type','Authorization']
 }));
 
+// -------------------
+// --- Body parser
+// -------------------
 app.use(express.json());
 
-// --- Sesiones con MongoStore ---
+// -------------------
+// --- Sesiones con MongoStore
+// -------------------
 const sessionStore = MongoStore.create({
   mongoUrl: process.env.MONGODB_URI,
   collectionName: "sessions",
@@ -56,7 +61,9 @@ app.use(session({
   cookie: { maxAge: 60 * 60 * 1000 }
 }));
 
-// --- Conexión MongoDB ---
+// -------------------
+// --- Conexión MongoDB
+// -------------------
 if (!process.env.MONGODB_URI) {
   console.error("❌ ERROR: MONGODB_URI no está definido.");
   process.exit(1);
@@ -77,18 +84,24 @@ async function connectDB() {
   }
 }
 
-// --- Rutas estáticas frontend ---
-app.use(express.static(path.join(__dirname, "../frontend")));
-app.use("/private", express.static(path.join(__dirname, "private")));
+// -------------------
+// --- Rutas estáticas
+// -------------------
+app.use(express.static(path.join(__dirname, "../frontend"))); // frontend público
+app.use("/private", express.static(path.join(__dirname, "private"))); // admin/login
 
-// --- Login/admin ---
+// -------------------
+// --- Login / Admin
+// -------------------
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
 
+// Mostrar login (solo backend)
 app.get("/login.html", (req, res) => {
   res.sendFile(path.join(__dirname, "private/login.html"));
 });
 
+// Procesar login
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -104,21 +117,25 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Middleware de protección admin
+// Middleware para proteger admin
 function requireAdmin(req, res, next) {
   if (req.session.isAdmin) next();
   else res.status(403).json({ error: "Acceso denegado" });
 }
 
+// Chequear sesión desde frontend
 app.get("/check-session", (req, res) => {
   res.json({ loggedIn: !!req.session.isAdmin });
 });
 
+// Mostrar admin solo si está logueado
 app.get("/admin.html", requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, "private/admin.html"));
 });
 
-// --- CRUD Players ---
+// -------------------
+// --- CRUD Players
+// -------------------
 app.post("/players", requireAdmin, async (req, res) => {
   try {
     const { name, tag, badges = [], social = {} } = req.body;
@@ -138,8 +155,8 @@ app.post("/players", requireAdmin, async (req, res) => {
       totalHeadshotKills: 0,
       matchesPlayed: 0,
       wins: 0,
-      badges, // nuevo campo
-      social  // nuevo campo
+      badges,
+      social
     };
 
     await playersCollection.insertOne(newPlayer);
@@ -209,7 +226,9 @@ app.delete("/players", requireAdmin, async (req, res) => {
   }
 });
 
-// --- CRUD Matches (con score) ---
+// -------------------
+// --- CRUD Matches
+// -------------------
 app.post("/matches", requireAdmin, async (req, res) => {
   try {
     const { match, winnerTeam, score } = req.body;
@@ -246,7 +265,9 @@ app.post("/matches", requireAdmin, async (req, res) => {
   }
 });
 
-// --- Rutas públicas para frontend ---
+// -------------------
+// --- Rutas públicas para frontend
+// -------------------
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
@@ -288,6 +309,9 @@ app.get("/leaderboard", async (req, res) => {
   }
 });
 
+// -------------------
+// --- Otras rutas públicas
+// -------------------
 app.get("/matches/:name/:tag", async (req, res) => {
   try {
     const { name, tag } = req.params;
@@ -335,7 +359,9 @@ app.get("/last-match", async (req, res) => {
   }
 });
 
-// --- Iniciar servidor ---
+// -------------------
+// --- Iniciar servidor
+// -------------------
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 });
