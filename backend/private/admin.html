@@ -29,6 +29,7 @@ section.active { display:block; }
   <ul>
     <li><a href="#dashboard" class="active">Dashboard</a></li>
     <li><a href="#players">Gestionar Jugadores</a></li>
+    <li><a href="#addMatch">Agregar Partida</a></li>
     <li><a href="#matches">Partidas</a></li>
     <li><a href="#" id="logoutBtn">Cerrar Sesión</a></li>
   </ul>
@@ -58,11 +59,9 @@ section.active { display:block; }
     </table>
   </section>
 
-  <!-- PARTIDAS -->
-  <section id="matches">
-    <h2>Partidas</h2>
-
-    <!-- Formulario agregar partida -->
+  <!-- AGREGAR PARTIDA -->
+  <section id="addMatch">
+    <h2>Agregar Partida</h2>
     <div id="addMatchForm" style="margin-bottom:1rem;">
       <label>Mapa:</label>
       <select id="matchMap">
@@ -93,8 +92,11 @@ section.active { display:block; }
 
       <button id="submitMatchBtn">Registrar Partida</button>
     </div>
+  </section>
 
-    <!-- Tabla de partidas -->
+  <!-- LISTA DE PARTIDAS -->
+  <section id="matches">
+    <h2>Partidas</h2>
     <table>
       <thead>
         <tr>
@@ -178,7 +180,7 @@ function updatePlayersTable(){
       </td>`;
     tbody.appendChild(row);
 
-    // --- Editar ---
+    // --- Editar jugador ---
     const editBtn = row.querySelector('.btn-edit');
     const deleteBtn = row.querySelector('.btn-delete');
 
@@ -218,7 +220,7 @@ function updatePlayersTable(){
             oldTag:p.tag,
             newName,
             newTag,
-            social: {twitter, tracker, twitch}
+            social:{twitter, tracker, twitch}
           })
         });
         const data = await res.json();
@@ -227,6 +229,7 @@ function updatePlayersTable(){
       }catch(err){alert(err.message);}
     });
 
+    // --- Eliminar ---
     deleteBtn.addEventListener('click', async ()=>{
       if(!confirm('¿Eliminar jugador?')) return;
       try{
@@ -237,14 +240,14 @@ function updatePlayersTable(){
           body:JSON.stringify({name:p.name, tag:p.tag})
         });
         const data = await res.json();
-        if(!res.ok) throw new Error(data.error||'Error al eliminar');
+        if(!res.ok) throw new Error(data.error||'Error al eliminar jugador');
         alert(data.message); loadPlayers();
       }catch(err){alert(err.message);}
     });
   });
 }
 
-// --- Dashboard ---
+// --- DASHBOARD ---
 async function updateDashboard(){
   document.getElementById('totalPlayers').innerText = allPlayers.length;
   try{
@@ -253,15 +256,12 @@ async function updateDashboard(){
     document.getElementById('totalMatches').innerText = dataMatches.count||0;
 
     const resLast = await fetch('/last-match',{credentials:'include'});
-    const dataLast = await resLast.json();
-    document.getElementById('lastMatchDate').innerText = dataLast.date ? new Date(dataLast.date).toLocaleString() : "N/A";
-  }catch{ 
-    document.getElementById('totalMatches').innerText = 0;
-    document.getElementById('lastMatchDate').innerText = "N/A";
-  }
+    const last = await resLast.json();
+    document.getElementById('lastMatchDate').innerText = last.date ? new Date(last.date).toLocaleString() : 'N/A';
+  }catch{ document.getElementById('totalMatches').innerText = 0; }
 }
 
-// --- Teams ---
+// --- TEAMS ---
 function populateTeams(){
   const teamA = document.getElementById('teamA');
   const teamB = document.getElementById('teamB');
@@ -284,7 +284,7 @@ function populateTeams(){
   for(let i=0;i<5;i++){ teamA.appendChild(createRow()); teamB.appendChild(createRow()); }
 }
 
-// --- Registrar partida ---
+// --- REGISTRAR PARTIDA ---
 document.getElementById('submitMatchBtn').addEventListener('click', async ()=>{
   const map = document.getElementById('matchMap').value;
   const winnerTeam = document.getElementById('winnerTeam').value;
@@ -323,26 +323,7 @@ document.getElementById('submitMatchBtn').addEventListener('click', async ()=>{
   }catch(err){alert(err.message);}
 });
 
-// --- Añadir jugador ---
-document.getElementById('addPlayerForm').addEventListener('submit', async e=>{
-  e.preventDefault();
-  const name=document.getElementById('playerName').value.trim();
-  const tag=document.getElementById('playerTag').value.trim();
-  if(!name || !tag) return alert('Nombre y tag requeridos');
-  try{
-    const res = await fetch('/players',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      credentials:'include',
-      body:JSON.stringify({name,tag})
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.error||'Error al añadir jugador');
-    alert(data.message); e.target.reset(); loadPlayers();
-  }catch(err){alert(err.message);}
-});
-
-// --- Cargar partidas en tabla ---
+// --- CARGAR Y EDITAR PARTIDAS ---
 async function loadMatches(){
   try{
     const res = await fetch('/matches',{credentials:'include'});
@@ -353,21 +334,66 @@ async function loadMatches(){
       tbody.innerHTML='<tr><td colspan="5">No hay partidas registradas</td></tr>';
       return;
     }
+
     matches.forEach(m=>{
       const row = document.createElement('tr');
-      row.innerHTML = `
+      row.innerHTML=`
         <td>${m.map}</td>
         <td>${m.score}</td>
         <td>${m.winnerTeam}</td>
         <td>${new Date(m.date).toLocaleString()}</td>
-        <td>
-          <button class="btn-edit-match">Editar</button>
-        </td>`;
+        <td><button class="btn-edit-match">Editar</button></td>`;
       tbody.appendChild(row);
 
       const editBtn = row.querySelector('.btn-edit-match');
-      editBtn.addEventListener('click', ()=> {
-        alert("Editar partida aún requiere implementación de formulario de edición");
+      editBtn.addEventListener('click', ()=>{
+        const editRow = document.createElement('tr');
+        editRow.className='edit-form-row';
+        editRow.innerHTML = `<td colspan="5">
+          <div class="edit-form">
+            <label>Mapa:</label>
+            <select class="edit-map">
+              <option value="Bind" ${m.map==="Bind"?"selected":""}>Bind</option>
+              <option value="Haven" ${m.map==="Haven"?"selected":""}>Haven</option>
+              <option value="Split" ${m.map==="Split"?"selected":""}>Split</option>
+              <option value="Ascent" ${m.map==="Ascent"?"selected":""}>Ascent</option>
+              <option value="Icebox" ${m.map==="Icebox"?"selected":""}>Icebox</option>
+              <option value="Breeze" ${m.map==="Breeze"?"selected":""}>Breeze</option>
+            </select>
+            <label>Ganador:</label>
+            <select class="edit-winner">
+              <option value="A" ${m.winnerTeam==="A"?"selected":""}>Equipo A</option>
+              <option value="B" ${m.winnerTeam==="B"?"selected":""}>Equipo B</option>
+            </select>
+            <label>Score:</label>
+            <input type="text" class="edit-score" value="${m.score}">
+            <button class="btn-save-match">Guardar</button>
+            <button class="btn-cancel-match">Cancelar</button>
+          </div>
+        </td>`;
+        row.parentNode.insertBefore(editRow, row.nextSibling);
+
+        editRow.querySelector('.btn-cancel-match').addEventListener('click', ()=>{
+          editRow.remove();
+        });
+
+        editRow.querySelector('.btn-save-match').addEventListener('click', async ()=>{
+          const newMap = editRow.querySelector('.edit-map').value;
+          const newWinner = editRow.querySelector('.edit-winner').value;
+          const newScore = editRow.querySelector('.edit-score').value.trim();
+          try{
+            const res = await fetch(`/matches/${m._id}`,{
+              method:'PUT',
+              headers:{'Content-Type':'application/json'},
+              credentials:'include',
+              body:JSON.stringify({map:newMap,winnerTeam:newWinner,score:newScore})
+            });
+            const data = await res.json();
+            if(!res.ok) throw new Error(data.error||'Error al actualizar partida');
+            alert(data.message);
+            loadMatches();
+          }catch(err){alert(err.message);}
+        });
       });
     });
   }catch(err){console.error(err);}
