@@ -18,16 +18,17 @@ const PORT = process.env.PORT || 3000;
 // --- CORS
 // -------------------
 const allowedOrigins = [
-  "https://valorant-10-mans-frontend.onrender.com"
+  "https://valorant-10-mans-frontend.onrender.com", // tu frontend
+  "https://valorant-10-mans.onrender.com"           // tu backend (admin/login)
 ];
 
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true); // permite Postman o requests sin origin
+    if (!origin) return callback(null, true); // permite llamadas directas desde el navegador (sin origin)
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error("CORS policy error"), false);
   },
-  credentials: true, // permite enviar cookies
+  credentials: true, // permite enviar cookies de sesión
   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization']
 }));
