@@ -232,13 +232,17 @@ app.delete("/players", requireAdmin, async (req, res) => {
 // -------------------
 // --- CRUD Matches
 // -------------------
+
+// Crear nueva partida
 app.post("/matches", requireAdmin, async (req, res) => {
   try {
-    const { match, winnerTeam, score } = req.body;
-    if (!Array.isArray(match) || match.length !== 10) return res.status(400).json({ error: "Formato inválido" });
+    const { match, winnerTeam, score, map } = req.body;
+    if (!Array.isArray(match) || match.length === 0) return res.status(400).json({ error: "Formato inválido" });
     if (!score || typeof score !== "string") return res.status(400).json({ error: "Score final requerido" });
+    if (!map || typeof map !== "string") return res.status(400).json({ error: "Mapa requerido" });
 
-    await matchesCollection.insertOne({ match, winnerTeam, score, date: new Date() });
+    const newMatch = { match, winnerTeam, score, map, date: new Date() };
+    await matchesCollection.insertOne(newMatch);
 
     for (const p of match) {
       const playerTeam = match.indexOf(p) < 5 ? "A" : "B";
@@ -265,6 +269,38 @@ app.post("/matches", requireAdmin, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al añadir partida" });
+  }
+});
+
+// Obtener todas las partidas para admin
+app.get("/matches", requireAdmin, async (req, res) => {
+  try {
+    const matches = await matchesCollection.find().sort({ date: -1 }).toArray();
+    res.json(matches);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener partidas" });
+  }
+});
+
+// Actualizar partida existente
+app.put("/matches", requireAdmin, async (req, res) => {
+  try {
+    const { oldDate, map, winnerTeam, score, match } = req.body;
+    if (!oldDate) return res.status(400).json({ error: "Fecha original requerida para identificar partida" });
+
+    const parsedDate = new Date(oldDate);
+    const result = await matchesCollection.updateOne(
+      { date: parsedDate },
+      { $set: { map, winnerTeam, score, match } }
+    );
+
+    if (result.matchedCount === 0) return res.status(404).json({ error: "Partida no encontrada" });
+
+    res.json({ message: "Partida actualizada correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al actualizar partida" });
   }
 });
 
