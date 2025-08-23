@@ -359,12 +359,18 @@ async function loadMatches(){
           <div class="edit-form">
             <label>Mapa:</label>
             <select class="edit-map">
-              <option value="Bind" ${m.map==="Bind"?"selected":""}>Bind</option>
-              <option value="Haven" ${m.map==="Haven"?"selected":""}>Haven</option>
-              <option value="Split" ${m.map==="Split"?"selected":""}>Split</option>
-              <option value="Ascent" ${m.map==="Ascent"?"selected":""}>Ascent</option>
-              <option value="Icebox" ${m.map==="Icebox"?"selected":""}>Icebox</option>
-              <option value="Breeze" ${m.map==="Breeze"?"selected":""}>Breeze</option>
+              <option value="Bind" ${m.map === "Bind" ? "selected" : ""}>Bind</option>
+              <option value="Haven" ${m.map === "Haven" ? "selected" : ""}>Haven</option>
+              <option value="Split" ${m.map === "Split" ? "selected" : ""}>Split</option>
+              <option value="Ascent" ${m.map === "Ascent" ? "selected" : ""}>Ascent</option>
+              <option value="Icebox" ${m.map === "Icebox" ? "selected" : ""}>Icebox</option>
+              <option value="Breeze" ${m.map === "Breeze" ? "selected" : ""}>Breeze</option>
+              <option value="Fracture" ${m.map === "Fracture" ? "selected" : ""}>Fracture</option>
+              <option value="Lotus" ${m.map === "Lotus" ? "selected" : ""}>Lotus</option>
+              <option value="Pearl" ${m.map === "Pearl" ? "selected" : ""}>Pearl</option>
+              <option value="Sunset" ${m.map === "Sunset" ? "selected" : ""}>Sunset</option>
+              <option value="Corrode" ${m.map === "Corrode" ? "selected" : ""}>Corrode</option>
+              <option value="Abyss" ${m.map === "Abyss" ? "selected" : ""}>Abyss</option>
             </select>
             <label>Ganador:</label>
             <select class="edit-winner">
