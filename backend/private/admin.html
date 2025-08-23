@@ -1,558 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VALORANT Admin Panel</title>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Rajdhani', sans-serif;
-            background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%);
-            color: #ffffff;
-            min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        /* Efectos de fondo animados */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(255, 70, 85, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 70, 85, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(255, 70, 85, 0.05) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: -1;
-            animation: pulse 4s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 1; }
-        }
-
-        /* Líneas de circuito animadas */
-        body::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(90deg, transparent 98%, rgba(255, 70, 85, 0.1) 100%),
-                linear-gradient(0deg, transparent 98%, rgba(255, 70, 85, 0.1) 100%);
-            background-size: 50px 50px;
-            pointer-events: none;
-            z-index: -1;
-            animation: grid-move 20s linear infinite;
-        }
-
-        @keyframes grid-move {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
-        }
-
-        header {
-            background: linear-gradient(90deg, rgba(255, 70, 85, 0.2) 0%, rgba(255, 70, 85, 0.1) 100%);
-            padding: 2rem;
-            border-bottom: 2px solid #ff4655;
-            box-shadow: 0 4px 20px rgba(255, 70, 85, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            animation: scan 3s ease-in-out infinite;
-        }
-
-        @keyframes scan {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-
-        header::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #ff4655, transparent);
-            animation: glow 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes glow {
-            from { box-shadow: 0 0 5px #ff4655; }
-            to { box-shadow: 0 0 20px #ff4655, 0 0 30px #ff4655; }
-        }
-
-        h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            text-shadow: 0 0 20px #ff4655;
-            background: linear-gradient(45deg, #ffffff, #ff4655, #ffffff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-align: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        nav {
-            background: rgba(15, 20, 25, 0.95);
-            padding: 0;
-            border-bottom: 1px solid rgba(255, 70, 85, 0.3);
-            backdrop-filter: blur(15px);
-            position: relative;
-        }
-
-        nav::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #ff4655, transparent);
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        nav li {
-            position: relative;
-        }
-
-        nav a {
-            display: block;
-            padding: 1.5rem 2.5rem;
-            color: #ffffff;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        nav a::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 70, 85, 0.3), transparent);
-            transition: left 0.6s ease;
-        }
-
-        nav a::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            width: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #ff4655, #ffffff, #ff4655);
-            transition: all 0.3s ease;
-            transform: translateX(-50%);
-        }
-
-        nav a:hover::before,
-        nav a.active::before {
-            left: 100%;
-        }
-
-        nav a:hover::after,
-        nav a.active::after {
-            width: 100%;
-        }
-
-        nav a:hover,
-        nav a.active {
-            color: #ff4655;
-            text-shadow: 0 0 15px #ff4655;
-            background: rgba(255, 70, 85, 0.1);
-        }
-
-        nav a.active {
-            box-shadow: 0 0 20px rgba(255, 70, 85, 0.4);
-        }
-
-        main {
-            padding: 3rem 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        section {
-            display: none;
-            animation: slideIn 0.6s ease-out;
-        }
-
-        section.active {
-            display: block;
-        }
-
-        @keyframes slideIn {
-            from { 
-                opacity: 0; 
-                transform: translateY(30px) scale(0.95); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0) scale(1); 
-            }
-        }
-
-        h2 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 2.5rem;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            color: #ff4655;
-            text-shadow: 0 0 15px rgba(255, 70, 85, 0.6);
-            position: relative;
-            text-align: center;
-        }
-
-        h2::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 4px;
-            background: linear-gradient(90deg, transparent, #ff4655, transparent);
-            border-radius: 2px;
-        }
-
-        h2::after {
-            content: '';
-            position: absolute;
-            bottom: -15px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 150px;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #ff4655, transparent);
-            border-radius: 1px;
-        }
-
-        /* Dashboard Stats */
-        #dashboard {
-            display: grid;
-            gap: 2rem;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        }
-
-        #dashboard p {
-            background: linear-gradient(135deg, rgba(255, 70, 85, 0.15), rgba(255, 70, 85, 0.05));
-            padding: 2rem;
-            border-radius: 15px;
-            border: 2px solid rgba(255, 70, 85, 0.3);
-            font-size: 1.4rem;
-            font-weight: 600;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-            transition: all 0.4s ease;
-            position: relative;
-            overflow: hidden;
-            text-align: center;
-        }
-
-        #dashboard p::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: left 0.6s ease;
-        }
-
-        #dashboard p:hover::before {
-            left: 100%;
-        }
-
-        #dashboard p:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 15px 40px rgba(255, 70, 85, 0.3);
-            border-color: #ff4655;
-        }
-
-        #dashboard span {
-            color: #ff4655;
-            font-weight: 700;
-            font-size: 2rem;
-            text-shadow: 0 0 15px rgba(255, 70, 85, 0.8);
-            display: block;
-            margin-top: 0.5rem;
-        }
-
-        /* Forms */
-        .form-inline {
-            display: flex;
-            gap: 1.5rem;
-            margin-bottom: 3rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        input, select, button {
-            padding: 1rem 1.5rem;
-            border: 2px solid rgba(255, 70, 85, 0.4);
-            background: rgba(15, 20, 25, 0.9);
-            color: #ffffff;
-            border-radius: 10px;
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 600;
-            transition: all 0.4s ease;
-            position: relative;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: #ff4655;
-            box-shadow: 0 0 20px rgba(255, 70, 85, 0.5);
-            background: rgba(15, 20, 25, 1);
-            transform: scale(1.02);
-        }
-
-        input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 500;
-        }
-
-        button {
-            background: linear-gradient(135deg, #ff4655, #e63946);
-            border: 2px solid #ff4655;
-            color: #ffffff;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-weight: 700;
-            position: relative;
-            overflow: hidden;
-            min-width: 150px;
-        }
-
-        button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: left 0.6s ease;
-        }
-
-        button:hover::before {
-            left: 100%;
-        }
-
-        button:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 10px 30px rgba(255, 70, 85, 0.5);
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-        }
-
-        button:active {
-            transform: translateY(-1px) scale(1.02);
-        }
-
-        /* Table */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: rgba(15, 20, 25, 0.8);
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 70, 85, 0.3);
-        }
-
-        th, td {
-            padding: 1.2rem;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 70, 85, 0.2);
-            font-weight: 500;
-        }
-
-        th {
-            background: linear-gradient(135deg, rgba(255, 70, 85, 0.3), rgba(255, 70, 85, 0.2));
-            color: #ff4655;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-size: 1rem;
-            text-shadow: 0 0 10px rgba(255, 70, 85, 0.5);
-        }
-
-        tr:hover {
-            background: rgba(255, 70, 85, 0.08);
-            transform: scale(1.01);
-            transition: all 0.3s ease;
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        /* Team sections */
-        #teamA, #teamB {
-            background: linear-gradient(135deg, rgba(255, 70, 85, 0.15), rgba(255, 70, 85, 0.08));
-            padding: 2rem;
-            border-radius: 15px;
-            border: 2px solid rgba(255, 70, 85, 0.4);
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        #teamA::before {
-            content: '⚡ EQUIPO A';
-            display: block;
-            font-weight: 700;
-            font-size: 1.3rem;
-            color: #ff4655;
-            margin-bottom: 1.5rem;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 10px rgba(255, 70, 85, 0.8);
-        }
-
-        #teamB::before {
-            content: '⚡ EQUIPO B';
-            display: block;
-            font-weight: 700;
-            font-size: 1.3rem;
-            color: #ff4655;
-            margin-bottom: 1.5rem;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 10px rgba(255, 70, 85, 0.8);
-        }
-
-        label {
-            display: block;
-            margin: 2rem 0 1rem 0;
-            font-weight: 700;
-            font-size: 1.2rem;
-            color: #ff4655;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(255, 70, 85, 0.5);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            nav ul {
-                flex-direction: column;
-            }
-            
-            nav a {
-                padding: 1rem;
-                text-align: center;
-            }
-            
-            .form-inline {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            h1 {
-                font-size: 2rem;
-                letter-spacing: 2px;
-            }
-            
-            h2 {
-                font-size: 1.8rem;
-            }
-            
-            main {
-                padding: 2rem 1rem;
-            }
-            
-            table {
-                font-size: 0.9rem;
-            }
-            
-            th, td {
-                padding: 0.8rem 0.5rem;
-            }
-            
-            #dashboard {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Scrollbar personalizado */
-        ::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(15, 20, 25, 0.8);
-            border-radius: 5px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, #ff4655, #e63946);
-            border-radius: 5px;
-            border: 1px solid rgba(255, 70, 85, 0.3);
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, #e63946, #ff4655);
-            box-shadow: 0 0 10px rgba(255, 70, 85, 0.5);
-        }
-
-        /* Efectos adicionales */
-        .delete-btn {
-            background: linear-gradient(135deg, #dc3545, #c82333) !important;
-            padding: 0.6rem 1.2rem !important;
-            font-size: 0.9rem !important;
-            min-width: auto !important;
-        }
-
-        .delete-btn:hover {
-            background: linear-gradient(135deg, #c82333, #dc3545) !important;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Admin Valorant</title>
+<style>
+body { font-family: Arial, sans-serif; margin:0; padding:0; }
+header { background:#1a1a1a; color:white; padding:1rem; text-align:center; }
+nav { background:#333; }
+nav ul { list-style:none; display:flex; margin:0; padding:0; }
+nav li { margin:0; }
+nav a { display:block; padding:1rem; color:white; text-decoration:none; }
+nav a.active { background:#555; }
+main { padding:1rem; }
+form.form-inline input, form.form-inline select { margin-right:0.5rem; }
+table { width:100%; border-collapse:collapse; margin-top:1rem; }
+table th, table td { border:1px solid #ccc; padding:0.5rem; text-align:center; }
+button { padding:0.3rem 0.5rem; margin-left:0.2rem; cursor:pointer; }
+section { display:none; }
+section.active { display:block; }
+.edit-form { background:#f9f9f9; padding:0.5rem; margin-top:0.5rem; border:1px solid #ccc; }
+.edit-form input { margin-right:0.5rem; margin-bottom:0.3rem; }
+</style>
 </head>
 <body>
 <header><h1>PANEL DE ADMINISTRADOR</h1></header>
@@ -656,28 +125,62 @@ function updatePlayersTable(){
   allPlayers.forEach(p=>{
     const row=document.createElement('tr');
     row.innerHTML=`
-      <td><input type="text" value="${p.name}" class="edit-name"></td>
-      <td><input type="text" value="${p.tag}" class="edit-tag"></td>
+      <td>${p.name}</td>
+      <td>${p.tag}</td>
       <td>${p.matchesPlayed||0}</td>
       <td>${p.totalKills||0}</td>
       <td>${p.totalDeaths||0}</td>
       <td>${p.totalAssists||0}</td>
       <td>
-        <button class="btn-update">Guardar</button>
+        <button class="btn-edit">Editar</button>
         <button class="btn-delete">Eliminar</button>
       </td>`;
     tbody.appendChild(row);
 
-    row.querySelector('.btn-update').addEventListener('click', async ()=>{
-      const newName=row.querySelector('.edit-name').value.trim();
-      const newTag=row.querySelector('.edit-tag').value.trim();
+    // --- Editar ---
+    const editBtn = row.querySelector('.btn-edit');
+    const deleteBtn = row.querySelector('.btn-delete');
+
+    // Crear formulario oculto
+    const editForm = document.createElement('tr');
+    editForm.className='edit-form-row';
+    editForm.innerHTML=`<td colspan="7">
+      <div class="edit-form" style="display:none;">
+        <input type="text" class="edit-name" value="${p.name}" placeholder="Nombre">
+        <input type="text" class="edit-tag" value="${p.tag}" placeholder="Tag">
+        <input type="text" class="edit-twitter" value="${p.social?.twitter||''}" placeholder="Twitter">
+        <input type="text" class="edit-tracker" value="${p.social?.tracker||''}" placeholder="Valorant Tracker">
+        <input type="text" class="edit-twitch" value="${p.social?.twitch||''}" placeholder="Twitch">
+        <button class="btn-save">Guardar</button>
+        <button class="btn-cancel">Cancelar</button>
+      </div>
+    </td>`;
+    row.parentNode.insertBefore(editForm, row.nextSibling);
+
+    const formDiv = editForm.querySelector('.edit-form');
+
+    editBtn.addEventListener('click', ()=> formDiv.style.display = 'block');
+    formDiv.querySelector('.btn-cancel').addEventListener('click', ()=> formDiv.style.display = 'none');
+
+    formDiv.querySelector('.btn-save').addEventListener('click', async ()=>{
+      const newName = formDiv.querySelector('.edit-name').value.trim();
+      const newTag = formDiv.querySelector('.edit-tag').value.trim();
+      const twitter = formDiv.querySelector('.edit-twitter').value.trim();
+      const tracker = formDiv.querySelector('.edit-tracker').value.trim();
+      const twitch = formDiv.querySelector('.edit-twitch').value.trim();
       if(!newName||!newTag) return alert('Nombre y tag requeridos');
       try{
         const res = await fetch('/players',{
           method:'PUT',
           headers:{'Content-Type':'application/json'},
           credentials:'include',
-          body:JSON.stringify({oldName:p.name, oldTag:p.tag, newName, newTag})
+          body:JSON.stringify({
+            oldName:p.name,
+            oldTag:p.tag,
+            newName,
+            newTag,
+            social: {twitter, tracker, twitch}
+          })
         });
         const data = await res.json();
         if(!res.ok) throw new Error(data.error||'Error al actualizar');
@@ -685,7 +188,8 @@ function updatePlayersTable(){
       }catch(err){alert(err.message);}
     });
 
-    row.querySelector('.btn-delete').addEventListener('click', async ()=>{
+    // --- Eliminar ---
+    deleteBtn.addEventListener('click', async ()=>{
       if(!confirm('¿Eliminar jugador?')) return;
       try{
         const res = await fetch('/players',{
@@ -738,18 +242,16 @@ function populateTeams(){
 // --- Registrar partida ---
 document.getElementById('submitMatchBtn').addEventListener('click', async ()=>{
   const winnerTeam = document.getElementById('winnerTeam').value;
-  if(!winnerTeam) return alert('Selecciona ganador');
-
   const score = document.getElementById('matchScore').value.trim();
-  if(!score) return alert('Debes ingresar el marcador final');
-
+  if(!winnerTeam) return alert('Selecciona ganador');
+  if(!score) return alert('Ingresa marcador final');
   const match=[];
+
   const teamA = document.getElementById('teamA').querySelectorAll('.form-inline');
   const teamB = document.getElementById('teamB').querySelectorAll('.form-inline');
 
   for(const row of [...teamA,...teamB]){
-    const select=row.querySelector('.player-select');
-    if(!select.value) return alert("Debes seleccionar los 10 jugadores");
+    const select=row.querySelector('.player-select'); if(!select.value) continue;
     const [name, tag] = select.value.split('||');
     const kills = parseInt(row.querySelector('.kill').value)||0;
     const deaths = parseInt(row.querySelector('.death').value)||0;
@@ -759,6 +261,7 @@ document.getElementById('submitMatchBtn').addEventListener('click', async ()=>{
     const hsPercent = parseFloat(row.querySelector('.hs').value)||0;
     match.push({name,tag,kills,deaths,assists,acs,firstBloods,hsPercent});
   }
+  if(match.length===0) return alert('No hay jugadores seleccionados');
 
   try{
     const res = await fetch('/matches',{
