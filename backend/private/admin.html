@@ -5,30 +5,384 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel Admin Valorant</title>
 <style>
-body { font-family: Arial, sans-serif; margin:0; padding:0; }
-header { background:#1a1a1a; color:white; padding:1rem; text-align:center; }
-nav { background:#333; }
-nav ul { list-style:none; display:flex; margin:0; padding:0; }
-nav li { margin:0; }
-nav a { display:block; padding:1rem; color:white; text-decoration:none; }
-nav a.active { background:#555; }
-main { padding:1rem; }
-form.form-inline input, form.form-inline select { margin-right:0.5rem; margin-bottom:0.3rem; }
-table { width:100%; border-collapse:collapse; margin-top:1rem; }
-table th, table td { border:1px solid #ccc; padding:0.5rem; text-align:center; }
-button { padding:0.3rem 0.5rem; margin-left:0.2rem; cursor:pointer; }
-section { display:none; }
-section.active { display:block; }
-.edit-form { background:#f9f9f9; padding:0.5rem; margin-top:0.5rem; border:1px solid #ccc; }
-.edit-form input, .edit-form select { margin-right:0.5rem; margin-bottom:0.3rem; }
-#eventMatchesPanel { background:#f1f1f1; padding:0.5rem; border:1px solid #ccc; margin-top:0.5rem; }
+:root {
+  --primary-color: #ff4655;
+  --dark-bg: #0f1923;
+  --medium-bg: #1a1a1a;
+  --light-bg: #f4f4f4;
+  --text-light: #ffffff;
+  --text-dark: #333333;
+  --border-radius: 4px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f0f0f0;
+  color: var(--text-dark);
+}
+
+header {
+  background: var(--dark-bg);
+  color: var(--text-light);
+  padding: 1rem;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+header h1::before {
+  content: "⚔️";
+  margin-right: 10px;
+}
+
+nav {
+  background: var(--medium-bg);
+  position: sticky;
+  top: 68px;
+  z-index: 99;
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+}
+
+nav li {
+  margin: 0;
+  white-space: nowrap;
+}
+
+nav a {
+  display: block;
+  padding: 1rem;
+  color: var(--text-light);
+  text-decoration: none;
+  transition: background 0.3s;
+}
+
+nav a:hover {
+  background: #2a2a2a;
+}
+
+nav a.active {
+  background: var(--primary-color);
+  font-weight: bold;
+}
+
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+main {
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+section {
+  display: none;
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+section.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+h2 {
+  color: var(--dark-bg);
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 0.5rem;
+  margin-top: 0;
+}
+
+h3 {
+  color: var(--dark-bg);
+}
+
+.form-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.form-inline input, 
+.form-inline select, 
+.form-inline button {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.form-group input, 
+.form-group select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+}
+
+button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+button:hover {
+  background: #e03a4d;
+}
+
+button.secondary {
+  background: #6c757d;
+}
+
+button.secondary:hover {
+  background: #5a6268;
+}
+
+button.danger {
+  background: #dc3545;
+}
+
+button.danger:hover {
+  background: #c82333;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+table th, table td {
+  border: 1px solid #ddd;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+table th {
+  background: var(--dark-bg);
+  color: white;
+  position: sticky;
+  top: 136px;
+}
+
+table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.edit-form {
+  background: var(--light-bg);
+  padding: 1rem;
+  margin-top: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+}
+
+.team-container {
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #f9f9f9;
+}
+
+.player-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  align-items: center;
+}
+
+.player-row select, 
+.player-row input {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+}
+
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.close {
+  float: right;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  gap: 0.5rem;
+}
+
+.pagination button {
+  background: var(--medium-bg);
+}
+
+.pagination button.active {
+  background: var(--primary-color);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.stat-card h3 {
+  margin-top: 0;
+  color: var(--primary-color);
+}
+
+.stat-card p {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0.5rem 0 0;
+}
+
+@media (max-width: 768px) {
+  nav ul {
+    flex-direction: column;
+    display: none;
+  }
+  
+  nav ul.show {
+    display: flex;
+  }
+  
+  .hamburger {
+    display: block;
+  }
+  
+  .form-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  table {
+    display: block;
+    overflow-x: auto;
+  }
+  
+  .player-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
 </style>
 </head>
 <body>
 
-<header><h1>PANEL DE ADMINISTRADOR</h1></header>
+<header>
+  <h1>PANEL DE ADMINISTRADOR VALORANT</h1>
+</header>
 
 <nav>
+  <button class="hamburger">☰</button>
   <ul>
     <li><a href="#dashboard" class="active">Dashboard</a></li>
     <li><a href="#players">Gestionar Jugadores</a></li>
@@ -43,33 +397,82 @@ section.active { display:block; }
   <!-- DASHBOARD -->
   <section id="dashboard" class="active">
     <h2>Dashboard / Resumen</h2>
-    <p>Total Jugadores: <span id="totalPlayers">0</span></p>
-    <p>Partidas Registradas: <span id="totalMatches">0</span></p>
-    <p>Última partida agregada: <span id="lastMatchDate">N/A</span></p>
+    
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Total Jugadores</h3>
+        <p id="totalPlayers">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Partidas Registradas</h3>
+        <p id="totalMatches">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Eventos Activos</h3>
+        <p id="totalEvents">0</p>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <h3>Última partida agregada</h3>
+      <p id="lastMatchDate">N/A</p>
+    </div>
+    
+    <div class="form-group">
+      <h3>Jugador con mejor K/D</h3>
+      <p id="bestKDPlayer">N/A</p>
+    </div>
   </section>
 
   <!-- JUGADORES -->
   <section id="players">
     <h2>Gestionar Jugadores</h2>
+    
     <form id="addPlayerForm" class="form-inline">
       <input type="text" id="playerName" placeholder="Nombre" required>
       <input type="text" id="playerTag" placeholder="Tag" required>
-      <button type="submit">Registrar</button>
+      <button type="submit">Registrar Jugador</button>
     </form>
-    <table>
-      <thead>
-        <tr><th>Nombre</th><th>Tag</th><th>Partidas</th><th>Kills</th><th>Deaths</th><th>Assists</th><th>Acciones</th></tr>
-      </thead>
-      <tbody id="playersTableBody"><tr><td colspan="7">No hay jugadores registrados</td></tr></tbody>
-    </table>
+    
+    <div class="form-inline">
+      <input type="text" id="searchPlayer" placeholder="Buscar jugador...">
+      <select id="sortPlayers">
+        <option value="name">Ordenar por nombre</option>
+        <option value="matches">Ordenar por partidas</option>
+        <option value="kills">Ordenar por kills</option>
+      </select>
+    </div>
+    
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Tag</th>
+            <th>Partidas</th>
+            <th>Kills</th>
+            <th>Deaths</th>
+            <th>Assists</th>
+            <th>K/D Ratio</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="playersTableBody">
+          <tr><td colspan="8">Cargando jugadores...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="pagination" id="playersPagination"></div>
   </section>
 
   <!-- AGREGAR PARTIDA -->
   <section id="addMatch">
     <h2>Agregar Partida</h2>
-    <div id="addMatchForm" style="margin-bottom:1rem;">
+    
+    <div class="form-group">
       <label>Mapa:</label>
-      <select id="matchMap">
+      <select id="matchMap" required>
         <option value="">Selecciona mapa</option>
         <option value="Bind">Bind</option>
         <option value="Haven">Haven</option>
@@ -84,52 +487,78 @@ section.active { display:block; }
         <option value="Pearl">Pearl</option>
         <option value="Fracture">Fracture</option>
       </select>
+    </div>
 
+    <div class="form-group">
       <label>Ganador:</label>
-      <select id="winnerTeam">
+      <select id="winnerTeam" required>
         <option value="">Seleccionar</option>
         <option value="A">Equipo A</option>
         <option value="B">Equipo B</option>
       </select>
-
-      <label>Marcador final:</label>
-      <input type="text" id="matchScore" placeholder="Ej: 13-8">
-
-      <h4>Equipo A</h4>
-      <div id="teamA"></div>
-
-      <h4>Equipo B</h4>
-      <div id="teamB"></div>
-
-      <button id="submitMatchBtn">Registrar Partida</button>
     </div>
+
+    <div class="form-group">
+      <label>Marcador final (formato: 13-8):</label>
+      <input type="text" id="matchScore" placeholder="Ej: 13-8" required pattern="\d{1,2}-\d{1,2}">
+    </div>
+
+    <div class="team-container">
+      <h3>Equipo A</h3>
+      <div id="teamA"></div>
+      <button id="addPlayerA" class="secondary">+ Agregar Jugador</button>
+    </div>
+
+    <div class="team-container">
+      <h3>Equipo B</h3>
+      <div id="teamB"></div>
+      <button id="addPlayerB" class="secondary">+ Agregar Jugador</button>
+    </div>
+
+    <button id="submitMatchBtn">Registrar Partida</button>
   </section>
 
   <!-- LISTA DE PARTIDAS -->
   <section id="matches">
     <h2>Partidas</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Mapa</th>
-          <th>Score</th>
-          <th>Ganador</th>
-          <th>Fecha</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="matchesTableBody">
-        <tr><td colspan="5">No hay partidas registradas</td></tr>
-      </tbody>
-    </table>
+    
+    <div class="form-inline">
+      <input type="text" id="searchMatch" placeholder="Buscar por mapa...">
+      <select id="matchesPerPage">
+        <option value="5">5 por página</option>
+        <option value="10" selected>10 por página</option>
+        <option value="20">20 por página</option>
+        <option value="50">50 por página</option>
+      </select>
+    </div>
+    
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Mapa</th>
+            <th>Score</th>
+            <th>Ganador</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="matchesTableBody">
+          <tr><td colspan="5">Cargando partidas...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="pagination" id="matchesPagination"></div>
   </section>
 
   <!-- EVENTOS / TORNEOS -->
   <section id="events">
     <h2>Eventos / Torneos</h2>
-    <div id="createEventForm" class="form-inline" style="margin-bottom:1rem;">
+    
+    <div class="form-inline" style="margin-bottom:1rem;">
       <input type="text" id="eventName" placeholder="Nombre del evento" required>
-      <select id="eventTeamSize">
+      <select id="eventTeamSize" required>
         <option value="">Tamaño de equipo</option>
         <option value="1">1vs1</option>
         <option value="2">2vs2</option>
@@ -137,7 +566,7 @@ section.active { display:block; }
         <option value="4">4vs4</option>
         <option value="5">5vs5</option>
       </select>
-      <select id="eventNumTeams">
+      <select id="eventNumTeams" required>
         <option value="">Número de equipos</option>
         <option value="2">2</option>
         <option value="4">4</option>
@@ -147,90 +576,266 @@ section.active { display:block; }
       <button id="createEventBtn">Crear Evento</button>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Equipo / Jugadores</th>
-          <th># Equipos</th>
-          <th>Rondas</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="eventsTableBody">
-        <tr><td colspan="5">No hay eventos creados</td></tr>
-      </tbody>
-    </table>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Equipo / Jugadores</th>
+            <th># Equipos</th>
+            <th>Rondas</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="eventsTableBody">
+          <tr><td colspan="5">Cargando eventos...</td></tr>
+        </tbody>
+      </table>
+    </div>
 
     <div id="eventMatchesPanel" style="display:none;">
       <h3 id="eventMatchesTitle">Partidas del Evento</h3>
+      <button id="closeEventMatches" class="secondary">Cerrar</button>
+      
       <div id="eventMatchesList"></div>
-      <h4>Agregar Partida</h4>
-      <div id="addEventMatchForm">
+      
+      <h4>Agregar Partida al Evento</h4>
+      <div class="form-group">
         <label>Mapa:</label>
-        <select id="eventMatchMap"></select>
+        <select id="eventMatchMap">
+          <option value="">Selecciona mapa</option>
+          <option value="Bind">Bind</option>
+          <option value="Haven">Haven</option>
+          <option value="Split">Split</option>
+          <option value="Ascent">Ascent</option>
+          <option value="Icebox">Icebox</option>
+          <option value="Breeze">Breeze</option>
+          <option value="Corrode">Corrode</option>
+          <option value="Abyss">Abyss</option>
+          <option value="Sunset">Sunset</option>
+          <option value="Lotus">Lotus</option>
+          <option value="Pearl">Pearl</option>
+          <option value="Fracture">Fracture</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
         <label>Ganador:</label>
         <select id="eventWinnerTeam">
           <option value="">Seleccionar</option>
           <option value="A">Equipo A</option>
           <option value="B">Equipo B</option>
         </select>
-        <label>Marcador:</label>
-        <input type="text" id="eventMatchScore" placeholder="Ej: 13-8">
+      </div>
+      
+      <div class="form-group">
+        <label>Marcador (formato: 13-8):</label>
+        <input type="text" id="eventMatchScore" placeholder="Ej: 13-8" required pattern="\d{1,2}-\d{1,2}">
+      </div>
+
+      <div class="team-container">
         <h5>Equipo A</h5>
         <div id="eventTeamA"></div>
+        <button id="addEventPlayerA" class="secondary">+ Agregar Jugador</button>
+      </div>
+
+      <div class="team-container">
         <h5>Equipo B</h5>
         <div id="eventTeamB"></div>
-        <button id="submitEventMatchBtn">Registrar Partida</button>
+        <button id="addEventPlayerB" class="secondary">+ Agregar Jugador</button>
       </div>
-      <button id="closeEventMatches">Cerrar</button>
+      
+      <button id="submitEventMatchBtn">Registrar Partida</button>
     </div>
   </section>
 </main>
+
+<!-- Modal para edición -->
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h3>Editar Jugador</h3>
+    <form id="editPlayerForm">
+      <input type="hidden" id="editPlayerId">
+      <div class="form-group">
+        <label>Nombre:</label>
+        <input type="text" id="editPlayerName" required>
+      </div>
+      <div class="form-group">
+        <label>Tag:</label>
+        <input type="text" id="editPlayerTag" required>
+      </div>
+      <button type="submit">Guardar Cambios</button>
+    </form>
+  </div>
+</div>
+
+<!-- Modal de confirmación -->
+<div id="confirmModal" class="modal">
+  <div class="modal-content">
+    <h3 id="confirmTitle">Confirmar acción</h3>
+    <p id="confirmMessage">¿Estás seguro de que deseas realizar esta acción?</p>
+    <div class="form-inline">
+      <button id="confirmYes" class="danger">Sí</button>
+      <button id="confirmNo" class="secondary">No</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const API_URL = window.location.origin;
 let allPlayers = [];
 let allEvents = [];
+let allMatches = [];
+let currentPlayersPage = 1;
+let currentMatchesPage = 1;
+let playersPerPage = 10;
+let matchesPerPage = 10;
+let currentEventId = null;
+let deleteCallback = null;
 
 // -------- Navegación --------
-const navLinks = document.querySelectorAll('nav a');
+document.querySelector('.hamburger').addEventListener('click', () => {
+  document.querySelector('nav ul').classList.toggle('show');
+});
+
+const navLinks = document.querySelectorAll('nav a:not(#logoutBtn)');
 const sections = document.querySelectorAll('section');
 navLinks.forEach(link => {
   link.addEventListener('click', e => {
     e.preventDefault();
     navLinks.forEach(l => l.classList.remove('active'));
     link.classList.add('active');
-    sections.forEach(s => s.style.display = 'none');
+    sections.forEach(s => s.classList.remove('active'));
     const target = document.querySelector(link.getAttribute('href'));
-    if(target) target.style.display = 'block';
+    if(target) target.classList.add('active');
+    
+    // Ocultar menú hamburguesa en móviles después de seleccionar
+    document.querySelector('nav ul').classList.remove('show');
   });
 });
-sections[0].style.display = 'block';
 
 // -------- Logout --------
 document.getElementById('logoutBtn').addEventListener('click', async () => {
-  await fetch('/logout', { method: 'POST', credentials: 'include' });
-  window.location.href = '/login.html';
+  if (await confirmAction('Cerrar Sesión', '¿Estás seguro de que deseas cerrar la sesión?')) {
+    try {
+      await fetch('/logout', { method: 'POST', credentials: 'include' });
+      window.location.href = '/login.html';
+    } catch (error) {
+      showError('Error al cerrar sesión');
+    }
+  }
+});
+
+// -------- Utilidades --------
+function showError(message) {
+  alert('Error: ' + message);
+}
+
+function showSuccess(message) {
+  alert('Éxito: ' + message);
+}
+
+async function confirmAction(title, message) {
+  return new Promise((resolve) => {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    document.getElementById('confirmModal').style.display = 'flex';
+    
+    document.getElementById('confirmYes').onclick = () => {
+      document.getElementById('confirmModal').style.display = 'none';
+      resolve(true);
+    };
+    
+    document.getElementById('confirmNo').onclick = () => {
+      document.getElementById('confirmModal').style.display = 'none';
+      resolve(false);
+    };
+  });
+}
+
+// -------- Modal de edición --------
+document.querySelector('.close').addEventListener('click', () => {
+  document.getElementById('editModal').style.display = 'none';
+});
+
+document.getElementById('editPlayerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('editPlayerId').value;
+  const name = document.getElementById('editPlayerName').value;
+  const tag = document.getElementById('editPlayerTag').value;
+  
+  try {
+    const res = await fetch(`/players/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ name, tag })
+    });
+    
+    if (res.ok) {
+      document.getElementById('editModal').style.display = 'none';
+      showSuccess('Jugador actualizado correctamente');
+      loadPlayers();
+    } else {
+      const data = await res.json();
+      showError(data.error || 'Error al actualizar jugador');
+    }
+  } catch (error) {
+    showError('Error de conexión');
+  }
 });
 
 // -------- Cargar jugadores --------
 async function loadPlayers() {
-  const res = await fetch('/players', { credentials: 'include' });
-  allPlayers = await res.json();
-  updatePlayersTable();
-  populateTeams();
-  updateDashboard();
+  try {
+    document.getElementById('playersTableBody').innerHTML = '<tr><td colspan="8">Cargando jugadores...</td></tr>';
+    const res = await fetch('/players', { credentials: 'include' });
+    
+    if (!res.ok) throw new Error('Error al cargar jugadores');
+    
+    allPlayers = await res.json();
+    updatePlayersTable();
+    populateTeams();
+    updateDashboard();
+  } catch (error) {
+    document.getElementById('playersTableBody').innerHTML = '<tr><td colspan="8">Error al cargar jugadores</td></tr>';
+    console.error('Error loading players:', error);
+  }
 }
 
 function updatePlayersTable() {
   const tbody = document.getElementById('playersTableBody');
+  const searchTerm = document.getElementById('searchPlayer').value.toLowerCase();
+  const sortBy = document.getElementById('sortPlayers').value;
+  
+  // Filtrar y ordenar jugadores
+  let filteredPlayers = allPlayers.filter(p => 
+    p.name.toLowerCase().includes(searchTerm) || 
+    p.tag.toLowerCase().includes(searchTerm)
+  );
+  
+  filteredPlayers.sort((a, b) => {
+    if (sortBy === 'name') return a.name.localeCompare(b.name);
+    if (sortBy === 'matches') return (b.matchesPlayed || 0) - (a.matchesPlayed || 0);
+    if (sortBy === 'kills') return (b.totalKills || 0) - (a.totalKills || 0);
+    return 0;
+  });
+  
+  // Paginación
+  const totalPages = Math.ceil(filteredPlayers.length / playersPerPage);
+  const startIndex = (currentPlayersPage - 1) * playersPerPage;
+  const paginatedPlayers = filteredPlayers.slice(startIndex, startIndex + playersPerPage);
+  
   tbody.innerHTML = '';
-  if (!allPlayers.length) {
-    tbody.innerHTML = '<tr><td colspan="7">No hay jugadores registrados</td></tr>';
+  
+  if (paginatedPlayers.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8">No hay jugadores registrados</td></tr>';
     return;
   }
-  allPlayers.forEach(p => {
+  
+  paginatedPlayers.forEach(p => {
+    const kdRatio = p.totalDeaths > 0 ? (p.totalKills / p.totalDeaths).toFixed(2) : p.totalKills > 0 ? p.totalKills.toFixed(2) : '0.00';
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${p.name}</td>
@@ -239,41 +844,150 @@ function updatePlayersTable() {
       <td>${p.totalKills || 0}</td>
       <td>${p.totalDeaths || 0}</td>
       <td>${p.totalAssists || 0}</td>
-      <td><button class="btn-edit">Editar</button> <button class="btn-delete">Eliminar</button></td>`;
+      <td>${kdRatio}</td>
+      <td>
+        <button class="btn-edit" data-id="${p._id}" data-name="${p.name}" data-tag="${p.tag}">Editar</button> 
+        <button class="btn-delete danger" data-id="${p._id}" data-name="${p.name}">Eliminar</button>
+      </td>`;
     tbody.appendChild(row);
   });
+  
+  // Configurar paginación
+  setupPagination('playersPagination', currentPlayersPage, totalPages, (page) => {
+    currentPlayersPage = page;
+    updatePlayersTable();
+  });
+  
+  // Añadir event listeners a los botones
+  document.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('editPlayerId').value = btn.dataset.id;
+      document.getElementById('editPlayerName').value = btn.dataset.name;
+      document.getElementById('editPlayerTag').value = btn.dataset.tag;
+      document.getElementById('editModal').style.display = 'flex';
+    });
+  });
+  
+  document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const playerName = btn.dataset.name;
+      if (await confirmAction('Eliminar Jugador', `¿Estás seguro de que deseas eliminar a ${playerName}?`)) {
+        try {
+          const res = await fetch(`/players/${btn.dataset.id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          });
+          
+          if (res.ok) {
+            showSuccess('Jugador eliminado correctamente');
+            loadPlayers();
+          } else {
+            const data = await res.json();
+            showError(data.error || 'Error al eliminar jugador');
+          }
+        } catch (error) {
+          showError('Error de conexión');
+        }
+      }
+    });
+  });
 }
+
+// -------- Búsqueda y ordenación de jugadores --------
+document.getElementById('searchPlayer').addEventListener('input', updatePlayersTable);
+document.getElementById('sortPlayers').addEventListener('change', updatePlayersTable);
 
 // -------- Dashboard --------
 async function updateDashboard() {
   document.getElementById('totalPlayers').innerText = allPlayers.length;
-  const resMatches = await fetch('/matches-count', { credentials: 'include' });
-  const dataMatches = await resMatches.json();
-  document.getElementById('totalMatches').innerText = dataMatches.count || 0;
-  const resLast = await fetch('/last-match', { credentials: 'include' });
-  const last = await resLast.json();
-  document.getElementById('lastMatchDate').innerText = last.date ? new Date(last.date).toLocaleString() : 'N/A';
+  
+  try {
+    const resMatches = await fetch('/matches-count', { credentials: 'include' });
+    if (resMatches.ok) {
+      const dataMatches = await resMatches.json();
+      document.getElementById('totalMatches').innerText = dataMatches.count || 0;
+    }
+    
+    const resEvents = await fetch('/events-count', { credentials: 'include' });
+    if (resEvents.ok) {
+      const dataEvents = await resEvents.json();
+      document.getElementById('totalEvents').innerText = dataEvents.count || 0;
+    }
+    
+    const resLast = await fetch('/last-match', { credentials: 'include' });
+    if (resLast.ok) {
+      const last = await resLast.json();
+      document.getElementById('lastMatchDate').innerText = last.date ? new Date(last.date).toLocaleString() : 'N/A';
+    }
+    
+    // Encontrar jugador con mejor K/D
+    let bestPlayer = null;
+    let bestKD = 0;
+    
+    allPlayers.forEach(p => {
+      const deaths = p.totalDeaths || 1;
+      const kd = (p.totalKills || 0) / deaths;
+      if (kd > bestKD) {
+        bestKD = kd;
+        bestPlayer = p;
+      }
+    });
+    
+    if (bestPlayer) {
+      document.getElementById('bestKDPlayer').innerText = `${bestPlayer.name} (${bestPlayer.tag}) - K/D: ${bestKD.toFixed(2)}`;
+    } else {
+      document.getElementById('bestKDPlayer').innerText = 'N/A';
+    }
+  } catch (error) {
+    console.error('Error updating dashboard:', error);
+  }
 }
 
 // -------- Equipos para partidas --------
 function populateTeams() {
   const teamA = document.getElementById('teamA');
   const teamB = document.getElementById('teamB');
-  teamA.innerHTML = ''; teamB.innerHTML = '';
-  const createRow = () => {
+  teamA.innerHTML = '';
+  teamB.innerHTML = '';
+  
+  const createPlayerRow = (team) => {
     const row = document.createElement('div');
-    row.className = 'form-inline';
+    row.className = 'player-row';
     row.innerHTML = `
-      <select class="player-select"><option value="">-- Selecciona jugador --</option>${allPlayers.map(p => `<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('')}</select>
+      <select class="player-select" required>
+        <option value="">-- Selecciona jugador --</option>
+        ${allPlayers.map(p => `<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('')}
+      </select>
+      <input type="number" placeholder="Kills" class="kill" min="0" required>
+      <input type="number" placeholder="Deaths" class="death" min="0" required>
+      <input type="number" placeholder="Assists" class="assist" min="0" required>
       <input type="number" placeholder="ACS" class="acs" min="0">
-      <input type="number" placeholder="Kills" class="kill" min="0">
-      <input type="number" placeholder="Deaths" class="death" min="0">
-      <input type="number" placeholder="Assists" class="assist" min="0">
-      <input type="number" placeholder="HS%" class="hs" min="0" max="100">
-      <input type="number" placeholder="FirstBloods" class="fb" min="0">`;
+      <input type="number" placeholder="HS%" class="hs" min="0" max="100" step="0.1">
+      <input type="number" placeholder="First Bloods" class="fb" min="0">
+      <button type="button" class="danger remove-player">X</button>
+    `;
+    
+    row.querySelector('.remove-player').addEventListener('click', () => {
+      row.remove();
+    });
+    
     return row;
   };
-  for (let i=0;i<5;i++){ teamA.appendChild(createRow()); teamB.appendChild(createRow()); }
+  
+  // Agregar 5 jugadores por defecto a cada equipo
+  for (let i = 0; i < 5; i++) {
+    teamA.appendChild(createPlayerRow('A'));
+    teamB.appendChild(createPlayerRow('B'));
+  }
+  
+  // Event listeners para botones de agregar jugadores
+  document.getElementById('addPlayerA').addEventListener('click', () => {
+    teamA.appendChild(createPlayerRow('A'));
+  });
+  
+  document.getElementById('addPlayerB').addEventListener('click', () => {
+    teamB.appendChild(createPlayerRow('B'));
+  });
 }
 
 // -------- Registrar partida normal --------
@@ -281,153 +995,546 @@ document.getElementById('submitMatchBtn').addEventListener('click', async () => 
   const map = document.getElementById('matchMap').value;
   const winnerTeam = document.getElementById('winnerTeam').value;
   const score = document.getElementById('matchScore').value.trim();
-  if (!map || !winnerTeam || !score) return alert('Completa todos los campos de la partida');
-
+  
+  // Validar formato del score
+  if (!/^\d{1,2}-\d{1,2}$/.test(score)) {
+    return showError('El formato del marcador no es válido. Debe ser como "13-8"');
+  }
+  
+  if (!map || !winnerTeam || !score) {
+    return showError('Completa todos los campos de la partida');
+  }
+  
   const match = [];
-  const teamA = document.getElementById('teamA').querySelectorAll('.form-inline');
-  const teamB = document.getElementById('teamB').querySelectorAll('.form-inline');
-  for (const row of [...teamA, ...teamB]) {
-    const select = row.querySelector('.player-select'); if (!select.value) continue;
+  const teamA = document.getElementById('teamA').querySelectorAll('.player-row');
+  const teamB = document.getElementById('teamB').querySelectorAll('.player-row');
+  
+  // Validar que haya al menos un jugador en cada equipo
+  if (teamA.length === 0 || teamB.length === 0) {
+    return showError('Cada equipo debe tener al menos un jugador');
+  }
+  
+  // Procesar equipo A
+  for (const row of teamA) {
+    const select = row.querySelector('.player-select');
+    if (!select.value) continue;
+    
     const [name, tag] = select.value.split('||');
     match.push({
       name, tag,
-      acs: parseInt(row.querySelector('.acs').value)||0,
-      kills: parseInt(row.querySelector('.kill').value)||0,
-      deaths: parseInt(row.querySelector('.death').value)||0,
-      assists: parseInt(row.querySelector('.assist').value)||0,
-      hsPercent: parseFloat(row.querySelector('.hs').value)||0,
-      firstBloods: parseInt(row.querySelector('.fb').value)||0
+      team: 'A',
+      kills: parseInt(row.querySelector('.kill').value) || 0,
+      deaths: parseInt(row.querySelector('.death').value) || 0,
+      assists: parseInt(row.querySelector('.assist').value) || 0,
+      acs: parseInt(row.querySelector('.acs').value) || 0,
+      hsPercent: parseFloat(row.querySelector('.hs').value) || 0,
+      firstBloods: parseInt(row.querySelector('.fb').value) || 0
     });
   }
-  if (!match.length) return alert('No hay jugadores seleccionados');
-
-  const res = await fetch('/matches', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body: JSON.stringify({ match, winnerTeam, score, map })
-  });
-  const data = await res.json();
-  if(!res.ok) return alert(data.error||'Error al registrar partida');
-  alert(data.message); loadPlayers(); loadMatches();
+  
+  // Procesar equipo B
+  for (const row of teamB) {
+    const select = row.querySelector('.player-select');
+    if (!select.value) continue;
+    
+    const [name, tag] = select.value.split('||');
+    match.push({
+      name, tag,
+      team: 'B',
+      kills: parseInt(row.querySelector('.kill').value) || 0,
+      deaths: parseInt(row.querySelector('.death').value) || 0,
+      assists: parseInt(row.querySelector('.assist').value) || 0,
+      acs: parseInt(row.querySelector('.acs').value) || 0,
+      hsPercent: parseFloat(row.querySelector('.hs').value) || 0,
+      firstBloods: parseInt(row.querySelector('.fb').value) || 0
+    });
+  }
+  
+  if (match.length < 2) {
+    return showError('Debe haber al menos un jugador en cada equipo');
+  }
+  
+  try {
+    const res = await fetch('/matches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ match, winnerTeam, score, map })
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      return showError(data.error || 'Error al registrar partida');
+    }
+    
+    showSuccess('Partida registrada correctamente');
+    
+    // Limpiar formulario
+    document.getElementById('matchMap').value = '';
+    document.getElementById('winnerTeam').value = '';
+    document.getElementById('matchScore').value = '';
+    
+    // Recargar datos
+    loadPlayers();
+    loadMatches();
+    updateDashboard();
+  } catch (error) {
+    showError('Error de conexión al registrar partida');
+  }
 });
 
 // -------- Cargar partidas normales --------
-async function loadMatches(){
-  const res = await fetch('/matches', { credentials:'include' });
-  const matches = await res.json();
+async function loadMatches() {
+  try {
+    document.getElementById('matchesTableBody').innerHTML = '<tr><td colspan="5">Cargando partidas...</td></tr>';
+    const res = await fetch('/matches', { credentials: 'include' });
+    
+    if (!res.ok) throw new Error('Error al cargar partidas');
+    
+    allMatches = await res.json();
+    updateMatchesTable();
+  } catch (error) {
+    document.getElementById('matchesTableBody').innerHTML = '<tr><td colspan="5">Error al cargar partidas</td></tr>';
+    console.error('Error loading matches:', error);
+  }
+}
+
+function updateMatchesTable() {
   const tbody = document.getElementById('matchesTableBody');
+  const searchTerm = document.getElementById('searchMatch').value.toLowerCase();
+  
+  // Filtrar partidas
+  const filteredMatches = allMatches.filter(m => 
+    m.map.toLowerCase().includes(searchTerm)
+  );
+  
+  // Paginación
+  const totalPages = Math.ceil(filteredMatches.length / matchesPerPage);
+  const startIndex = (currentMatchesPage - 1) * matchesPerPage;
+  const paginatedMatches = filteredMatches.slice(startIndex, startIndex + matchesPerPage);
+  
   tbody.innerHTML = '';
-  if (!matches.length) return tbody.innerHTML='<tr><td colspan="5">No hay partidas registradas</td></tr>';
-  matches.forEach(m=>{
-    const row=document.createElement('tr');
-    row.innerHTML=`<td>${m.map}</td><td>${m.score}</td><td>${m.winnerTeam}</td><td>${new Date(m.date).toLocaleString()}</td><td><button>Editar</button></td>`;
+  
+  if (paginatedMatches.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5">No hay partidas registradas</td></tr>';
+    return;
+  }
+  
+  paginatedMatches.forEach(m => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${m.map}</td>
+      <td>${m.score}</td>
+      <td>Equipo ${m.winnerTeam}</td>
+      <td>${new Date(m.date).toLocaleString()}</td>
+      <td>
+        <button class="btn-edit-match" data-id="${m._id}">Editar</button>
+        <button class="btn-delete-match danger" data-id="${m._id}">Eliminar</button>
+      </td>`;
     tbody.appendChild(row);
   });
-}
-
-// -------- Eventos y partidas dentro de evento --------
-const createEventBtn = document.getElementById('createEventBtn');
-const eventsTableBody = document.getElementById('eventsTableBody');
-const eventMatchesPanel = document.getElementById('eventMatchesPanel');
-const eventMatchesTitle = document.getElementById('eventMatchesTitle');
-const eventMatchesList = document.getElementById('eventMatchesList');
-const closeEventMatches = document.getElementById('closeEventMatches');
-
-async function loadEvents() {
-  const res = await fetch('/events', { credentials:'include' });
-  allEvents = await res.json();
-  renderEvents();
-}
-
-function renderEvents(){
-  eventsTableBody.innerHTML = '';
-  if(!allEvents.length) return eventsTableBody.innerHTML='<tr><td colspan="5">No hay eventos creados</td></tr>';
-  allEvents.forEach((ev,i)=>{
-    const row=document.createElement('tr');
-    row.innerHTML=`<td>${ev.name}</td><td>${ev.teamSize}vs${ev.teamSize}</td><td>${ev.numTeams}</td><td>${ev.rounds||0}</td><td><button class="btn-view" data-index="${i}">Ver / Editar</button></td>`;
-    eventsTableBody.appendChild(row);
+  
+  // Configurar paginación
+  setupPagination('matchesPagination', currentMatchesPage, totalPages, (page) => {
+    currentMatchesPage = page;
+    updateMatchesTable();
   });
-
-  document.querySelectorAll('.btn-view').forEach(btn=>{
-    btn.addEventListener('click',async ()=>{
-      document.querySelectorAll('.btn-view').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      const ev = allEvents[btn.dataset.index];
-      eventMatchesTitle.innerText=`Partidas: ${ev.name}`;
-
-      // Cargar partidas
-      const res = await fetch(`/events/${ev._id}/matches`,{credentials:'include'});
-      const matches = await res.json();
-      eventMatchesList.innerHTML = matches.length ? matches.map(m=>`<div>${m.teamA?.map(p=>p.name).join(', ')} vs ${m.teamB?.map(p=>p.name).join(', ')}</div>`).join('') : 'No hay partidas aún';
-
-      // Mostrar panel
-      eventMatchesPanel.style.display='block';
-      populateEventTeams();
+  
+  // Añadir event listeners a los botones (pendiente de implementar)
+  document.querySelectorAll('.btn-delete-match').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (await confirmAction('Eliminar Partida', '¿Estás seguro de que deseas eliminar esta partida?')) {
+        try {
+          const res = await fetch(`/matches/${btn.dataset.id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          });
+          
+          if (res.ok) {
+            showSuccess('Partida eliminada correctamente');
+            loadMatches();
+            loadPlayers(); // Para actualizar estadísticas de jugadores
+          } else {
+            const data = await res.json();
+            showError(data.error || 'Error al eliminar partida');
+          }
+        } catch (error) {
+          showError('Error de conexión');
+        }
+      }
     });
   });
 }
 
-createEventBtn.addEventListener('click', async ()=>{
-  const name=document.getElementById('eventName').value.trim();
-  const teamSize=document.getElementById('eventTeamSize').value;
-  const numTeams=document.getElementById('eventNumTeams').value;
-  if(!name||!teamSize||!numTeams) return alert('Completa todos los campos');
-
-  const res=await fetch('/events',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body: JSON.stringify({ name, teamSize, numTeams })
-  });
-  const data=await res.json();
-  if(!res.ok) return alert(data.error||'Error al crear evento');
-  document.getElementById('eventName').value='';
-  document.getElementById('eventTeamSize').value='';
-  document.getElementById('eventNumTeams').value='';
-  loadEvents();
+// -------- Búsqueda de partidas --------
+document.getElementById('searchMatch').addEventListener('input', updateMatchesTable);
+document.getElementById('matchesPerPage').addEventListener('change', (e) => {
+  matchesPerPage = parseInt(e.target.value);
+  currentMatchesPage = 1;
+  updateMatchesTable();
 });
 
-closeEventMatches.addEventListener('click',()=>{eventMatchesPanel.style.display='none';});
-
-// Agregar partida a evento
-document.getElementById('submitEventMatchBtn').addEventListener('click', async ()=>{
-  const map=document.getElementById('eventMatchMap').value;
-  const winnerTeam=document.getElementById('eventWinnerTeam').value;
-  const score=document.getElementById('eventMatchScore').value.trim();
-  if(!map||!winnerTeam||!score) return alert('Completa todos los campos');
-
-  const match=[];
-  const teamA=document.getElementById('eventTeamA').querySelectorAll('.form-inline');
-  const teamB=document.getElementById('eventTeamB').querySelectorAll('.form-inline');
-  for(const row of [...teamA,...teamB]){
-    const select=row.querySelector('.player-select'); if(!select.value) continue;
-    const [name,tag]=select.value.split('||');
-    match.push({name,tag,kills:parseInt(row.querySelector('.kill').value)||0,deaths:parseInt(row.querySelector('.death').value)||0,assists:parseInt(row.querySelector('.assist').value)||0});
+// -------- Utilidad de paginación --------
+function setupPagination(containerId, currentPage, totalPages, onClick) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  
+  if (totalPages <= 1) return;
+  
+  // Botón anterior
+  if (currentPage > 1) {
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '«';
+    prevBtn.addEventListener('click', () => onClick(currentPage - 1));
+    container.appendChild(prevBtn);
   }
-  if(!match.length) return alert('No hay jugadores seleccionados');
+  
+  // Páginas
+  for (let i = 1; i <= totalPages; i++) {
+    const pageBtn = document.createElement('button');
+    pageBtn.textContent = i;
+    pageBtn.classList.toggle('active', i === currentPage);
+    pageBtn.addEventListener('click', () => onClick(i));
+    container.appendChild(pageBtn);
+  }
+  
+  // Botón siguiente
+  if (currentPage < totalPages) {
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = '»';
+    nextBtn.addEventListener('click', () => onClick(currentPage + 1));
+    container.appendChild(nextBtn);
+  }
+}
 
-  const eventIndex=document.querySelector('.btn-view.active')?.dataset.index;
-  if(eventIndex===undefined) return alert('No hay evento seleccionado');
-  const ev=allEvents[eventIndex];
+// -------- Eventos y partidas dentro de evento --------
+async function loadEvents() {
+  try {
+    document.getElementById('eventsTableBody').innerHTML = '<tr><td colspan="5">Cargando eventos...</td></tr>';
+    const res = await fetch('/events', { credentials: 'include' });
+    
+    if (!res.ok) throw new Error('Error al cargar eventos');
+    
+    allEvents = await res.json();
+    renderEvents();
+  } catch (error) {
+    document.getElementById('eventsTableBody').innerHTML = '<tr><td colspan="5">Error al cargar eventos</td></tr>';
+    console.error('Error loading events:', error);
+  }
+}
 
-  const res=await fetch(`/events/${ev._id}/matches`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body: JSON.stringify({ match,winnerTeam,score,map })
+function renderEvents() {
+  const tbody = document.getElementById('eventsTableBody');
+  tbody.innerHTML = '';
+  
+  if (!allEvents.length) {
+    tbody.innerHTML = '<tr><td colspan="5">No hay eventos creados</td></tr>';
+    return;
+  }
+  
+  allEvents.forEach((ev, i) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${ev.name}</td>
+      <td>${ev.teamSize}vs${ev.teamSize}</td>
+      <td>${ev.numTeams}</td>
+      <td>${ev.rounds || 0}</td>
+      <td>
+        <button class="btn-view" data-id="${ev._id}" data-name="${ev.name}">Ver / Editar</button>
+        <button class="btn-delete-event danger" data-id="${ev._id}" data-name="${ev.name}">Eliminar</button>
+      </td>`;
+    tbody.appendChild(row);
   });
-  const data=await res.json();
-  if(!res.ok) return alert(data.error||'Error al agregar partida');
-  alert(data.message);
-  eventMatchesPanel.style.display='none';
-  loadEvents();
+  
+  // Event listeners para botones de eventos
+  document.querySelectorAll('.btn-view').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      currentEventId = btn.dataset.id;
+      await showEventMatches(currentEventId, btn.dataset.name);
+    });
+  });
+  
+  document.querySelectorAll('.btn-delete-event').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (await confirmAction('Eliminar Evento', `¿Estás seguro de que deseas eliminar el evento "${btn.dataset.name}"?`)) {
+        try {
+          const res = await fetch(`/events/${btn.dataset.id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          });
+          
+          if (res.ok) {
+            showSuccess('Evento eliminado correctamente');
+            loadEvents();
+          } else {
+            const data = await res.json();
+            showError(data.error || 'Error al eliminar evento');
+          }
+        } catch (error) {
+          showError('Error de conexión');
+        }
+      }
+    });
+  });
+}
+
+async function showEventMatches(eventId, eventName) {
+  eventMatchesTitle.innerText = `Partidas: ${eventName}`;
+  
+  try {
+    const res = await fetch(`/events/${eventId}/matches`, { credentials: 'include' });
+    
+    if (!res.ok) throw new Error('Error al cargar partidas del evento');
+    
+    const matches = await res.json();
+    
+    eventMatchesList.innerHTML = matches.length 
+      ? matches.map(m => `
+          <div style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
+            <strong>${m.map}</strong> - ${m.score} (Ganador: Equipo ${m.winnerTeam})<br>
+            <small>${new Date(m.date).toLocaleString()}</small>
+          </div>
+        `).join('') 
+      : '<div>No hay partidas aún</div>';
+    
+    eventMatchesPanel.style.display = 'block';
+    populateEventTeams();
+  } catch (error) {
+    eventMatchesList.innerHTML = '<div>Error al cargar partidas del evento</div>';
+    console.error('Error loading event matches:', error);
+  }
+}
+
+function populateEventTeams() {
+  const eventTeamA = document.getElementById('eventTeamA');
+  const eventTeamB = document.getElementById('eventTeamB');
+  eventTeamA.innerHTML = '';
+  eventTeamB.innerHTML = '';
+  
+  const createPlayerRow = (team) => {
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    row.innerHTML = `
+      <select class="player-select" required>
+        <option value="">-- Selecciona jugador --</option>
+        ${allPlayers.map(p => `<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('')}
+      </select>
+      <input type="number" placeholder="Kills" class="kill" min="0" required>
+      <input type="number" placeholder="Deaths" class="death" min="0" required>
+      <input type="number" placeholder="Assists" class="assist" min="0" required>
+      <button type="button" class="danger remove-player">X</button>
+    `;
+    
+    row.querySelector('.remove-player').addEventListener('click', () => {
+      row.remove();
+    });
+    
+    return row;
+  };
+  
+  // Agregar 1 jugador por defecto a cada equipo
+  eventTeamA.appendChild(createPlayerRow('A'));
+  eventTeamB.appendChild(createPlayerRow('B'));
+  
+  // Event listeners para botones de agregar jugadores
+  document.getElementById('addEventPlayerA').addEventListener('click', () => {
+    eventTeamA.appendChild(createPlayerRow('A'));
+  });
+  
+  document.getElementById('addEventPlayerB').addEventListener('click', () => {
+    eventTeamB.appendChild(createPlayerRow('B'));
+  });
+}
+
+document.getElementById('createEventBtn').addEventListener('click', async () => {
+  const name = document.getElementById('eventName').value.trim();
+  const teamSize = document.getElementById('eventTeamSize').value;
+  const numTeams = document.getElementById('eventNumTeams').value;
+  
+  if (!name || !teamSize || !numTeams) {
+    return showError('Completa todos los campos');
+  }
+  
+  try {
+    const res = await fetch('/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ name, teamSize, numTeams })
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      return showError(data.error || 'Error al crear evento');
+    }
+    
+    showSuccess('Evento creado correctamente');
+    
+    // Limpiar formulario
+    document.getElementById('eventName').value = '';
+    document.getElementById('eventTeamSize').value = '';
+    document.getElementById('eventNumTeams').value = '';
+    
+    loadEvents();
+  } catch (error) {
+    showError('Error de conexión al crear evento');
+  }
 });
 
-// Inicializar
-loadPlayers();
-loadMatches();
-loadEvents();
+document.getElementById('closeEventMatches').addEventListener('click', () => {
+  eventMatchesPanel.style.display = 'none';
+  currentEventId = null;
+});
+
+document.getElementById('submitEventMatchBtn').addEventListener('click', async () => {
+  if (!currentEventId) {
+    return showError('No hay evento seleccionado');
+  }
+  
+  const map = document.getElementById('eventMatchMap').value;
+  const winnerTeam = document.getElementById('eventWinnerTeam').value;
+  const score = document.getElementById('eventMatchScore').value.trim();
+  
+  // Validar formato del score
+  if (!/^\d{1,2}-\d{1,2}$/.test(score)) {
+    return showError('El formato del marcador no es válido. Debe ser como "13-8"');
+  }
+  
+  if (!map || !winnerTeam || !score) {
+    return showError('Completa todos los campos');
+  }
+  
+  const match = [];
+  const teamA = document.getElementById('eventTeamA').querySelectorAll('.player-row');
+  const teamB = document.getElementById('eventTeamB').querySelectorAll('.player-row');
+  
+  // Validar que haya al menos un jugador en cada equipo
+  if (teamA.length === 0 || teamB.length === 0) {
+    return showError('Cada equipo debe tener al menos un jugador');
+  }
+  
+  // Procesar equipo A
+  for (const row of teamA) {
+    const select = row.querySelector('.player-select');
+    if (!select.value) continue;
+    
+    const [name, tag] = select.value.split('||');
+    match.push({
+      name, tag,
+      team: 'A',
+      kills: parseInt(row.querySelector('.kill').value) || 0,
+      deaths: parseInt(row.querySelector('.death').value) || 0,
+      assists: parseInt(row.querySelector('.assist').value) || 0
+    });
+  }
+  
+  // Procesar equipo B
+  for (const row of teamB) {
+    const select = row.querySelector('.player-select');
+    if (!select.value) continue;
+    
+    const [name, tag] = select.value.split('||');
+    match.push({
+      name, tag,
+      team: 'B',
+      kills: parseInt(row.querySelector('.kill').value) || 0,
+      deaths: parseInt(row.querySelector('.death').value) || 0,
+      assists: parseInt(row.querySelector('.assist').value) || 0
+    });
+  }
+  
+  if (match.length < 2) {
+    return showError('Debe haber al menos un jugador en cada equipo');
+  }
+  
+  try {
+    const res = await fetch(`/events/${currentEventId}/matches`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ match, winnerTeam, score, map })
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      return showError(data.error || 'Error al agregar partida');
+    }
+    
+    showSuccess('Partida agregada correctamente al evento');
+    
+    // Limpiar formulario
+    document.getElementById('eventMatchMap').value = '';
+    document.getElementById('eventWinnerTeam').value = '';
+    document.getElementById('eventMatchScore').value = '';
+    
+    // Recargar partidas del evento
+    await showEventMatches(currentEventId, document.getElementById('eventMatchesTitle').textContent.replace('Partidas: ', ''));
+  } catch (error) {
+    showError('Error de conexión al agregar partida');
+  }
+});
+
+// -------- Registrar jugador --------
+document.getElementById('addPlayerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const name = document.getElementById('playerName').value.trim();
+  const tag = document.getElementById('playerTag').value.trim();
+  
+  if (!name || !tag) {
+    return showError('Completa todos los campos');
+  }
+  
+  try {
+    const res = await fetch('/players', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ name, tag })
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      return showError(data.error || 'Error al registrar jugador');
+    }
+    
+    showSuccess('Jugador registrado correctamente');
+    
+    // Limpiar formulario
+    document.getElementById('playerName').value = '';
+    document.getElementById('playerTag').value = '';
+    
+    loadPlayers();
+  } catch (error) {
+    showError('Error de conexión al registrar jugador');
+  }
+});
+
+// -------- Inicializar aplicación --------
+function initApp() {
+  loadPlayers();
+  loadMatches();
+  loadEvents();
+  updateDashboard();
+  
+  // Configurar event listeners globales
+  document.getElementById('matchesPerPage').addEventListener('change', (e) => {
+    matchesPerPage = parseInt(e.target.value);
+    currentMatchesPage = 1;
+    updateMatchesTable();
+  });
+}
+
+// Iniciar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 </script>
 
 </body>
