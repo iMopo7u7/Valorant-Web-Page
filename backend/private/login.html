@@ -91,26 +91,34 @@
     <button type="submit">Iniciar Sesión</button>
   </form>
 </div>
+  
 <script>
-  const API_URL = window.location.origin;
-  document.getElementById('loginForm').addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    try{
-      const res = await fetch('/login',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({username,password}),
-        credentials:'include'
-      });
-      if(res.ok) window.location.href='/admin.html';
-      else{
-        const data = await res.json();
-        alert(data.error || 'Usuario o contraseña incorrectos');
-      }
-    }catch(err){alert('Error de conexión');}
-  });
+const API_URL = "https://valorant-10-mans.onrender.com";
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+
+  try {
+    const res = await fetch(`${API_URL}/login`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({username, password})
+    });
+
+    if(res.ok) {
+      window.location.href = `${API_URL}/admin.html`;
+    } else {
+      const data = await res.json();
+      alert(data.error || 'Usuario o contraseña incorrectos');
+    }
+  } catch(err) {
+    alert('Error de conexión');
+  }
+});
 </script>
+  
 </body>
 </html>
