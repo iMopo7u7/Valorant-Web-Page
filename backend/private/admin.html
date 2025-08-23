@@ -21,6 +21,7 @@ section { display:none; }
 section.active { display:block; }
 .edit-form { background:#f9f9f9; padding:0.5rem; margin-top:0.5rem; border:1px solid #ccc; }
 .edit-form input, .edit-form select { margin-right:0.5rem; margin-bottom:0.3rem; }
+#eventMatchesPanel { background:#f1f1f1; padding:0.5rem; border:1px solid #ccc; margin-top:0.5rem; }
 </style>
 </head>
 <body>
@@ -31,7 +32,7 @@ section.active { display:block; }
     <li><a href="#players">Gestionar Jugadores</a></li>
     <li><a href="#addMatch">Agregar Partida</a></li>
     <li><a href="#matches">Partidas</a></li>
-    <li><a href="#events">Eventos / Torneos</a></li>
+    <li><a href="#events">Eventos</a></li>
     <li><a href="#" id="logoutBtn">Cerrar Sesión</a></li>
   </ul>
 </nav>
@@ -120,11 +121,9 @@ section.active { display:block; }
     </table>
   </section>
 
-  <!-- NUEVA SECCION EVENTOS / TORNEOS -->
+  <!-- EVENTOS / TORNEOS -->
   <section id="events">
     <h2>Eventos / Torneos</h2>
-
-    <!-- Crear nuevo evento -->
     <div id="createEventForm" class="form-inline" style="margin-bottom:1rem;">
       <input type="text" id="eventName" placeholder="Nombre del evento" required>
       <select id="eventTeamSize">
@@ -145,7 +144,6 @@ section.active { display:block; }
       <button id="createEventBtn">Crear Evento</button>
     </div>
 
-    <!-- Lista de eventos -->
     <table>
       <thead>
         <tr>
@@ -161,8 +159,7 @@ section.active { display:block; }
       </tbody>
     </table>
 
-    <!-- Panel para gestionar partidas de un evento -->
-    <div id="eventMatchesPanel" style="margin-top:1rem; display:none;">
+    <div id="eventMatchesPanel" style="display:none;">
       <h3 id="eventMatchesTitle">Partidas del Evento</h3>
       <div id="eventMatchesList"></div>
       <button id="closeEventMatches">Cerrar</button>
@@ -170,110 +167,6 @@ section.active { display:block; }
   </section>
 </main>
 
-<script>
-const API_URL = window.location.origin;
-
-// --- Verificar sesión ---
-(async ()=>{
-  try {
-    const res = await fetch('/check-session',{credentials:'include'});
-    const data = await res.json();
-    if(!data.loggedIn) window.location.href='/login.html';
-  } catch { window.location.href='/login.html'; }
-})();
-
-// --- Navegación ---
-const navLinks = document.querySelectorAll('nav a');
-const sections = document.querySelectorAll('section');
-navLinks.forEach(link=>{
-  link.addEventListener('click', e=>{
-    e.preventDefault();
-    navLinks.forEach(l=>l.classList.remove('active'));
-    link.classList.add('active');
-    sections.forEach(s=>s.style.display='none');
-    document.querySelector(link.getAttribute('href')).style.display='block';
-  });
-});
-sections[0].style.display='block';
-
-// --- Logout ---
-document.getElementById('logoutBtn').addEventListener('click', async ()=>{
-  await fetch('/logout',{method:'POST',credentials:'include'});
-  window.location.href='/login.html';
-});
-
-// --- CRUD Jugadores ---
-let allPlayers=[];
-async function loadPlayers(){
-  try{
-    const res = await fetch('/players',{credentials:'include'});
-    allPlayers = await res.json();
-    updatePlayersTable();
-    populateTeams();
-    updateDashboard();
-  }catch(err){console.error(err);}
-}
-
-// --- (Tu JS de jugadores, dashboard y partidas se mantiene igual, no lo copio aquí para no repetir) ---
-
-// ------------------
-// NUEVO JS PARA EVENTOS / TORNEOS
-// ------------------
-let allEvents = [];
-
-const createEventBtn = document.getElementById('createEventBtn');
-const eventsTableBody = document.getElementById('eventsTableBody');
-const eventMatchesPanel = document.getElementById('eventMatchesPanel');
-const eventMatchesTitle = document.getElementById('eventMatchesTitle');
-const eventMatchesList = document.getElementById('eventMatchesList');
-const closeEventMatches = document.getElementById('closeEventMatches');
-
-function renderEvents(){
-  if(!allEvents.length){
-    eventsTableBody.innerHTML = '<tr><td colspan="5">No hay eventos creados</td></tr>';
-    return;
-  }
-  eventsTableBody.innerHTML = '';
-  allEvents.forEach((ev,i)=>{
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${ev.name}</td>
-      <td>${ev.teamSize}vs${ev.teamSize}</td>
-      <td>${ev.numTeams}</td>
-      <td>${ev.rounds || 0}</td>
-      <td>
-        <button class="btn-view" data-index="${i}">Ver / Editar</button>
-      </td>`;
-    eventsTableBody.appendChild(row);
-  });
-
-  document.querySelectorAll('.btn-view').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const ev = allEvents[btn.dataset.index];
-      eventMatchesTitle.innerText = `Partidas: ${ev.name}`;
-      eventMatchesList.innerHTML = ev.matches && ev.matches.length
-        ? ev.matches.map(m=>`<div>${m.teamA.join(', ')} vs ${m.teamB.join(', ')}</div>`).join('')
-        : 'No hay partidas aún';
-      eventMatchesPanel.style.display='block';
-    });
-  });
-}
-
-createEventBtn.addEventListener('click', ()=>{
-  const name = document.getElementById('eventName').value.trim();
-  const teamSize = document.getElementById('eventTeamSize').value;
-  const numTeams = document.getElementById('eventNumTeams').value;
-  if(!name || !teamSize || !numTeams) return alert('Completa todos los campos');
-  allEvents.push({name, teamSize, numTeams, matches:[]});
-  document.getElementById('eventName').value='';
-  document.getElementById('eventTeamSize').value='';
-  document.getElementById('eventNumTeams').value='';
-  renderEvents();
-});
-
-closeEventMatches.addEventListener('click', ()=>{ eventMatchesPanel.style.display='none'; });
-
-renderEvents();
-</script>
+<script src="admin.js"></script>
 </body>
 </html>
