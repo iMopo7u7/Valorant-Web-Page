@@ -1,372 +1,232 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login Admin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --valorant-red: #ff4655;
-      --valorant-red-glow: rgba(255, 70, 85, 0.4);
-      --valorant-blue: #00d4ff;
-      --valorant-purple: #a855f7;
-      --bg-dark: #121212;
-      --bg-surface: #1e1e1e;
-      --bg-card: #2a2a2a;
-      --border-color: #333;
-      --text-primary: #eee;
-      --text-secondary: #ccc;
-      --text-muted: #999;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, var(--bg-dark) 0%, #0a0a0a 100%);
-      color: var(--text-primary);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      overflow: hidden;
-      position: relative;
-    }
-
-    /* Fondo animado */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: 
-        radial-gradient(circle at 20% 80%, rgba(255, 70, 85, 0.05) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.03) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.03) 0%, transparent 50%);
-      pointer-events: none;
-      z-index: -1;
-      animation: pulse 4s ease-in-out infinite alternate;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 0.8; }
-      100% { opacity: 1; }
-    }
-
-    /* Partículas flotantes */
-    .particles {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    .particle {
-      position: absolute;
-      width: 2px;
-      height: 2px;
-      background: var(--valorant-red);
-      border-radius: 50%;
-      animation: float 6s ease-in-out infinite;
-      opacity: 0.6;
-    }
-
-    .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
-    .particle:nth-child(2) { left: 20%; animation-delay: 1s; }
-    .particle:nth-child(3) { left: 30%; animation-delay: 2s; }
-    .particle:nth-child(4) { left: 40%; animation-delay: 3s; }
-    .particle:nth-child(5) { left: 50%; animation-delay: 4s; }
-    .particle:nth-child(6) { left: 60%; animation-delay: 5s; }
-    .particle:nth-child(7) { left: 70%; animation-delay: 0.5s; }
-    .particle:nth-child(8) { left: 80%; animation-delay: 1.5s; }
-    .particle:nth-child(9) { left: 90%; animation-delay: 2.5s; }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(100vh) scale(0); }
-      10% { transform: translateY(90vh) scale(1); }
-      90% { transform: translateY(10vh) scale(1); }
-      100% { transform: translateY(0vh) scale(0); }
-    }
-
-    .login-container {
-      background: rgba(42, 42, 42, 0.95);
-      backdrop-filter: blur(20px);
-      padding: 3rem 2.5rem;
-      border-radius: 20px;
-      box-shadow: 
-        0 0 40px rgba(0, 0, 0, 0.7),
-        0 0 80px var(--valorant-red-glow),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      text-align: center;
-      width: 420px;
-      max-width: 90vw;
-      border: 1px solid rgba(255, 70, 85, 0.3);
-      position: relative;
-      overflow: hidden;
-      animation: slideIn 0.8s ease-out;
-    }
-
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(30px) scale(0.9);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    .login-container::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, var(--valorant-red), var(--valorant-blue), var(--valorant-purple));
-      animation: shimmer 2s ease-in-out infinite;
-    }
-
-    @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
-    }
-
-    .admin-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-      color: var(--valorant-red);
-      text-shadow: 0 0 20px var(--valorant-red-glow);
-    }
-
-    .login-container h2 {
-      font-family: 'Orbitron', monospace;
-      font-size: 2.2rem;
-      font-weight: 900;
-      color: var(--valorant-red);
-      text-shadow: 0 0 20px var(--valorant-red-glow);
-      margin-bottom: 0.5rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-
-    .login-subtitle {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      margin-bottom: 2.5rem;
-      font-weight: 300;
-    }
-
-    .form-group {
-      margin-bottom: 1.5rem;
-      position: relative;
-      text-align: left;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    input {
-      width: 100%;
-      padding: 1rem 1.2rem;
-      margin: 0;
-      border-radius: 12px;
-      border: 2px solid var(--border-color);
-      background: rgba(18, 18, 18, 0.8);
-      color: var(--text-primary);
-      font-family: 'Poppins', sans-serif;
-      font-size: 1rem;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(10px);
-    }
-
-    input:focus {
-      outline: none;
-      border-color: var(--valorant-red);
-      box-shadow: 
-        0 0 20px var(--valorant-red-glow),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      background: rgba(18, 18, 18, 0.95);
-      transform: translateY(-2px);
-    }
-
-    input::placeholder {
-      color: var(--text-muted);
-      font-weight: 400;
-    }
-
-    button {
-      width: 100%;
-      padding: 1.2rem;
-      background: linear-gradient(135deg, var(--valorant-red), #ff6b7a);
-      border: 2px solid var(--valorant-red);
-      border-radius: 12px;
-      color: white;
-      font-weight: 700;
-      font-size: 1.1rem;
-      cursor: pointer;
-      font-family: 'Poppins', sans-serif;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-      margin-top: 1rem;
-      box-shadow: 0 0 20px var(--valorant-red-glow);
-    }
-
-    button::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-      transition: left 0.5s;
-    }
-
-    button:hover {
-      background: linear-gradient(135deg, #ff6b7a, var(--valorant-red));
-      transform: translateY(-3px);
-      box-shadow: 0 10px 30px var(--valorant-red-glow);
-    }
-
-    button:hover::before {
-      left: 100%;
-    }
-
-    button:active {
-      transform: translateY(-1px);
-    }
-
-    .login-footer {
-      margin-top: 2rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border-color);
-      color: var(--text-muted);
-      font-size: 0.85rem;
-    }
-
-    /* Responsive */
-    @media (max-width: 480px) {
-      .login-container {
-        padding: 2rem 1.5rem;
-        width: 95vw;
-      }
-      
-      .login-container h2 {
-        font-size: 1.8rem;
-      }
-      
-      input, button {
-        padding: 1rem;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --valorant-red: #ff4655;
+    --valorant-red-glow: rgba(255, 70, 85, 0.4);
+    --bg-dark: #121212;
+    --bg-card: #2a2a2a;
+    --border-color: #333;
+    --text-primary: #eee;
+    --text-muted: #999;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body {
+    font-family:'Poppins',sans-serif;
+    background: linear-gradient(135deg,var(--bg-dark) 0%,#0a0a0a 100%);
+    color: var(--text-primary);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+  }
+  .login-container {
+    background: rgba(42,42,42,0.95);
+    backdrop-filter: blur(20px);
+    padding: 3rem 2.5rem;
+    border-radius: 20px;
+    width: 420px;
+    max-width: 90vw;
+    border:1px solid rgba(255,70,85,0.3);
+    text-align:center;
+  }
+  .login-container h2 {
+    font-family:'Orbitron',monospace;
+    font-size:2.2rem;
+    font-weight:900;
+    color: var(--valorant-red);
+    margin-bottom:0.5rem;
+  }
+  .login-subtitle {color: var(--text-muted); font-size:0.95rem; margin-bottom:2.5rem;}
+  .form-group {margin-bottom:1.5rem; text-align:left;}
+  .form-group label {display:block; margin-bottom:0.5rem; font-weight:600; color: var(--text-muted);}
+  input {
+    width:100%;
+    padding:1rem 1.2rem;
+    border-radius:12px;
+    border:2px solid var(--border-color);
+    background: rgba(18,18,18,0.8);
+    color: var(--text-primary);
+    font-size:1rem;
+  }
+  input:focus {
+    outline:none;
+    border-color: var(--valorant-red);
+    background: rgba(18,18,18,0.95);
+  }
+  button {
+    width:100%;
+    padding:1.2rem;
+    background: linear-gradient(135deg,var(--valorant-red),#ff6b7a);
+    border:none;
+    border-radius:12px;
+    color:white;
+    font-weight:700;
+    font-size:1.1rem;
+    cursor:pointer;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin-top:1rem;
+  }
+</style>
 </head>
 <body>
-  <!-- Partículas flotantes -->
-  <div class="particles">
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-  </div>
-
-  <div class="login-container">
-    <div class="admin-icon">🛡️</div>
-    <h2>Panel Admin</h2>
-    <p class="login-subtitle">Acceso autorizado únicamente</p>
-    
-    <form id="loginForm">
-      <div class="form-group">
-        <label for="username">Usuario</label>
-        <input type="text" id="username" placeholder="Ingresa tu usuario" required>
-      </div>
-      
-      <div class="form-group">
-        <label for="password">Contraseña</label>
-        <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
-      </div>
-      
-      <button type="submit">Iniciar Sesión</button>
-    </form>
-    
-    <div class="login-footer">
-      <p>Sistema de administración Valorant 10 Mans</p>
+<div class="login-container">
+  <h2>Panel Admin</h2>
+  <p class="login-subtitle">Acceso autorizado únicamente</p>
+  <form id="loginForm">
+    <div class="form-group">
+      <label for="username">Usuario</label>
+      <input type="text" id="username" placeholder="Ingresa tu usuario" required>
     </div>
-  </div>
-
-  <script>
-  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    <div class="form-group">
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
+    </div>
+    <button type="submit">Iniciar Sesión</button>
+  </form>
+</div>
+<script>
+  const API_URL = window.location.origin;
+  document.getElementById('loginForm').addEventListener('submit', async (e)=>{
     e.preventDefault();
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-
-    try {
-      const res = await fetch('/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-        credentials: 'include'
+    try{
+      const res = await fetch('/login',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({username,password}),
+        credentials:'include'
       });
-
-      const data = await res.json();
-      if (res.ok) {
-        window.location.href = '/admin.html';
-      } else {
-        alert(data.message || 'Usuario o contraseña incorrectos');
+      if(res.ok) window.location.href='/admin.html';
+      else{
+        const data = await res.json();
+        alert(data.error || 'Usuario o contraseña incorrectos');
       }
-    } catch (err) {
-      alert('Error de conexión');
-    }
+    }catch(err){alert('Error de conexión');}
   });
 </script>
-
-  <script>
-    (function(){
-      function c(){
-        var b=a.contentDocument||a.contentWindow.document;
-        if(b){
-          var d=b.createElement('script');
-          d.innerHTML="window.__CF$cv$params={r:'96fc15c8f25b46e8',t:'MTc1NTI5NjQ4OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
-          b.getElementsByTagName('head')[0].appendChild(d)
-        }
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --valorant-red: #ff4655;
+    --valorant-red-glow: rgba(255, 70, 85, 0.4);
+    --bg-dark: #121212;
+    --bg-card: #2a2a2a;
+    --border-color: #333;
+    --text-primary: #eee;
+    --text-muted: #999;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body {
+    font-family:'Poppins',sans-serif;
+    background: linear-gradient(135deg,var(--bg-dark) 0%,#0a0a0a 100%);
+    color: var(--text-primary);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+  }
+  .login-container {
+    background: rgba(42,42,42,0.95);
+    backdrop-filter: blur(20px);
+    padding: 3rem 2.5rem;
+    border-radius: 20px;
+    width: 420px;
+    max-width: 90vw;
+    border:1px solid rgba(255,70,85,0.3);
+    text-align:center;
+  }
+  .login-container h2 {
+    font-family:'Orbitron',monospace;
+    font-size:2.2rem;
+    font-weight:900;
+    color: var(--valorant-red);
+    margin-bottom:0.5rem;
+  }
+  .login-subtitle {color: var(--text-muted); font-size:0.95rem; margin-bottom:2.5rem;}
+  .form-group {margin-bottom:1.5rem; text-align:left;}
+  .form-group label {display:block; margin-bottom:0.5rem; font-weight:600; color: var(--text-muted);}
+  input {
+    width:100%;
+    padding:1rem 1.2rem;
+    border-radius:12px;
+    border:2px solid var(--border-color);
+    background: rgba(18,18,18,0.8);
+    color: var(--text-primary);
+    font-size:1rem;
+  }
+  input:focus {
+    outline:none;
+    border-color: var(--valorant-red);
+    background: rgba(18,18,18,0.95);
+  }
+  button {
+    width:100%;
+    padding:1.2rem;
+    background: linear-gradient(135deg,var(--valorant-red),#ff6b7a);
+    border:none;
+    border-radius:12px;
+    color:white;
+    font-weight:700;
+    font-size:1.1rem;
+    cursor:pointer;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin-top:1rem;
+  }
+</style>
+</head>
+<body>
+<div class="login-container">
+  <h2>Panel Admin</h2>
+  <p class="login-subtitle">Acceso autorizado únicamente</p>
+  <form id="loginForm">
+    <div class="form-group">
+      <label for="username">Usuario</label>
+      <input type="text" id="username" placeholder="Ingresa tu usuario" required>
+    </div>
+    <div class="form-group">
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
+    </div>
+    <button type="submit">Iniciar Sesión</button>
+  </form>
+</div>
+<script>
+  const API_URL = window.location.origin;
+  document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    try{
+      const res = await fetch('/login',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({username,password}),
+        credentials:'include'
+      });
+      if(res.ok) window.location.href='/admin.html';
+      else{
+        const data = await res.json();
+        alert(data.error || 'Usuario o contraseña incorrectos');
       }
-      if(document.body){
-        var a=document.createElement('iframe');
-        a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';
-        document.body.appendChild(a);
-        if('loading'!==document.readyState)c();
-        else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);
-        else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}
-      }
-    })();
-  </script>
+    }catch(err){alert('Error de conexión');}
+  });
+</script>
 </body>
 </html>
