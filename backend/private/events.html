@@ -92,6 +92,7 @@ button { padding:0.3rem 0.5rem; margin-left:0.2rem; cursor:pointer; }
       <h5>Equipo B</h5>
       <div id="eventTeamB"></div>
       <button id="submitEventMatchBtn">Registrar Partida</button>
+      <button id="backToAdminBtn" style="margin-left:10px;">Regresar a Admin</button>
     </div>
     <button id="closeEventMatches">Cerrar</button>
   </div>
@@ -101,22 +102,23 @@ button { padding:0.3rem 0.5rem; margin-left:0.2rem; cursor:pointer; }
 const API_URL = window.location.origin;
 let allEvents = [];
 let allPlayers = [];
+let currentTeamSize = 5;
 
-// -------- Cargar jugadores (para seleccionar en equipos de eventos) --------
+// Cargar jugadores
 async function loadPlayers() {
   const res = await fetch('/players', { credentials:'include' });
   allPlayers = await res.json();
 }
 loadPlayers();
 
-// -------- Cargar eventos --------
+// Cargar eventos
 async function loadEvents() {
   const res = await fetch('/events', { credentials:'include' });
   allEvents = await res.json();
   renderEvents();
 }
 
-// -------- Renderizar tabla de eventos --------
+// Renderizar tabla de eventos
 function renderEvents() {
   const tbody = document.getElementById('eventsTableBody');
   tbody.innerHTML = '';
@@ -135,6 +137,7 @@ function renderEvents() {
       document.querySelectorAll('.btn-view').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       const ev = allEvents[btn.dataset.index];
+      currentTeamSize = parseInt(ev.teamSize);
       document.getElementById('eventMatchesTitle').innerText=`Partidas: ${ev.name}`;
 
       // Cargar partidas
@@ -149,7 +152,7 @@ function renderEvents() {
   });
 }
 
-// -------- Crear evento --------
+// Crear evento
 document.getElementById('createEventBtn').addEventListener('click', async ()=>{
   const name = document.getElementById('eventName').value.trim();
   const teamSize = document.getElementById('eventTeamSize').value;
@@ -170,12 +173,17 @@ document.getElementById('createEventBtn').addEventListener('click', async ()=>{
   loadEvents();
 });
 
-// -------- Cerrar panel de partidas --------
+// Cerrar panel de partidas
 document.getElementById('closeEventMatches').addEventListener('click',()=>{
   document.getElementById('eventMatchesPanel').style.display='none';
 });
 
-// -------- Populate equipos para evento --------
+// Regresar a admin
+document.getElementById('backToAdminBtn').addEventListener('click',()=>{
+  window.location.href = '/admin.html';
+});
+
+// Populate equipos para evento según teamSize
 function populateEventTeams() {
   const teamAContainer = document.getElementById('eventTeamA');
   const teamBContainer = document.getElementById('eventTeamB');
@@ -189,10 +197,13 @@ function populateEventTeams() {
                      <input type="number" placeholder="Assists" class="assist" min="0">`;
     return row;
   }
-  for(let i=0;i<5;i++){ teamAContainer.appendChild(createRow()); teamBContainer.appendChild(createRow()); }
+  for(let i=0;i<currentTeamSize;i++){ 
+    teamAContainer.appendChild(createRow()); 
+    teamBContainer.appendChild(createRow()); 
+  }
 }
 
-// -------- Agregar partida a evento --------
+// Agregar partida a evento
 document.getElementById('submitEventMatchBtn').addEventListener('click', async ()=>{
   const map = document.getElementById('eventMatchMap').value;
   const winnerTeam = document.getElementById('eventWinnerTeam').value;
@@ -202,12 +213,14 @@ document.getElementById('submitEventMatchBtn').addEventListener('click', async (
   const match=[];
   const teamA = document.getElementById('eventTeamA').querySelectorAll('.form-inline');
   const teamB = document.getElementById('eventTeamB').querySelectorAll('.form-inline');
+
   for(const row of [...teamA,...teamB]){
     const select=row.querySelector('.player-select'); if(!select.value) continue;
     const [name,tag]=select.value.split('||');
     match.push({name,tag,kills:parseInt(row.querySelector('.kill').value)||0,deaths:parseInt(row.querySelector('.death').value)||0,assists:parseInt(row.querySelector('.assist').value)||0});
   }
-  if(!match.length) return alert('No hay jugadores seleccionados');
+
+  if(match.length !== currentTeamSize*2) return alert(`Selecciona exactamente ${currentTeamSize} jugadores por equipo`);
 
   const eventIndex = document.querySelector('.btn-view.active')?.dataset.index;
   if(eventIndex===undefined) return alert('No hay evento seleccionado');
