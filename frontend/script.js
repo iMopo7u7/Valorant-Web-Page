@@ -29,6 +29,52 @@ function getRankClass(position) {
   }
 }
 
+function getBadgeIcon(type) {
+  switch (type) {
+    case 'champion': return '👑';
+    case 'finalist': return '🥈';
+    case 'semifinalist': return '🥉';
+    case 'participant': return '🎯';
+    default: return '🎮';
+  }
+}
+
+function createBadges(badges) {
+  return badges.map(badge => 
+    `<span class="badge ${badge.type}" 
+           data-tournament="${badge.tournament}" 
+           data-date="${badge.date}" 
+           data-placement="${badge.placement || ''}">
+      ${getBadgeIcon(badge.type)}
+    </span>`
+  ).join('');
+}
+
+function createSocialLinks(social) {
+  let html = '<div class="player-social">';
+  
+  if (social.twitter) {
+    html += `<a href="${social.twitter}" target="_blank" title="Twitter">
+      <img src="assets/twitter-icon.png" alt="Twitter" class="social-icon">
+    </a>`;
+  }
+  
+  if (social.valorantTracker) {
+    html += `<a href="${social.valorantTracker}" target="_blank" title="Valorant Tracker">
+      <img src="assets/tracker-icon.png" alt="Tracker" class="social-icon">
+    </a>`;
+  }
+  
+  if (social.twitch) {
+    html += `<a href="${social.twitch}" target="_blank" title="Twitch">
+      <img src="assets/twitch-icon.png" alt="Twitch" class="social-icon">
+    </a>`;
+  }
+  
+  html += '</div>';
+  return html;
+}
+
 // ==========================
 // 🔧 API SERVICE
 // ==========================
@@ -82,6 +128,10 @@ async function renderTopPlayers(players) {
       <div class="player-name">${player.name}</div>
       <div class="player-tag">#${player.tag}</div>
       <div class="player-score">${player.score}</div>
+      <div class="player-badges">
+        ${createBadges(player.badges?.slice(0, 3) || [])}
+      </div>
+      ${createSocialLinks(player.social || {})}
     </div>
   `).join('');
 }
@@ -101,12 +151,13 @@ async function renderLeaderboardTable(players) {
           <div>
             <div class="player-name-link">${p.name}</div>
             <div class="player-tag-text">#${p.tag}</div>
-            <div class="player-social">
-              ${p.social?.twitter ? `<a href="${p.social.twitter}" target="_blank">Twitter</a>` : ''}
-              ${p.social?.tracker ? `<a href="${p.social.tracker}" target="_blank">Tracker</a>` : ''}
-              ${p.social?.twitch ? `<a href="${p.social.twitch}" target="_blank">Twitch</a>` : ''}
-            </div>
           </div>
+        </div>
+        <div class="player-meta">
+          <div class="badges-container">
+            ${createBadges(p.badges || [])}
+          </div>
+          ${createSocialLinks(p.social || {})}
         </div>
       </td>
       <td class="stat-cell">${Math.round(p.avgACS) || 0}</td>
