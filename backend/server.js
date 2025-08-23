@@ -126,8 +126,15 @@ app.get("/check-session", (req, res) => {
   res.json({ loggedIn: !!req.session.isAdmin });
 });
 
+// -------------------
+// --- Rutas seguras de páginas
+// -------------------
 app.get("/admin.html", requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, "private/admin.html"));
+});
+
+app.get("/events.html", requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, "private/events.html"));
 });
 
 // -------------------
@@ -236,7 +243,6 @@ app.post("/matches", requireAdmin, async (req, res) => {
     const newMatch = { match, winnerTeam, score, map, date: new Date() };
     await matchesCollection.insertOne(newMatch);
 
-    // Si la partida pertenece a un evento
     if (eventId) {
       await eventsCollection.updateOne(
         { _id: new ObjectId(eventId) },
@@ -444,7 +450,6 @@ app.get("/last-match", async (req, res) => {
   }
 });
 
-// Public route for getting events (visible on frontend)
 app.get("/events-public", async (req, res) => {
   try {
     const events = await eventsCollection.find().sort({ createdAt: -1 }).toArray();
@@ -460,6 +465,17 @@ app.get("/events-public", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Error al obtener eventos" });
   }
+});
+
+// -------------------
+// --- Logout
+// -------------------
+app.post("/logout", (req, res) => {
+  req.session.destroy(err => {
+    if(err) return res.status(500).json({error:"Error cerrando sesión"});
+    res.clearCookie("connect.sid");
+    res.json({success:true});
+  });
 });
 
 // -------------------
