@@ -180,15 +180,17 @@ app.get("/players", requireAdmin, async (req, res) => {
 
 app.put("/players", requireAdmin, async (req, res) => {
   try {
-    const { oldName, oldTag, newName, newTag } = req.body;
+    const { oldName, oldTag, newName, newTag, social } = req.body;
     if (!oldName || !oldTag || !newName || !newTag)
       return res.status(400).json({ error: "Todos los campos son requeridos" });
 
+    // Actualizar en players (incluyendo redes sociales)
     await playersCollection.updateOne(
       { name: oldName, tag: oldTag },
-      { $set: { name: newName, tag: newTag } }
+      { $set: { name: newName, tag: newTag, social: social || {} } }
     );
 
+    // Actualizar nombre/tag en los matches
     const matches = await matchesCollection.find({ "match.name": oldName, "match.tag": oldTag }).toArray();
     for (const match of matches) {
       let modified = false;
