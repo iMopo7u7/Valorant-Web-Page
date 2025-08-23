@@ -13,14 +13,14 @@ nav li { margin:0; }
 nav a { display:block; padding:1rem; color:white; text-decoration:none; }
 nav a.active { background:#555; }
 main { padding:1rem; }
-form.form-inline input, form.form-inline select { margin-right:0.5rem; }
+form.form-inline input, form.form-inline select { margin-right:0.5rem; margin-bottom:0.3rem; }
 table { width:100%; border-collapse:collapse; margin-top:1rem; }
 table th, table td { border:1px solid #ccc; padding:0.5rem; text-align:center; }
 button { padding:0.3rem 0.5rem; margin-left:0.2rem; cursor:pointer; }
 section { display:none; }
 section.active { display:block; }
 .edit-form { background:#f9f9f9; padding:0.5rem; margin-top:0.5rem; border:1px solid #ccc; }
-.edit-form input { margin-right:0.5rem; margin-bottom:0.3rem; }
+.edit-form input, .edit-form select { margin-right:0.5rem; margin-bottom:0.3rem; }
 </style>
 </head>
 <body>
@@ -29,17 +29,20 @@ section.active { display:block; }
   <ul>
     <li><a href="#dashboard" class="active">Dashboard</a></li>
     <li><a href="#players">Gestionar Jugadores</a></li>
-    <li><a href="#matches">Añadir Partidas</a></li>
+    <li><a href="#matches">Partidas</a></li>
     <li><a href="#" id="logoutBtn">Cerrar Sesión</a></li>
   </ul>
 </nav>
 <main>
+  <!-- DASHBOARD -->
   <section id="dashboard" class="active">
     <h2>Dashboard / Resumen</h2>
     <p>Total Jugadores: <span id="totalPlayers">0</span></p>
     <p>Partidas Registradas: <span id="totalMatches">0</span></p>
+    <p>Última partida agregada: <span id="lastMatchDate">N/A</span></p>
   </section>
 
+  <!-- JUGADORES -->
   <section id="players">
     <h2>Gestionar Jugadores</h2>
     <form id="addPlayerForm" class="form-inline">
@@ -55,19 +58,57 @@ section.active { display:block; }
     </table>
   </section>
 
+  <!-- PARTIDAS -->
   <section id="matches">
-    <h2>Añadir Partidas</h2>
-    <div id="teamA"></div>
-    <div id="teamB" style="margin-top:1rem;"></div>
-    <label>Ganador:</label>
-    <select id="winnerTeam">
-      <option value="">Seleccionar</option>
-      <option value="A">Equipo A</option>
-      <option value="B">Equipo B</option>
-    </select>
-    <label>Marcador final:</label>
-    <input type="text" id="matchScore" placeholder="Ej: 13-8">
-    <button id="submitMatchBtn">Registrar Partida</button>
+    <h2>Partidas</h2>
+
+    <!-- Formulario agregar partida -->
+    <div id="addMatchForm" style="margin-bottom:1rem;">
+      <label>Mapa:</label>
+      <select id="matchMap">
+        <option value="">Selecciona mapa</option>
+        <option value="Bind">Bind</option>
+        <option value="Haven">Haven</option>
+        <option value="Split">Split</option>
+        <option value="Ascent">Ascent</option>
+        <option value="Icebox">Icebox</option>
+        <option value="Breeze">Breeze</option>
+      </select>
+
+      <label>Ganador:</label>
+      <select id="winnerTeam">
+        <option value="">Seleccionar</option>
+        <option value="A">Equipo A</option>
+        <option value="B">Equipo B</option>
+      </select>
+
+      <label>Marcador final:</label>
+      <input type="text" id="matchScore" placeholder="Ej: 13-8">
+
+      <h4>Equipo A</h4>
+      <div id="teamA"></div>
+
+      <h4>Equipo B</h4>
+      <div id="teamB"></div>
+
+      <button id="submitMatchBtn">Registrar Partida</button>
+    </div>
+
+    <!-- Tabla de partidas -->
+    <table>
+      <thead>
+        <tr>
+          <th>Mapa</th>
+          <th>Score</th>
+          <th>Ganador</th>
+          <th>Fecha</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="matchesTableBody">
+        <tr><td colspan="5">No hay partidas registradas</td></tr>
+      </tbody>
+    </table>
   </section>
 </main>
 
@@ -141,7 +182,6 @@ function updatePlayersTable(){
     const editBtn = row.querySelector('.btn-edit');
     const deleteBtn = row.querySelector('.btn-delete');
 
-    // Crear formulario oculto
     const editForm = document.createElement('tr');
     editForm.className='edit-form-row';
     editForm.innerHTML=`<td colspan="7">
@@ -158,7 +198,6 @@ function updatePlayersTable(){
     row.parentNode.insertBefore(editForm, row.nextSibling);
 
     const formDiv = editForm.querySelector('.edit-form');
-
     editBtn.addEventListener('click', ()=> formDiv.style.display = 'block');
     formDiv.querySelector('.btn-cancel').addEventListener('click', ()=> formDiv.style.display = 'none');
 
@@ -188,7 +227,6 @@ function updatePlayersTable(){
       }catch(err){alert(err.message);}
     });
 
-    // --- Eliminar ---
     deleteBtn.addEventListener('click', async ()=>{
       if(!confirm('¿Eliminar jugador?')) return;
       try{
@@ -210,10 +248,17 @@ function updatePlayersTable(){
 async function updateDashboard(){
   document.getElementById('totalPlayers').innerText = allPlayers.length;
   try{
-    const res = await fetch('/matches-count',{credentials:'include'});
-    const data = await res.json();
-    document.getElementById('totalMatches').innerText = data.count||0;
-  }catch{ document.getElementById('totalMatches').innerText = 0; }
+    const resMatches = await fetch('/matches-count',{credentials:'include'});
+    const dataMatches = await resMatches.json();
+    document.getElementById('totalMatches').innerText = dataMatches.count||0;
+
+    const resLast = await fetch('/last-match',{credentials:'include'});
+    const dataLast = await resLast.json();
+    document.getElementById('lastMatchDate').innerText = dataLast.date ? new Date(dataLast.date).toLocaleString() : "N/A";
+  }catch{ 
+    document.getElementById('totalMatches').innerText = 0;
+    document.getElementById('lastMatchDate').innerText = "N/A";
+  }
 }
 
 // --- Teams ---
@@ -227,12 +272,12 @@ function populateTeams(){
     row.className='form-inline';
     row.innerHTML=`
       <select class="player-select"><option value="">-- Selecciona jugador --</option>${allPlayers.map(p=>`<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('')}</select>
+      <input type="number" placeholder="ACS" class="acs" min="0">
       <input type="number" placeholder="Kills" class="kill" min="0">
       <input type="number" placeholder="Deaths" class="death" min="0">
       <input type="number" placeholder="Assists" class="assist" min="0">
-      <input type="number" placeholder="ACS" class="acs" min="0">
-      <input type="number" placeholder="FirstBloods" class="fb" min="0">
-      <input type="number" placeholder="HS%" class="hs" min="0" max="100">`;
+      <input type="number" placeholder="HS%" class="hs" min="0" max="100">
+      <input type="number" placeholder="FirstBloods" class="fb" min="0">`;
     return row;
   };
 
@@ -241,25 +286,27 @@ function populateTeams(){
 
 // --- Registrar partida ---
 document.getElementById('submitMatchBtn').addEventListener('click', async ()=>{
+  const map = document.getElementById('matchMap').value;
   const winnerTeam = document.getElementById('winnerTeam').value;
   const score = document.getElementById('matchScore').value.trim();
+  if(!map) return alert('Selecciona mapa');
   if(!winnerTeam) return alert('Selecciona ganador');
   if(!score) return alert('Ingresa marcador final');
-  const match=[];
 
+  const match=[];
   const teamA = document.getElementById('teamA').querySelectorAll('.form-inline');
   const teamB = document.getElementById('teamB').querySelectorAll('.form-inline');
 
   for(const row of [...teamA,...teamB]){
     const select=row.querySelector('.player-select'); if(!select.value) continue;
     const [name, tag] = select.value.split('||');
+    const acs = parseInt(row.querySelector('.acs').value)||0;
     const kills = parseInt(row.querySelector('.kill').value)||0;
     const deaths = parseInt(row.querySelector('.death').value)||0;
     const assists = parseInt(row.querySelector('.assist').value)||0;
-    const acs = parseInt(row.querySelector('.acs').value)||0;
-    const firstBloods = parseInt(row.querySelector('.fb').value)||0;
     const hsPercent = parseFloat(row.querySelector('.hs').value)||0;
-    match.push({name,tag,kills,deaths,assists,acs,firstBloods,hsPercent});
+    const firstBloods = parseInt(row.querySelector('.fb').value)||0;
+    match.push({name,tag,acs,kills,deaths,assists,hsPercent,firstBloods});
   }
   if(match.length===0) return alert('No hay jugadores seleccionados');
 
@@ -268,11 +315,11 @@ document.getElementById('submitMatchBtn').addEventListener('click', async ()=>{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       credentials:'include',
-      body:JSON.stringify({match,winnerTeam,score})
+      body:JSON.stringify({match,winnerTeam,score,map})
     });
     const data = await res.json();
     if(!res.ok) throw new Error(data.error||'Error al registrar partida');
-    alert(data.message); loadPlayers();
+    alert(data.message); loadPlayers(); loadMatches();
   }catch(err){alert(err.message);}
 });
 
@@ -295,9 +342,40 @@ document.getElementById('addPlayerForm').addEventListener('submit', async e=>{
   }catch(err){alert(err.message);}
 });
 
+// --- Cargar partidas en tabla ---
+async function loadMatches(){
+  try{
+    const res = await fetch('/matches',{credentials:'include'});
+    const matches = await res.json();
+    const tbody = document.getElementById('matchesTableBody');
+    tbody.innerHTML='';
+    if(!matches.length){
+      tbody.innerHTML='<tr><td colspan="5">No hay partidas registradas</td></tr>';
+      return;
+    }
+    matches.forEach(m=>{
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${m.map}</td>
+        <td>${m.score}</td>
+        <td>${m.winnerTeam}</td>
+        <td>${new Date(m.date).toLocaleString()}</td>
+        <td>
+          <button class="btn-edit-match">Editar</button>
+        </td>`;
+      tbody.appendChild(row);
+
+      const editBtn = row.querySelector('.btn-edit-match');
+      editBtn.addEventListener('click', ()=> {
+        alert("Editar partida aún requiere implementación de formulario de edición");
+      });
+    });
+  }catch(err){console.error(err);}
+}
+
 // --- Inicializar ---
 loadPlayers();
+loadMatches();
 </script>
-
 </body>
 </html>
