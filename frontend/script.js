@@ -101,6 +101,11 @@ async function renderLeaderboardTable(players) {
           <div>
             <div class="player-name-link">${p.name}</div>
             <div class="player-tag-text">#${p.tag}</div>
+            <div class="player-social">
+              ${p.social?.twitter ? `<a href="${p.social.twitter}" target="_blank">Twitter</a>` : ''}
+              ${p.social?.tracker ? `<a href="${p.social.tracker}" target="_blank">Tracker</a>` : ''}
+              ${p.social?.twitch ? `<a href="${p.social.twitch}" target="_blank">Twitch</a>` : ''}
+            </div>
           </div>
         </div>
       </td>
