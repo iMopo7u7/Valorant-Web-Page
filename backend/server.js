@@ -70,7 +70,7 @@ if (!process.env.MONGODB_URI) {
   process.exit(1);
 }
 
-let db, playersCollection, matchesCollection;
+let db, playersCollection, matchesCollection, eventsCollection;
 async function connectDB() {
   try {
     const client = new MongoClient(process.env.MONGODB_URI);
@@ -78,6 +78,7 @@ async function connectDB() {
     db = client.db("valorantDB");
     playersCollection = db.collection("players");
     matchesCollection = db.collection("matches");
+    eventsCollection = db.collection("events");
     console.log("✅ Conectado a MongoDB");
   } catch (err) {
     console.error("❌ Error conectando a MongoDB:", err);
@@ -227,13 +228,21 @@ app.delete("/players", requireAdmin, async (req, res) => {
 // -------------------
 app.post("/matches", requireAdmin, async (req, res) => {
   try {
-    const { match, winnerTeam, score, map } = req.body;
+    const { match, winnerTeam, score, map, eventId } = req.body;
     if (!Array.isArray(match) || match.length === 0) return res.status(400).json({ error: "Formato inválido" });
     if (!score || typeof score !== "string") return res.status(400).json({ error: "Score final requerido" });
     if (!map || typeof map !== "string") return res.status(400).json({ error: "Mapa requerido" });
 
     const newMatch = { match, winnerTeam, score, map, date: new Date() };
     await matchesCollection.insertOne(newMatch);
+
+    // Si la partida pertenece a un evento
+    if (eventId) {
+      await eventsCollection.updateOne(
+        { _id: new ObjectId(eventId) },
+        { $push: { matches: newMatch } }
+      );
+    }
 
     for (const p of match) {
       const playerTeam = match.indexOf(p) < 5 ? "A" : "B";
@@ -263,7 +272,6 @@ app.post("/matches", requireAdmin, async (req, res) => {
   }
 });
 
-// Obtener todas las partidas
 app.get("/matches", requireAdmin, async (req, res) => {
   try {
     const matches = await matchesCollection.find().sort({ date: -1 }).toArray();
@@ -274,7 +282,6 @@ app.get("/matches", requireAdmin, async (req, res) => {
   }
 });
 
-// Actualizar partida por ID (para que funcione el admin.html)
 app.put("/matches/:id", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -296,7 +303,58 @@ app.put("/matches/:id", requireAdmin, async (req, res) => {
 });
 
 // -------------------
-// --- Rutas públicas para frontend
+// --- CRUD Events / Torneos
+// -------------------
+app.post("/events", requireAdmin, async (req, res) => {
+  try {
+    const { name, teamSize, numTeams, rounds = 0 } = req.body;
+    if (!name || !teamSize || !numTeams)
+      return res.status(400).json({ error: "Completa todos los campos" });
+
+    const exists = await eventsCollection.findOne({ name });
+    if (exists) return res.status(400).json({ error: "Evento ya existe" });
+
+    const newEvent = {
+      name,
+      teamSize,
+      numTeams,
+      rounds,
+      matches: [],
+      createdAt: new Date()
+    };
+
+    await eventsCollection.insertOne(newEvent);
+    res.json({ message: "Evento creado correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al crear evento" });
+  }
+});
+
+app.get("/events", requireAdmin, async (req, res) => {
+  try {
+    const events = await eventsCollection.find().sort({ createdAt: -1 }).toArray();
+    res.json(events);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener eventos" });
+  }
+});
+
+app.get("/events/:id/matches", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const event = await eventsCollection.findOne({ _id: new ObjectId(id) });
+    if (!event) return res.status(404).json({ error: "Evento no encontrado" });
+    res.json(event.matches || []);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener partidas del evento" });
+  }
+});
+
+// -------------------
+// --- Rutas públicas
 // -------------------
 app.get("/leaderboard", async (req, res) => {
   try {
@@ -339,9 +397,6 @@ app.get("/leaderboard", async (req, res) => {
   }
 });
 
-// -------------------
-// --- Otras rutas públicas
-// -------------------
 app.get("/matches/:name/:tag", async (req, res) => {
   try {
     const { name, tag } = req.params;
@@ -386,6 +441,24 @@ app.get("/last-match", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al obtener última partida" });
+  }
+});
+
+// Public route for getting events (visible on frontend)
+app.get("/events-public", async (req, res) => {
+  try {
+    const events = await eventsCollection.find().sort({ createdAt: -1 }).toArray();
+    res.json(events.map(e => ({
+      _id: e._id,
+      name: e.name,
+      teamSize: e.teamSize,
+      numTeams: e.numTeams,
+      rounds: e.rounds,
+      matches: e.matches || []
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener eventos" });
   }
 });
 
