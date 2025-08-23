@@ -1,873 +1,262 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Leaderboard Valorant - 10 Mans</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
-  @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
-  
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  body {
-    background: #0d1117;
-    color: #ffffff;
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-    line-height: 1.6;
-    overflow-x: hidden;
-    position: relative;
-  }
-
-  /* Professional subtle background */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: 
-      radial-gradient(circle at 20% 80%, rgba(220, 38, 127, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(220, 38, 127, 0.02) 0%, transparent 50%),
-      linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%);
-    pointer-events: none;
-    z-index: -2;
-  }
-
-  body::after {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: 
-      radial-gradient(1px 1px at 25px 35px, rgba(255, 255, 255, 0.02), transparent),
-      radial-gradient(1px 1px at 75px 85px, rgba(220, 38, 127, 0.03), transparent);
-    background-repeat: repeat;
-    background-size: 100px 100px;
-    pointer-events: none;
-    z-index: -1;
-  }
-
-  /* Professional Header */
-  .header {
-    background: rgba(13, 17, 23, 0.95);
-    border-bottom: 1px solid rgba(48, 54, 61, 0.8);
-    box-shadow: 
-      0 1px 0 rgba(255, 255, 255, 0.03) inset,
-      0 8px 32px rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(20px);
-    position: relative;
-    z-index: 100;
-  }
-
-  .header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, 
-      transparent 0%, 
-      rgba(220, 38, 127, 0.6) 50%,
-      transparent 100%);
-  }
-
-  .header-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 32px 32px 0 32px;
-    position: relative;
-  }
-
-  .header-title {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    margin-bottom: 12px;
-    position: relative;
-  }
-
-  .header-title::before {
-    content: '';
-    position: absolute;
-    left: -8px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 4px;
-    height: 60px;
-    background: linear-gradient(180deg, 
-      transparent 0%,
-      rgba(220, 38, 127, 0.8) 20%,
-      #dc267f 50%,
-      rgba(220, 38, 127, 0.8) 80%,
-      transparent 100%);
-    border-radius: 2px;
-    box-shadow: 
-      0 0 10px rgba(220, 38, 127, 0.5),
-      0 0 20px rgba(220, 38, 127, 0.3);
-  }
-
-  .header h1 {
-    font-size: 36px;
-    font-weight: 700;
-    color: #f0f6fc;
-    margin: 0;
-    letter-spacing: -0.8px;
-    font-family: 'Inter', sans-serif;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .header .title-accent {
-    color: #dc267f;
-    font-weight: 800;
-    text-shadow: 
-      0 0 20px rgba(220, 38, 127, 0.6),
-      0 0 40px rgba(220, 38, 127, 0.4),
-      0 2px 4px rgba(0, 0, 0, 0.8);
-    position: relative;
-    font-family: 'JetBrains Mono', monospace;
-    letter-spacing: -0.5px;
-  }
-
-  .header .title-accent::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(220, 38, 127, 0.2);
-    filter: blur(15px);
-    z-index: -1;
-    animation: neonPulse 3s ease-in-out infinite;
-  }
-
-  @keyframes neonPulse {
-    0%, 100% { 
-      opacity: 0.5;
-      transform: scale(1);
-    }
-    50% { 
-      opacity: 0.8;
-      transform: scale(1.05);
-    }
-  }
-
-  .header .title-separator {
-    color: rgba(139, 148, 158, 0.4);
-    font-weight: 300;
-    font-size: 28px;
-    margin: 0 8px;
-  }
-
-  .header .title-badge {
-    background: linear-gradient(135deg, 
-      rgba(220, 38, 127, 0.15) 0%, 
-      rgba(220, 38, 127, 0.05) 100%);
-    border: 1px solid rgba(220, 38, 127, 0.3);
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #dc267f;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    font-family: 'JetBrains Mono', monospace;
-    box-shadow: 
-      0 0 10px rgba(220, 38, 127, 0.2),
-      0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-
-  .header p {
-    color: rgba(139, 148, 158, 0.8);
-    font-size: 14px;
-    margin-bottom: 28px;
-    font-weight: 400;
-    letter-spacing: 0.2px;
-    margin-left: 8px;
-  }
-
-  /* Professional Navigation */
-  nav {
-    background: none;
-    border: none;
-    padding: 0;
-    box-shadow: none;
-  }
-
-  .nav-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    display: flex;
-    gap: 2px;
-    padding: 0 32px;
-  }
-
-  nav button {
-    background: rgba(21, 26, 33, 0.8);
-    border: 1px solid rgba(48, 54, 61, 0.6);
-    padding: 14px 28px;
-    color: rgba(139, 148, 158, 0.9);
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 13px;
-    transition: all 0.2s ease;
-    border-radius: 8px 8px 0 0;
-    position: relative;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    backdrop-filter: blur(10px);
-    font-family: 'Inter', sans-serif;
-  }
-
-  nav button:hover {
-    color: #f0f6fc;
-    background: rgba(30, 35, 42, 0.9);
-    border-color: rgba(48, 54, 61, 0.8);
-    transform: translateY(-1px);
-  }
-
-  nav button.active {
-    color: #f0f6fc;
-    background: rgba(30, 35, 42, 0.95);
-    border-color: rgba(220, 38, 127, 0.4);
-    border-bottom-color: transparent;
-    box-shadow: 
-      0 0 20px rgba(220, 38, 127, 0.15),
-      0 1px 0 rgba(255, 255, 255, 0.05) inset;
-  }
-
-  nav button.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, 
-      transparent 0%,
-      rgba(220, 38, 127, 0.8) 20%,
-      #dc267f 50%,
-      rgba(220, 38, 127, 0.8) 80%,
-      transparent 100%);
-    box-shadow: 0 0 8px rgba(220, 38, 127, 0.6);
-  }
-
-  /* Main Content */
-  .main-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 40px 24px;
-    position: relative;
-  }
-
-  /* Professional Stats Cards */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-
-  .stat-card {
-    background: rgba(21, 26, 33, 0.8);
-    border: 1px solid rgba(48, 54, 61, 0.6);
-    border-radius: 8px;
-    padding: 20px 24px;
-    text-align: center;
-    position: relative;
-    backdrop-filter: blur(10px);
-    transition: all 0.2s ease;
-  }
-
-  .stat-card:hover {
-    border-color: rgba(220, 38, 127, 0.3);
-    box-shadow: 
-      0 4px 12px rgba(0, 0, 0, 0.3),
-      0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-    transform: translateY(-2px);
-  }
-
-  .stat-card h3 {
-    color: rgba(139, 148, 158, 0.9);
-    font-size: 11px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    font-family: 'Inter', sans-serif;
-  }
-
-  .stat-card .value {
-    color: #f0f6fc;
-    font-size: 24px;
-    font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
-    letter-spacing: -0.5px;
-  }
-
-  /* Professional Table Container */
-  .table-container {
-    background: rgba(21, 26, 33, 0.8);
-    border: 1px solid rgba(48, 54, 61, 0.6);
-    border-radius: 12px;
-    overflow: hidden;
-    backdrop-filter: blur(10px);
-    box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.4),
-      0 1px 0 rgba(255, 255, 255, 0.03) inset;
-  }
-
-  .table-header {
-    padding: 24px 32px;
-    border-bottom: 1px solid rgba(48, 54, 61, 0.8);
-    background: rgba(13, 17, 23, 0.8);
-    position: relative;
-  }
-
-  .table-header h2 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #f0f6fc;
-    letter-spacing: -0.3px;
-    font-family: 'Inter', sans-serif;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .table-header h2::before {
-    content: '';
-    width: 3px;
-    height: 20px;
-    background: linear-gradient(180deg, 
-      rgba(220, 38, 127, 0.8) 0%,
-      #dc267f 50%,
-      rgba(220, 38, 127, 0.8) 100%);
-    border-radius: 2px;
-    box-shadow: 0 0 8px rgba(220, 38, 127, 0.4);
-  }
-
-  /* Professional Table */
-  .table-wrapper {
-    overflow-x: auto;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  th {
-    background: rgba(13, 17, 23, 0.9);
-    color: rgba(139, 148, 158, 0.9);
-    padding: 16px 24px;
-    text-align: left;
-    font-weight: 600;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    border-bottom: 1px solid rgba(48, 54, 61, 0.8);
-    white-space: nowrap;
-    font-family: 'Inter', sans-serif;
-  }
-
-  td {
-    padding: 20px 24px;
-    border-bottom: 1px solid rgba(48, 54, 61, 0.3);
-    font-size: 14px;
-    vertical-align: middle;
-    transition: all 0.2s ease;
-    font-family: 'Inter', sans-serif;
-  }
-
-  tr:hover {
-    background: rgba(30, 35, 42, 0.5);
-  }
-
-  tr:hover td {
-    border-color: rgba(220, 38, 127, 0.2);
-  }
-
-  /* Rank Column */
-  .rank-cell {
-    font-weight: 700;
-    font-size: 16px;
-    color: rgba(139, 148, 158, 0.8);
-    width: 60px;
-    text-align: center;
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .rank-1 .rank-cell { 
-    color: #ffd700; 
-    text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
-  }
-  .rank-2 .rank-cell { 
-    color: #c0c0c0; 
-    text-shadow: 0 0 8px rgba(192, 192, 192, 0.4);
-  }
-  .rank-3 .rank-cell { 
-    color: #cd7f32; 
-    text-shadow: 0 0 8px rgba(205, 127, 50, 0.4);
-  }
-
-  /* Player Column */
-  .player-cell {
-    min-width: 280px;
-  }
-
-  .player-info {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .player-details {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .player-name {
-    font-weight: 600;
-    font-size: 15px;
-    color: #f0f6fc;
-    margin-bottom: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    letter-spacing: -0.2px;
-  }
-
-  .player-name:hover {
-    color: #dc267f;
-    text-shadow: 0 0 8px rgba(220, 38, 127, 0.4);
-  }
-
-  .player-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .meta-section {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .meta-label {
-    font-size: 10px;
-    color: rgba(139, 148, 158, 0.7);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    min-width: 50px;
-  }
-
-  /* Professional Badges */
-  .badges-container {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .badge {
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    border: 1px solid rgba(48, 54, 61, 0.6);
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .badge:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  }
-
-  .badge-mvp {
-    background: rgba(255, 215, 0, 0.15);
-    color: #ffd700;
-    border-color: rgba(255, 215, 0, 0.3);
-  }
-
-  .badge-ace {
-    background: rgba(220, 38, 127, 0.15);
-    color: #dc267f;
-    border-color: rgba(220, 38, 127, 0.3);
-  }
-
-  .badge-clutch {
-    background: rgba(0, 191, 255, 0.15);
-    color: #00bfff;
-    border-color: rgba(0, 191, 255, 0.3);
-  }
-
-  .badge-hs {
-    background: rgba(255, 107, 53, 0.15);
-    color: #ff6b35;
-    border-color: rgba(255, 107, 53, 0.3);
-  }
-
-  .badge-streak {
-    background: rgba(157, 78, 221, 0.15);
-    color: #9d4edd;
-    border-color: rgba(157, 78, 221, 0.3);
-  }
-
-  .badge-more {
-    background: rgba(48, 54, 61, 0.3);
-    color: rgba(139, 148, 158, 0.8);
-    border-color: rgba(48, 54, 61, 0.6);
-    font-size: 9px;
-  }
-
-  /* Professional Tooltip */
-  .tooltip {
-    position: absolute;
-    bottom: 32px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(13, 17, 23, 0.95);
-    border: 1px solid rgba(48, 54, 61, 0.8);
-    border-radius: 6px;
-    padding: 8px 12px;
-    color: #f0f6fc;
-    font-size: 11px;
-    font-weight: 500;
-    white-space: nowrap;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.2s ease;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(10px);
-    font-family: 'Inter', sans-serif;
-  }
-
-  .tooltip::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 4px solid transparent;
-    border-top-color: rgba(13, 17, 23, 0.95);
-  }
-
-  .badge:hover .tooltip {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(-4px);
-  }
-
-  /* Professional Social Links */
-  .social-links {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .social-link {
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    font-size: 10px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    border: 1px solid rgba(48, 54, 61, 0.6);
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .social-link:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  }
-
-  .social-valorant {
-    background: rgba(220, 38, 127, 0.15);
-    color: #dc267f;
-    border-color: rgba(220, 38, 127, 0.3);
-  }
-
-  .social-twitter {
-    background: rgba(29, 161, 242, 0.15);
-    color: #1da1f2;
-    border-color: rgba(29, 161, 242, 0.3);
-  }
-
-  .social-twitch {
-    background: rgba(145, 70, 255, 0.15);
-    color: #9146ff;
-    border-color: rgba(145, 70, 255, 0.3);
-  }
-
-  /* Professional Stats Columns */
-  .stat-cell {
-    font-weight: 600;
-    text-align: center;
-    width: 80px;
-    color: #f0f6fc;
-    font-size: 14px;
-    font-family: 'JetBrains Mono', monospace;
-    letter-spacing: -0.3px;
-  }
-
-  /* Responsive */
-  @media (max-width: 1024px) {
-    .main-content {
-      padding: 24px 16px;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valorant Leaderboard - Pro Players Rankings & Statistics</title>
+    <meta name="description" content="Leaderboard competitivo de Valorant con estadísticas de jugadores, ACS, KDA, winrate y logros en torneos.">
+    <meta name="author" content="Valorant Leaderboard">
+
+    <meta property="og:title" content="Valorant Leaderboard - Pro Players Rankings">
+    <meta property="og:description" content="Trackea a los mejores jugadores de Valorant con estadísticas detalladas.">
+    <meta property="og:type" content="website">
     
-    .stats-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Valorant Leaderboard - Pro Players Rankings">
+    <meta name="twitter:description" content="Trackea a los mejores jugadores de Valorant con estadísticas y logros.">
     
-    .player-cell {
-      min-width: 240px;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .header-content,
-    .nav-content,
-    .main-content {
-      padding-left: 16px;
-      padding-right: 16px;
-    }
-    
-    .stats-grid {
-      grid-template-columns: 1fr;
-    }
-    
-    .player-info {
-      gap: 12px;
-    }
-    
-    .player-meta {
-      gap: 8px;
-    }
-    
-    th, td {
-      padding: 12px 16px;
-    }
-
-    nav button {
-      padding: 12px 20px;
-      font-size: 12px;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .player-cell {
-      min-width: 200px;
-    }
-    
-    .badge {
-      width: 20px;
-      height: 20px;
-      font-size: 10px;
-    }
-    
-    .social-link {
-      width: 20px;
-      height: 20px;
-      font-size: 10px;
-    }
-
-    .nav-content {
-      gap: 4px;
-    }
-
-    nav button {
-      padding: 10px 16px;
-    }
-  }
-</style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Header Navigation -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">VALORANT <span class="accent">LEADERBOARD</span></h1>
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-tab="leaderboard">Leaderboard</button>
+                <button class="nav-tab" data-tab="events">Events</button>
+                <button class="nav-tab" data-tab="matches">Matches</button>
+            </nav>
+        </div>
+    </header>
 
-<div class="header">
-  <div class="header-content">
-    <div class="header-title">
-      <h1>
-        Leaderboard 
-        <span class="title-accent">VALORANT</span> 
-        <span class="title-separator">|</span>
-        <span class="title-badge">10 MANS</span>
-      </h1>
-    </div>
-    <p>Ranking oficial de los 10 mans • Temporada 2025 • Actualizado en tiempo real</p>
-  </div>
-  
-  <nav>
-    <div class="nav-content">
-      <button class="active" onclick="navigate('leaderboard')">Leaderboard</button>
-      <button onclick="navigate('matches')">Partidas</button>
-      <button onclick="navigate('events')">Eventos</button>
-    </div>
-  </nav>
-</div>
+    <main class="main-content">
+        <div class="container">
+            <!-- Leaderboard Tab Content -->
+            <div id="leaderboard-content" class="tab-content active">
+                <!-- System Statistics -->
+                <section class="system-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">🎮</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="total-matches">0</div>
+                            <div class="stat-label">Total Matches</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="total-players">0</div>
+                            <div class="stat-label">Registered Players</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔄</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="last-update">-</div>
+                            <div class="stat-label">Last Update</div>
+                        </div>
+                    </div>
+                </section>
 
-<div class="main-content">
-  <div class="stats-grid">
-    <div class="stat-card">
-      <h3>Total Partidas</h3>
-      <div class="value" id="stat-matches">0</div>
-    </div>
-    <div class="stat-card">
-      <h3>Jugadores Activos</h3>
-      <div class="value" id="stat-players">0</div>
-    </div>
-    <div class="stat-card">
-      <h3>Última Actualización</h3>
-      <div class="value" id="stat-update">Cargando...</div>
-    </div>
-  </div>
+                <!-- Top 3 Players Highlight -->
+                <section class="top-players" id="top-players">
+                    <!-- Dynamic content -->
+                </section>
 
-  <div class="table-container">
-    <div class="table-header">
-      <h2>Leaderboard</h2>
+                <!-- Complete Rankings Table -->
+                <section class="leaderboard-table">
+                    <div class="table-card">
+                        <h2 class="table-title">Complete Rankings</h2>
+                        <div class="table-wrapper">
+                            <table class="rankings-table">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center">#</th>
+                                        <th>Player</th>
+                                        <th class="text-center">ACS</th>
+                                        <th class="text-center">KDA</th>
+                                        <th class="text-center">HS%</th>
+                                        <th class="text-center">First Kills</th>
+                                        <th class="text-center">Winrate %</th>
+                                        <th class="text-center">Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rankings-tbody">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Events Tab Content -->
+            <div id="events-content" class="tab-content">
+                <div class="coming-soon">
+                    <h2 class="coming-soon-title">Events</h2>
+                    <p class="coming-soon-text">Coming soon...</p>
+                </div>
+            </div>
+
+            <!-- Matches Tab Content -->
+            <div id="matches-content" class="tab-content">
+                <div class="coming-soon">
+                    <h2 class="coming-soon-title">Match History</h2>
+                    <p class="coming-soon-text">Coming soon...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Tooltip -->
+    <div id="tooltip" class="tooltip">
+        <div class="tooltip-content">
+            <div class="tooltip-title"></div>
+            <div class="tooltip-text"></div>
+        </div>
     </div>
+
+    <!-- Background Effects -->
+    <div class="background-effects">
+        <div class="bg-orb orb-1"></div>
+        <div class="bg-orb orb-2"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valorant Leaderboard - Pro Players Rankings & Statistics</title>
+    <meta name="description" content="Leaderboard competitivo de Valorant con estadísticas de jugadores, ACS, KDA, winrate y logros en torneos.">
+    <meta name="author" content="Valorant Leaderboard">
+
+    <meta property="og:title" content="Valorant Leaderboard - Pro Players Rankings">
+    <meta property="og:description" content="Trackea a los mejores jugadores de Valorant con estadísticas detalladas.">
+    <meta property="og:type" content="website">
     
-    <div class="table-wrapper">
-      <table id="leaderboard">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Jugador</th>
-            <th>ACS</th>
-            <th>K/D</th>
-            <th>HS%</th>
-            <th>FK</th>
-            <th>WR%</th>
-            <th>Score</th>
-          </tr>
-        </thead>
-        <tbody id="leaderboard-body">
-          <!-- Contenido dinámico -->
-        </tbody>
-      </table>
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Valorant Leaderboard - Pro Players Rankings">
+    <meta name="twitter:description" content="Trackea a los mejores jugadores de Valorant con estadísticas y logros.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header Navigation -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">VALORANT <span class="accent">LEADERBOARD</span></h1>
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-tab="leaderboard">Leaderboard</button>
+                <button class="nav-tab" data-tab="events">Events</button>
+                <button class="nav-tab" data-tab="matches">Matches</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <!-- Leaderboard Tab Content -->
+            <div id="leaderboard-content" class="tab-content active">
+                <!-- System Statistics -->
+                <section class="system-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">🎮</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="total-matches">0</div>
+                            <div class="stat-label">Total Matches</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="total-players">0</div>
+                            <div class="stat-label">Registered Players</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔄</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="last-update">-</div>
+                            <div class="stat-label">Last Update</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Top 3 Players Highlight -->
+                <section class="top-players" id="top-players">
+                    <!-- Dynamic content -->
+                </section>
+
+                <!-- Complete Rankings Table -->
+                <section class="leaderboard-table">
+                    <div class="table-card">
+                        <h2 class="table-title">Complete Rankings</h2>
+                        <div class="table-wrapper">
+                            <table class="rankings-table">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center">#</th>
+                                        <th>Player</th>
+                                        <th class="text-center">ACS</th>
+                                        <th class="text-center">KDA</th>
+                                        <th class="text-center">HS%</th>
+                                        <th class="text-center">First Kills</th>
+                                        <th class="text-center">Winrate %</th>
+                                        <th class="text-center">Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rankings-tbody">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Events Tab Content -->
+            <div id="events-content" class="tab-content">
+                <div class="coming-soon">
+                    <h2 class="coming-soon-title">Events</h2>
+                    <p class="coming-soon-text">Coming soon...</p>
+                </div>
+            </div>
+
+            <!-- Matches Tab Content -->
+            <div id="matches-content" class="tab-content">
+                <div class="coming-soon">
+                    <h2 class="coming-soon-title">Match History</h2>
+                    <p class="coming-soon-text">Coming soon...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Tooltip -->
+    <div id="tooltip" class="tooltip">
+        <div class="tooltip-content">
+            <div class="tooltip-title"></div>
+            <div class="tooltip-text"></div>
+        </div>
     </div>
-  </div>
-</div>
 
-<script>
-// ==========================
-// 🔧 API CONFIG
-// ==========================
-const API_BASE_URL = "https://valorant-10-mans.onrender.com"; 
+    <!-- Background Effects -->
+    <div class="background-effects">
+        <div class="bg-orb orb-1"></div>
+        <div class="bg-orb orb-2"></div>
+    </div>
 
-// ==========================
-// 🔧 UTILS
-// ==========================
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" });
-}
-
-// ==========================
-// 🔧 API SERVICE
-// ==========================
-class ApiService {
-  static async fetchJson(url) {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Error ${res.status} en ${url}`);
-    return res.json();
-  }
-
-  static async getLeaderboard() {
-    return this.fetchJson(`${API_BASE_URL}/leaderboard`);
-  }
-
-  static async getStats() {
-    const [matchesCount, playersCount, lastMatch] = await Promise.all([
-      this.fetchJson(`${API_BASE_URL}/matches-count`),
-      this.fetchJson(`${API_BASE_URL}/players-count`),
-      this.fetchJson(`${API_BASE_URL}/last-match`)
-    ]);
-
-    return {
-      totalMatches: matchesCount.count || 0,
-      activePlayers: playersCount.count || 0,
-      lastUpdate: lastMatch.date ? formatDate(lastMatch.date) : "No disponible"
-    };
-  }
-}
-
-// ==========================
-// 🔧 UI RENDER
-// ==========================
-async function loadStats() {
-  try {
-    const stats = await ApiService.getStats();
-    document.getElementById("stat-matches").textContent = stats.totalMatches;
-    document.getElementById("stat-players").textContent = stats.activePlayers;
-    document.getElementById("stat-update").textContent = stats.lastUpdate;
-  } catch (err) {
-    console.error("Error cargando stats:", err);
-  }
-}
-
-async function loadLeaderboard() {
-  try {
-    const data = await ApiService.getLeaderboard();
-    const tbody = document.getElementById("leaderboard-body");
-
-    tbody.innerHTML = data.map((p, i) => `
-      <tr>
-        <td>${i + 1}</td>
-        <td>${p.name}#${p.tag}</td>
-        <td>${Math.round(p.avgACS) || 0}</td>
-        <td>${p.avgKDA.toFixed(2)}</td>
-        <td>${p.hsPercent.toFixed(1)}%</td>
-        <td>${p.fk.toFixed(1)}</td>
-        <td>${p.winrate.toFixed(1)}%</td>
-        <td>${p.score}</td>
-      </tr>
-    `).join("");
-  } catch (err) {
-    console.error("Error cargando leaderboard:", err);
-  }
-}
-
-// ==========================
-// 🔧 INIT
-// ==========================
-async function initializeApp() {
-  await Promise.all([
-    loadStats(),
-    loadLeaderboard()
-  ]);
-  console.log("Frontend conectado al backend ✅");
-}
-
-document.addEventListener("DOMContentLoaded", initializeApp);
-</script>
-
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9725664c370a1f76',t:'MTc1NTcyOTcwMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script src="script.js"></script>
+</body>
 </html>
