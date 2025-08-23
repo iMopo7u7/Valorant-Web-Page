@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 import session from "express-session";
 import MongoStore from "connect-mongo";
@@ -18,17 +18,17 @@ const PORT = process.env.PORT || 3000;
 // --- CORS
 // -------------------
 const allowedOrigins = [
-  "https://valorant-10-mans-frontend.onrender.com", // tu frontend
-  "https://valorant-10-mans.onrender.com"           // tu backend (admin/login)
+  "https://valorant-10-mans-frontend.onrender.com",
+  "https://valorant-10-mans.onrender.com"
 ];
 
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true); // permite llamadas directas desde el navegador (sin origin)
+    if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error("CORS policy error"), false);
   },
-  credentials: true, // permite enviar cookies de sesión
+  credentials: true,
   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization']
 }));
@@ -88,8 +88,8 @@ async function connectDB() {
 // -------------------
 // --- Rutas estáticas
 // -------------------
-app.use(express.static(path.join(__dirname, "../frontend"))); // frontend público
-app.use("/private", express.static(path.join(__dirname, "private"))); // admin/login
+app.use(express.static(path.join(__dirname, "../frontend")));
+app.use("/private", express.static(path.join(__dirname, "private")));
 
 // -------------------
 // --- Login / Admin
@@ -97,12 +97,10 @@ app.use("/private", express.static(path.join(__dirname, "private"))); // admin/l
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
 
-// Mostrar login (solo backend)
 app.get("/login.html", (req, res) => {
   res.sendFile(path.join(__dirname, "private/login.html"));
 });
 
-// Procesar login
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -118,18 +116,15 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Middleware para proteger admin
 function requireAdmin(req, res, next) {
   if (req.session.isAdmin) next();
   else res.status(403).json({ error: "Acceso denegado" });
 }
 
-// Chequear sesión desde frontend
 app.get("/check-session", (req, res) => {
   res.json({ loggedIn: !!req.session.isAdmin });
 });
 
-// Mostrar admin solo si está logueado
 app.get("/admin.html", requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, "private/admin.html"));
 });
@@ -184,13 +179,11 @@ app.put("/players", requireAdmin, async (req, res) => {
     if (!oldName || !oldTag || !newName || !newTag)
       return res.status(400).json({ error: "Todos los campos son requeridos" });
 
-    // Actualizar en players (incluyendo redes sociales)
     await playersCollection.updateOne(
       { name: oldName, tag: oldTag },
       { $set: { name: newName, tag: newTag, social: social || {} } }
     );
 
-    // Actualizar nombre/tag en los matches
     const matches = await matchesCollection.find({ "match.name": oldName, "match.tag": oldTag }).toArray();
     for (const match of matches) {
       let modified = false;
@@ -232,8 +225,6 @@ app.delete("/players", requireAdmin, async (req, res) => {
 // -------------------
 // --- CRUD Matches
 // -------------------
-
-// Crear nueva partida
 app.post("/matches", requireAdmin, async (req, res) => {
   try {
     const { match, winnerTeam, score, map } = req.body;
@@ -272,7 +263,7 @@ app.post("/matches", requireAdmin, async (req, res) => {
   }
 });
 
-// Obtener todas las partidas para admin
+// Obtener todas las partidas
 app.get("/matches", requireAdmin, async (req, res) => {
   try {
     const matches = await matchesCollection.find().sort({ date: -1 }).toArray();
@@ -283,16 +274,16 @@ app.get("/matches", requireAdmin, async (req, res) => {
   }
 });
 
-// Actualizar partida existente
-app.put("/matches", requireAdmin, async (req, res) => {
+// Actualizar partida por ID (para que funcione el admin.html)
+app.put("/matches/:id", requireAdmin, async (req, res) => {
   try {
-    const { oldDate, map, winnerTeam, score, match } = req.body;
-    if (!oldDate) return res.status(400).json({ error: "Fecha original requerida para identificar partida" });
+    const { id } = req.params;
+    const { map, winnerTeam, score } = req.body;
+    if (!map || !winnerTeam || !score) return res.status(400).json({ error: "Faltan datos" });
 
-    const parsedDate = new Date(oldDate);
     const result = await matchesCollection.updateOne(
-      { date: parsedDate },
-      { $set: { map, winnerTeam, score, match } }
+      { _id: new ObjectId(id) },
+      { $set: { map, winnerTeam, score } }
     );
 
     if (result.matchedCount === 0) return res.status(404).json({ error: "Partida no encontrada" });
