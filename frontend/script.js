@@ -67,10 +67,11 @@ function createSocialLinks(social) {
   };
 
   let html = '<div class="player-social">';
-  
-  for (const [key, svg] of Object.entries(icons)) {
-    if (social[key]) {
-      html += `<a href="${social[key]}" target="_blank" title="${key}">${svg}</a>`;
+
+  // Recorremos todas las redes que tenga el jugador
+  for (const key in social) {
+    if (social[key] && icons[key]) {
+      html += `<a href="${social[key]}" target="_blank" title="${key}">${icons[key]}</a>`;
     }
   }
 
