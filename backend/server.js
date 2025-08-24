@@ -285,6 +285,51 @@ app.post("/events/:id/matches", requireAdmin, async (req, res) => {
 });
 
 // -------------------
+// --- Rutas de stats públicas
+// -------------------
+app.get("/players-count", async (req, res) => {
+  try {
+    const count = await playersCollection.countDocuments();
+    res.json({ count });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener count de jugadores" });
+  }
+});
+
+app.get("/matches-count", async (req, res) => {
+  try {
+    const events = await eventsCollection.find().toArray();
+    const totalMatches = events.reduce((acc, ev) => acc + (ev.matches?.length || 0), 0);
+    res.json({ count: totalMatches });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener count de partidas" });
+  }
+});
+
+app.get("/last-match", async (req, res) => {
+  try {
+    const events = await eventsCollection.find().sort({ "matches.date": -1 }).toArray();
+    // Buscar la última partida de todos los eventos
+    let lastMatch = null;
+    events.forEach(ev => {
+      if (ev.matches?.length) {
+        const sortedMatches = [...ev.matches].sort((a, b) => new Date(b.date) - new Date(a.date));
+        if (!lastMatch || new Date(sortedMatches[0].date) > new Date(lastMatch.date)) {
+          lastMatch = sortedMatches[0];
+        }
+      }
+    });
+    if (!lastMatch) return res.json({ match: null });
+    res.json({ match: lastMatch });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener última partida" });
+  }
+});
+
+// -------------------
 // --- Rutas públicas
 // -------------------
 app.get("/leaderboard", async (req, res) => {
