@@ -129,6 +129,7 @@
   </div>
 </main>
 
+<!-- SOLO EL JS CORREGIDO -->
 <script>
 const API_URL = window.location.origin;
 let allEvents = [], allPlayers = [], currentEvent = null, currentEventMatches = [], currentTeamSize = 5;
@@ -187,7 +188,6 @@ function renderEvents(){
       btn.classList.add('active');
       currentEvent = allEvents[btn.dataset.index];
       currentTeamSize = parseInt(currentEvent.teamSize,10);
-      document.getElementById('teamSizeLabel').textContent = currentTeamSize;
       document.getElementById('eventMatchesTitle').innerText = `Partidas: ${currentEvent.name}`;
       currentEventMatches = currentEvent.matches || [];
       renderEventMatchesList(currentEvent, currentEventMatches);
@@ -220,7 +220,7 @@ document.getElementById('createEventBtn').addEventListener('click', async ()=>{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     credentials:'include',
-    body:JSON.stringify({name,teamSize,numTeams,badge,teams:eventTeams,matches:[]})
+    body:JSON.stringify({name,teamSize,numTeams,badge,teams:eventTeams})
   });
   if(!res.ok) return alert('Error creando evento');
   alert('Evento creado exitosamente');
