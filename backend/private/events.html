@@ -208,13 +208,17 @@ document.getElementById('saveTeamsBtn').addEventListener('click',async()=>{
 
 // --- Generate matches ---
 function generateMatches(){
-  const aliveTeams = Object.keys(currentEvent.teams).filter(k=>currentEvent.teams[k].length>0);
-  const maxMatches = aliveTeams.length - 1;
+  if(!currentEvent) return [];
+  const aliveTeams = Object.keys(currentEvent.teams)
+                           .filter(k => currentEvent.teams[k].length > 0 && !currentEvent.teams[k].eliminated);
   const matches = currentEvent.matches || [];
-  if(matches.length >= maxMatches) return; // ya completado
+  const maxMatches = currentEvent.numTeams - 1;
+  if(matches.length >= maxMatches) return [];
   const newMatches = [];
   for(let i=0;i<aliveTeams.length;i+=2){
-    if(aliveTeams[i+1]) newMatches.push({teamA: currentEvent.teams[aliveTeams[i]], teamB: currentEvent.teams[aliveTeams[i+1]], winnerTeam:'', map:'', score:'', stats:{}}); 
+    if(aliveTeams[i+1]){
+      newMatches.push({teamA: currentEvent.teams[aliveTeams[i]], teamB: currentEvent.teams[aliveTeams[i+1]], winnerTeam:'', map:'', score:'', stats:{}});
+    }
   }
   return newMatches;
 }
@@ -238,7 +242,6 @@ function renderMatches(){
     div.appendChild(winnerSelect);
     const scoreInput = document.createElement('input'); scoreInput.placeholder='Score'; div.appendChild(scoreInput);
 
-    // Stats por jugador
     ['A','B'].forEach(teamLabel=>{
       const teamDiv = document.createElement('div');
       teamDiv.innerHTML=`<strong>Equipo ${teamLabel}</strong>`;
@@ -268,7 +271,6 @@ function renderMatches(){
       const score=scoreInput.value;
       if(!map || !winner || !score) return alert('Completa mapa, ganador y score');
 
-      // Recoger stats
       ['A','B'].forEach(teamLabel=>{
         const team = teamLabel==='A'? m.teamA : m.teamB;
         team.forEach((p,pi)=>{
@@ -284,13 +286,17 @@ function renderMatches(){
 
       m.map=map; m.winnerTeam=winner; m.score=score;
 
-      // Guardar match
       const res = await fetch(`/events/${currentEvent._id}/matches`,{
         method:'POST', headers:{'Content-Type':'application/json'},
         credentials:'include', body:JSON.stringify(m)
       });
       if(!res.ok) return alert('Error registrando partida');
       alert('Partida registrada');
+
+      // Marcar equipo perdedor como eliminado
+      const loser = winner==='A'? 'B':'A';
+      currentEvent.teams[loser].eliminated=true;
+
       currentEvent.matches.push(m);
       renderMatches();
     });
