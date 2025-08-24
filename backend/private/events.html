@@ -5,20 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Eventos / Torneos Valorant</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f5f5f5; }
+  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4;}
   header { background:#1a1a1a; color:white; padding:1rem; text-align:center; }
   main { padding:1rem; max-width:1200px; margin:auto; }
-  table { width:100%; border-collapse:collapse; margin-top:1rem; background:white; }
+  table { width:100%; border-collapse:collapse; margin-top:1rem; background:white;}
   th, td { border:1px solid #ccc; padding:0.5rem; text-align:center; }
+  button { padding:0.4rem 0.8rem; margin:0.2rem; cursor:pointer; }
   .form-inline { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem; margin-bottom:0.5rem; }
   input, select { padding:0.3rem; }
-  button { padding:0.3rem 0.6rem; cursor:pointer; margin-top:0.2rem; }
-  #eventMatchesPanel { background:#fff; padding:1rem; border:1px solid #ccc; margin-top:1rem; display:none; }
-  .teams { display:grid; grid-template-columns: 1fr 1fr; gap:1rem; }
-  .player-row { display:flex; gap:0.3rem; margin-bottom:0.3rem; align-items:center; }
+  #eventMatchesPanel { display:none; background:white; padding:1rem; border:1px solid #ccc; margin-top:1rem; }
+  .team-container { border:1px solid #ccc; padding:0.5rem; margin-bottom:0.5rem; background:#fafafa; }
+  .player-row { display:flex; gap:0.3rem; margin-bottom:0.3rem; align-items:center; flex-wrap:wrap;}
+  .player-row input { width:70px; }
   .hint { font-size:0.85rem; color:#666; }
   .section-title { margin-top:1rem; font-weight:bold; }
-  .error { color:red; font-size:0.85rem; }
+  .disabled { opacity:0.5; pointer-events:none; }
 </style>
 </head>
 <body>
@@ -26,15 +27,13 @@
 <header><h1>EVENTOS / TORNEOS</h1></header>
 
 <main>
-  <div class="form-inline">
-    <button id="backToAdminBtn">Regresar a Admin</button>
-  </div>
+  <button id="backToAdminBtn">← Regresar a Admin</button>
 
-  <!-- Crear evento -->
-  <div id="createEventForm" class="form-inline">
-    <input type="text" id="eventName" placeholder="Nombre del evento" required>
+  <h2>Crear Evento</h2>
+  <div class="form-inline">
+    <input type="text" id="eventName" placeholder="Nombre del evento">
     <select id="eventBadge">
-      <option value="">Selecciona Badge</option>
+      <option value="">Badge</option>
       <option value="champion">Champion 👑</option>
       <option value="finalist">Finalist 🥈</option>
       <option value="semifinalist">Semifinalist 🥉</option>
@@ -58,11 +57,12 @@
     <button id="createEventBtn">Crear Evento</button>
   </div>
 
+  <h2>Eventos Existentes</h2>
   <table>
     <thead>
       <tr>
         <th>Nombre</th>
-        <th>Tamaño</th>
+        <th>TeamSize</th>
         <th># Equipos</th>
         <th># Partidas</th>
         <th>Badge</th>
@@ -74,22 +74,11 @@
     </tbody>
   </table>
 
-  <!-- Panel de editar evento y registrar partidas -->
+  <!-- Panel de partidas -->
   <div id="eventMatchesPanel">
     <h3 id="eventMatchesTitle">Partidas del Evento</h3>
-    <div id="eventMatchesList" class="hint">No hay partidas aún</div>
 
-    <h4 class="section-title">Equipos</h4>
-    <div class="teams">
-      <div>
-        <h5>Equipo A</h5>
-        <div id="eventTeamA"></div>
-      </div>
-      <div>
-        <h5>Equipo B</h5>
-        <div id="eventTeamB"></div>
-      </div>
-    </div>
+    <div id="eventMatchesList" class="hint">No hay partidas aún</div>
 
     <h4 class="section-title">Agregar Partida</h4>
     <div id="addEventMatchForm">
@@ -97,18 +86,10 @@
         <label>Mapa:</label>
         <select id="eventMatchMap">
           <option value="">Selecciona mapa</option>
-          <option value="Bind">Bind</option>
-          <option value="Haven">Haven</option>
-          <option value="Split">Split</option>
-          <option value="Ascent">Ascent</option>
-          <option value="Icebox">Icebox</option>
-          <option value="Breeze">Breeze</option>
-          <option value="Corrode">Corrode</option>
-          <option value="Abyss">Abyss</option>
-          <option value="Sunset">Sunset</option>
-          <option value="Lotus">Lotus</option>
-          <option value="Pearl">Pearl</option>
-          <option value="Fracture">Fracture</option>
+          <option>Bind</option><option>Haven</option><option>Split</option>
+          <option>Ascent</option><option>Icebox</option><option>Breeze</option>
+          <option>Corrode</option><option>Abyss</option><option>Sunset</option>
+          <option>Lotus</option><option>Pearl</option><option>Fracture</option>
         </select>
 
         <label>Ganador:</label>
@@ -122,58 +103,58 @@
         <input type="text" id="eventMatchScore" placeholder="Ej: 13-8">
       </div>
 
-      <div class="hint">Ingresa estadísticas por jugador: Kills, Deaths, Assists, ACS, HS%, First Bloods.</div>
-
-      <div class="form-inline">
-        <button id="submitEventMatchBtn">Registrar Partida</button>
-        <button id="closeEventMatches" style="margin-left:auto;">Cerrar</button>
+      <div class="teams" style="display:flex; gap:1rem;">
+        <div class="team-container">
+          <h5>Equipo A</h5>
+          <div id="eventTeamA" class="team-players"></div>
+        </div>
+        <div class="team-container">
+          <h5>Equipo B</h5>
+          <div id="eventTeamB" class="team-players"></div>
+        </div>
       </div>
+
+      <div class="hint">
+        Selecciona jugadores de la lista y completa sus estadísticas.
+      </div>
+
+      <button id="submitEventMatchBtn">Registrar Partida</button>
+      <button id="closeEventMatchesBtn" style="float:right;">Cerrar</button>
     </div>
   </div>
 </main>
 
 <script>
 const API_URL = window.location.origin;
-let allEvents = [], allPlayers = [], currentEvent = null, currentEventMatches = [], currentTeamSize = 5;
+let allPlayers = [], allEvents = [], currentEvent = null, currentTeamSize = 5;
 
-// --- Utils ---
-function sanitizeInt(n){ const x=parseInt(n,10); return Number.isFinite(x)?x:0; }
+// Utils
+function sanitizeInt(v){ const n=parseInt(v,10); return isNaN(n)?0:n; }
 
-// --- Load players ---
+// --- Load players
 async function loadPlayers(){
   const res = await fetch('/players',{credentials:'include'});
-  allPlayers = res.ok? await res.json() : [];
+  allPlayers = res.ok ? await res.json() : [];
 }
 
-// --- Load events ---
+// --- Load events
 async function loadEvents(){
   const res = await fetch('/events',{credentials:'include'});
-  allEvents = res.ok? await res.json() : [];
+  allEvents = res.ok ? await res.json() : [];
   renderEvents();
 }
 
-// --- Badge icons ---
-function getBadgeIcon(type){
-  switch(type){
-    case 'champion': return '👑'; 
-    case 'finalist': return '🥈'; 
-    case 'semifinalist': return '🥉'; 
-    case 'participant': return '🎯'; 
-    default: return type; 
-  }
-}
+// --- Badge icons
+function getBadgeIcon(b){ switch(b){ case 'champion': return '👑'; case 'finalist': return '🥈'; case 'semifinalist': return '🥉'; case 'participant': return '🎯'; default: return b; }}
 
-// --- Render events table ---
+// --- Render events table
 function renderEvents(){
-  const tbody=document.getElementById('eventsTableBody'); 
-  tbody.innerHTML='';
-  if(!allEvents.length){ 
-    tbody.innerHTML='<tr><td colspan="6">No hay eventos creados</td></tr>'; 
-    return; 
-  }
+  const tbody = document.getElementById('eventsTableBody');
+  tbody.innerHTML = '';
+  if(!allEvents.length){ tbody.innerHTML='<tr><td colspan="6">No hay eventos</td></tr>'; return;}
   allEvents.forEach((ev,i)=>{
-    const row=document.createElement('tr');
-    row.innerHTML=`
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
       <td>${ev.name}</td>
       <td>${ev.teamSize}vs${ev.teamSize}</td>
       <td>${ev.numTeams}</td>
@@ -181,140 +162,122 @@ function renderEvents(){
       <td>${getBadgeIcon(ev.badge)}</td>
       <td><button class="btn-view" data-index="${i}">Ver / Editar</button></td>
     `;
-    tbody.appendChild(row);
+    tbody.appendChild(tr);
   });
 
   document.querySelectorAll('.btn-view').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      document.querySelectorAll('.btn-view').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      currentEvent = allEvents[btn.dataset.index];
-      currentTeamSize = parseInt(currentEvent.teamSize,10);
-      document.getElementById('eventMatchesTitle').innerText = `Evento: ${currentEvent.name}`;
-      currentEventMatches = currentEvent.matches || [];
-      renderEventMatchesList(currentEvent, currentEventMatches);
-      document.getElementById('eventMatchesPanel').style.display='block';
-      populateEventTeams();
-    });
+    btn.onclick=()=>openEvent(parseInt(btn.dataset.index));
   });
 }
 
-// --- Render matches ---
-function renderEventMatchesList(ev,matches){
-  const list=document.getElementById('eventMatchesList');
-  list.innerHTML = matches.length? matches.map((m,idx)=>`<div>#${idx+1}: ${(m.teamA?.map(p=>p.name).join(',')||'A')} vs ${(m.teamB?.map(p=>p.name).join(',')||'B')} | ${m.map||'-'} | Ganador: ${m.winnerTeam||'-'} | Score: ${m.score||'-'}</div>`).join('') 
-  : 'No hay partidas aún';
+// --- Open event panel
+function openEvent(idx){
+  currentEvent = allEvents[idx];
+  currentTeamSize = parseInt(currentEvent.teamSize,10);
+  document.getElementById('eventMatchesTitle').innerText = `Partidas: ${currentEvent.name}`;
+  renderEventMatchesList();
+  populateEventTeams();
+  document.getElementById('eventMatchesPanel').style.display='block';
 }
 
-// --- Create event ---
-document.getElementById('createEventBtn').addEventListener('click', async ()=>{
+// --- Render matches
+function renderEventMatchesList(){
+  const list = document.getElementById('eventMatchesList');
+  const matches = currentEvent.matches || [];
+  if(!matches.length){ list.innerHTML='No hay partidas aún'; return;}
+  list.innerHTML = matches.map((m,i)=>`#${i+1}: ${m.teamA.map(p=>p.name).join(',')} vs ${m.teamB.map(p=>p.name).join(',')} | ${m.map} | Ganador: ${m.winnerTeam} | Score: ${m.score}`).join('<br>');
+}
+
+// --- Create event
+document.getElementById('createEventBtn').onclick=async ()=>{
   const name=document.getElementById('eventName').value.trim();
+  const badge=document.getElementById('eventBadge').value;
   const teamSize=parseInt(document.getElementById('eventTeamSize').value);
   const numTeams=parseInt(document.getElementById('eventNumTeams').value);
-  const badge=document.getElementById('eventBadge').value;
-  if(!name || !teamSize || !numTeams){ return alert('Completa nombre, tamaño de equipo y número de equipos'); }
-
-  // Inicializa equipos vacíos
-  const eventTeams={};
-  for(let i=0;i<numTeams;i++){ eventTeams[String.fromCharCode(65+i)] = []; }
-
-  const res = await fetch('/events',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body:JSON.stringify({name,teamSize,numTeams,badge,teams:eventTeams,matches:[]})
-  });
+  if(!name||!badge||!teamSize||!numTeams){ return alert('Completa todos los campos'); }
+  const teams={};
+  for(let i=0;i<numTeams;i++){ teams[String.fromCharCode(65+i)] = []; }
+  const res = await fetch('/events',{method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({name,teamSize,numTeams,badge,teams,matches:[]})});
   if(!res.ok) return alert('Error creando evento');
-  alert('Evento creado exitosamente');
-  document.getElementById('eventName').value='';
-  document.getElementById('eventTeamSize').value='';
-  document.getElementById('eventNumTeams').value='';
-  document.getElementById('eventBadge').value='';
+  alert('Evento creado');
+  document.getElementById('eventName').value=''; document.getElementById('eventBadge').value=''; document.getElementById('eventTeamSize').value=''; document.getElementById('eventNumTeams').value='';
   loadEvents();
-});
+}
 
-// --- Populate teams ---
+// --- Populate teams
 function populateEventTeams(){
-  const teamContainers = {A: document.getElementById('eventTeamA'), B: document.getElementById('eventTeamB')};
-  teamContainers.A.innerHTML=''; teamContainers.B.innerHTML='';
-
-  if(!currentEvent || !currentEvent.teams) return;
-
-  const teamKeys = Object.keys(currentEvent.teams).slice(0,2); // Solo mostrar A y B
-  teamKeys.forEach((teamKey,idx)=>{
-    const container = idx===0? teamContainers.A : teamContainers.B;
-    currentEvent.teams[teamKey].forEach(player=>{
-      const row=document.createElement('div'); 
-      row.className='player-row';
-      row.innerHTML=`
-        <input type="text" value="${player.name}" disabled>
-        <input type="number" class="kill" placeholder="Kills" min="0">
-        <input type="number" class="death" placeholder="Deaths" min="0">
-        <input type="number" class="assist" placeholder="Assists" min="0">
-        <input type="number" class="acs" placeholder="ACS" min="0">
-        <input type="number" class="fb" placeholder="FirstBloods" min="0">
-        <input type="number" class="hs" placeholder="HS%" min="0">
-      `;
-      container.appendChild(row);
-    });
+  ['A','B'].forEach((label)=>{
+    const container = document.getElementById(label==='A'?'eventTeamA':'eventTeamB');
+    container.innerHTML='';
+    const teamKey = Object.keys(currentEvent.teams)[label==='A'?0:1];
+    const teamPlayers = currentEvent.teams[teamKey] || [];
+    for(let i=0;i<currentTeamSize;i++){
+      const playerRow = document.createElement('div');
+      playerRow.className='player-row';
+      const select = document.createElement('select');
+      select.innerHTML = `<option value="">Selecciona jugador</option>`+allPlayers.map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+      const kills = document.createElement('input'); kills.placeholder='Kills'; kills.type='number'; kills.min=0;
+      const deaths = document.createElement('input'); deaths.placeholder='Deaths'; deaths.type='number'; deaths.min=0;
+      const assists = document.createElement('input'); assists.placeholder='Assists'; assists.type='number'; assists.min=0;
+      const acs = document.createElement('input'); acs.placeholder='ACS'; acs.type='number'; acs.min=0;
+      const hs = document.createElement('input'); hs.placeholder='HS%'; hs.type='number'; hs.min=0; hs.max=100;
+      const fb = document.createElement('input'); fb.placeholder='FB'; fb.type='number'; fb.min=0;
+      playerRow.append(select,kills,deaths,assists,acs,hs,fb);
+      container.appendChild(playerRow);
+    }
   });
 }
 
-// --- Register match ---
-document.getElementById('submitEventMatchBtn').addEventListener('click', async ()=>{
-  if(!currentEvent) return alert('Selecciona evento');
+// --- Submit match
+document.getElementById('submitEventMatchBtn').onclick=async ()=>{
+  if(!currentEvent) return;
   const map=document.getElementById('eventMatchMap').value;
   const winnerTeam=document.getElementById('eventWinnerTeam').value;
   const score=document.getElementById('eventMatchScore').value.trim();
-  if(!map || !winnerTeam || !score) return alert('Completa mapa, ganador y marcador');
+  if(!map||!winnerTeam||!score) return alert('Completa todos los campos');
 
   const teams = {};
-  ['A','B'].forEach(teamLabel=>{
-    const container = teamLabel==='A'? document.getElementById('eventTeamA') : document.getElementById('eventTeamB');
-    teams[teamLabel] = [...container.querySelectorAll('.player-row')].map(row=>({
-      name: row.querySelector('input[type=text]').value,
-      kills: sanitizeInt(row.querySelector('.kill').value),
-      deaths: sanitizeInt(row.querySelector('.death').value),
-      assists: sanitizeInt(row.querySelector('.assist').value),
-      acs: sanitizeInt(row.querySelector('.acs').value),
-      firstBloods: sanitizeInt(row.querySelector('.fb').value),
-      hsPercent: sanitizeInt(row.querySelector('.hs').value)
-    }));
+  let valid=true;
+  ['A','B'].forEach(label=>{
+    const container = document.getElementById(label==='A'?'eventTeamA':'eventTeamB');
+    teams[label] = [...container.querySelectorAll('.player-row')].map(row=>{
+      const name=row.querySelector('select').value;
+      if(!name) valid=false;
+      return {
+        name,
+        kills: sanitizeInt(row.querySelector('[placeholder=Kills]').value),
+        deaths: sanitizeInt(row.querySelector('[placeholder=Deaths]').value),
+        assists: sanitizeInt(row.querySelector('[placeholder=Assists]').value),
+        acs: sanitizeInt(row.querySelector('[placeholder=ACS]').value),
+        hsPercent: sanitizeInt(row.querySelector('[placeholder="HS%"]').value),
+        firstBloods: sanitizeInt(row.querySelector('[placeholder=FB]').value)
+      }
+    });
   });
+  if(!valid) return alert('Selecciona todos los jugadores');
 
-  const match={map, winnerTeam, score, teamA: teams.A, teamB: teams.B};
-  const res=await fetch(`/events/${currentEvent._id}/matches`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body:JSON.stringify(match)
-  });
+  const match={map,winnerTeam,score,teamA:teams.A,teamB:teams.B};
+  const res = await fetch(`/events/${currentEvent._id}/matches`,{method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify(match)});
   if(!res.ok) return alert('Error agregando partida');
 
   alert('Partida registrada');
   currentEvent.matches.push(match);
-  renderEventMatchesList(currentEvent,currentEvent.matches);
+  renderEventMatchesList();
   populateEventTeams();
-  document.getElementById('eventMatchMap').value='';
-  document.getElementById('eventWinnerTeam').value='';
-  document.getElementById('eventMatchScore').value='';
-});
+  document.getElementById('eventMatchMap').value=''; document.getElementById('eventWinnerTeam').value=''; document.getElementById('eventMatchScore').value='';
+}
 
-// --- Close matches panel ---
-document.getElementById('closeEventMatches').addEventListener('click', ()=>{
+// --- Close panel
+document.getElementById('closeEventMatchesBtn').onclick=()=>{
   document.getElementById('eventMatchesPanel').style.display='none';
   currentEvent=null;
-  currentEventMatches=[];
-});
+}
 
-// --- Back to admin ---
-document.getElementById('backToAdminBtn').addEventListener('click', ()=>{window.location.href='/admin.html';});
+// --- Back to admin
+document.getElementById('backToAdminBtn').onclick=()=>window.location.href='/admin.html';
 
-// --- Init ---
-(async function init(){ 
-  await loadPlayers(); 
-  await loadEvents(); 
-})();
+// --- Init
+(async function(){ await loadPlayers(); await loadEvents(); })();
 </script>
 
 </body>
