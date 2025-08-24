@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 import session from "express-session";
 import MongoStore from "connect-mongo";
@@ -18,7 +18,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- CORS
+// -------------------
+// --- CORS GLOBAL
+// -------------------
 const allowedOrigins = [
   "https://valorant-10-mans-frontend.onrender.com",
   "https://valorant-10-mans.onrender.com"
@@ -34,17 +36,28 @@ app.use(cors({
   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization']
 }));
-app.options('*', cors());
 
-// --- Body parser
+app.options("*", cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization']
+}));
+
+// -------------------
+// --- BODY PARSER
+// -------------------
 app.use(express.json());
 
-// --- Sesiones
+// -------------------
+// --- SESIONES
+// -------------------
 const sessionStore = MongoStore.create({
   mongoUrl: process.env.MONGODB_URI,
   collectionName: "sessions",
-  ttl: 60 * 60
+  ttl: 60 * 60,
 });
+
 app.use(session({
   secret: process.env.SESSION_SECRET || "valorantsecret",
   resave: false,
@@ -53,13 +66,16 @@ app.use(session({
   cookie: { maxAge: 60 * 60 * 1000 }
 }));
 
-// --- Conexión MongoDB
+// -------------------
+// --- CONEXIÓN MONGO
+// -------------------
 if (!process.env.MONGODB_URI) {
   console.error("❌ ERROR: MONGODB_URI no está definido.");
   process.exit(1);
 }
 
-let db, playersCollection, eventsCollection;
+export let db, playersCollection, eventsCollection;
+
 async function connectDB() {
   try {
     const client = new MongoClient(process.env.MONGODB_URI);
@@ -74,16 +90,22 @@ async function connectDB() {
   }
 }
 
-// --- Rutas estáticas
+// -------------------
+// --- RUTAS ESTÁTICAS
+// -------------------
 app.use(express.static(path.join(__dirname, "../frontend")));
 app.use("/private", express.static(path.join(__dirname, "private")));
 
-// --- Rutas modularizadas
-app.use("/leaderboard", leaderboardRoutes(playersCollection, eventsCollection));
-app.use("/admin", adminRoutes(session, playersCollection));
-app.use("/", eventsRoutes(eventsCollection));
+// -------------------
+// --- USO DE RUTAS MODULARIZADAS
+// -------------------
+app.use("/", leaderboardRoutes);
+app.use("/", adminRoutes);
+app.use("/", eventsRoutes);
 
-// --- Servidor
+// -------------------
+// --- INICIAR SERVIDOR
+// -------------------
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 });
