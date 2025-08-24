@@ -17,9 +17,124 @@
       background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%);
       color: #ffffff;
       min-height: 100vh;
-      padding: 20px;
+      padding: 0;
       position: relative;
       overflow-x: hidden;
+    }
+
+    /* Navigation Bar */
+    .navbar {
+      background: rgba(15, 20, 25, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 2px solid rgba(255, 70, 85, 0.3);
+      padding: 15px 0;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+    }
+
+    .nav-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .brand-main {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(45deg, #ff4655, #ffffff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 20px rgba(255, 70, 85, 0.5);
+      letter-spacing: 2px;
+    }
+
+    .brand-sub {
+      font-size: 14px;
+      font-weight: 500;
+      color: #00ffff;
+      text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+      letter-spacing: 3px;
+      margin-top: -5px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 30px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      text-decoration: none;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 600;
+      font-size: 16px;
+      border-radius: 25px;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .nav-link:hover {
+      color: #ffffff;
+      border-color: rgba(255, 70, 85, 0.5);
+      background: rgba(255, 70, 85, 0.1);
+      box-shadow: 0 0 15px rgba(255, 70, 85, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .nav-link.active {
+      color: #ff4655;
+      border-color: #ff4655;
+      background: rgba(255, 70, 85, 0.15);
+      box-shadow: 0 0 20px rgba(255, 70, 85, 0.4);
+    }
+
+    .nav-icon {
+      font-size: 18px;
+    }
+
+    /* Page Header */
+    .page-header {
+      text-align: center;
+      padding: 40px 20px;
+      margin-bottom: 20px;
+    }
+
+    .page-header h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      background: linear-gradient(45deg, #ff4655, #00ffff, #ffffff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 30px rgba(255, 70, 85, 0.5);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .page-subtitle {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 400;
+      letter-spacing: 1px;
+      margin: 0;
     }
 
     body::before {
@@ -35,20 +150,6 @@
         radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
       pointer-events: none;
       z-index: -1;
-    }
-
-    h1 {
-      text-align: center;
-      font-size: 3rem;
-      font-weight: 700;
-      margin-bottom: 30px;
-      background: linear-gradient(45deg, #ff4655, #00ffff, #ffffff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: 0 0 30px rgba(255, 70, 85, 0.5);
-      letter-spacing: 2px;
-      text-transform: uppercase;
     }
 
     #search {
@@ -79,6 +180,10 @@
 
     #search::placeholder {
       color: rgba(255, 255, 255, 0.6);
+    }
+
+    .main-content {
+      padding: 0 20px 40px;
     }
 
     #matchesList {
@@ -256,13 +361,41 @@
 
     /* Responsive Design */
     @media (max-width: 768px) {
-      body {
-        padding: 10px;
+      .nav-container {
+        padding: 0 15px;
       }
 
-      h1 {
+      .brand-main {
+        font-size: 22px;
+      }
+
+      .brand-sub {
+        font-size: 12px;
+      }
+
+      .nav-links {
+        gap: 15px;
+      }
+
+      .nav-link {
+        padding: 10px 15px;
+        font-size: 14px;
+      }
+
+      .nav-link span:not(.nav-icon) {
+        display: none;
+      }
+
+      .page-header h1 {
         font-size: 2rem;
-        margin-bottom: 20px;
+      }
+
+      .page-subtitle {
+        font-size: 16px;
+      }
+
+      .main-content {
+        padding: 0 15px 30px;
       }
 
       .match-header {
@@ -292,8 +425,32 @@
     }
 
     @media (max-width: 480px) {
-      h1 {
+      .brand-main {
+        font-size: 18px;
+      }
+
+      .brand-sub {
+        font-size: 10px;
+      }
+
+      .nav-links {
+        gap: 10px;
+      }
+
+      .nav-link {
+        padding: 8px 12px;
+      }
+
+      .page-header {
+        padding: 30px 15px;
+      }
+
+      .page-header h1 {
         font-size: 1.5rem;
+      }
+
+      .page-subtitle {
+        font-size: 14px;
       }
 
       #search {
@@ -331,9 +488,35 @@
   </style>
 </head>
 <body>
-  <h1>Historial de Partidas</h1>
-  <input type="text" id="search" placeholder="🔍 Buscar jugador (name#tag)">
-  <ul id="matchesList"></ul>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <span class="brand-main">VALORANT</span>
+        <span class="brand-sub">10 MANS</span>
+      </div>
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">
+          <span class="nav-icon">🏆</span>
+          <span>Leaderboard</span>
+        </a>
+        <a href="#" class="nav-link active">
+          <span class="nav-icon">⚔️</span>
+          <span>Matches</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <h1>Match History</h1>
+    <p class="page-subtitle">Revive las mejores partidas de los 10 mans custom</p>
+  </div>
+  
+  <div class="main-content">
+    <input type="text" id="search" placeholder="🔍 Buscar jugador (name#tag)">
+    <ul id="matchesList"></ul>
+  </div>
 
   <script>
     const API_BASE_URL = "https://valorant-10-mans.onrender.com";
@@ -425,5 +608,5 @@
 
     loadMatches();
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9745b92045269e2d',t:'MTc1NjA2ODYzOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9745c06e86409e2d',t:'MTc1NjA2ODkzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
