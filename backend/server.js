@@ -7,7 +7,7 @@ import MongoStore from "connect-mongo";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Rutas
+// Importar rutas modulares
 import leaderboardRoutesFunc from "./routes/leaderboard.js";
 import adminRoutesFunc from "./routes/admin.js";
 import eventsRoutesFunc from "./routes/events.js";
@@ -84,6 +84,14 @@ async function connectDB() {
     playersCollection = db.collection("players");
     eventsCollection = db.collection("events");
     console.log("✅ Conectado a MongoDB");
+
+    // -------------------
+    // --- Montar rutas
+    // -------------------
+    app.use("/", leaderboardRoutesFunc(playersCollection, eventsCollection));
+    app.use("/", adminRoutesFunc(playersCollection, eventsCollection));
+    app.use("/", eventsRoutesFunc(playersCollection, eventsCollection));
+
   } catch (err) {
     console.error("❌ Error conectando a MongoDB:", err);
     process.exit(1);
@@ -130,14 +138,6 @@ app.get("/check-session", (req, res) => {
   res.json({ loggedIn: !!req.session.isAdmin });
 });
 
-app.get("/admin.html", requireAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, "private/admin.html"));
-});
-
-app.get("/events.html", requireAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, "private/events.html"));
-});
-
 // -------------------
 // --- Logout
 // -------------------
@@ -150,14 +150,7 @@ app.post("/logout", (req, res) => {
 });
 
 // -------------------
-// --- Rutas modulares
-// -------------------
-app.use("/", leaderboardRoutesFunc(playersCollection, eventsCollection));
-app.use("/", adminRoutesFunc(playersCollection, eventsCollection));
-app.use("/", eventsRoutesFunc(playersCollection, eventsCollection));
-
-// -------------------
-// --- Iniciar servidor
+// --- Servidor
 // -------------------
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
