@@ -5,19 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Eventos / Torneos Valorant</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; }
-  header { background:#1a1a1a; color:white; padding:1rem; text-align:center; }
-  main { padding:1rem; }
-  form.form-inline input, form.form-inline select { margin-right:0.5rem; margin-bottom:0.3rem; }
-  table { width:100%; border-collapse:collapse; margin-top:1rem; }
-  table th, table td { border:1px solid #ccc; padding:0.5rem; text-align:center; }
-  button { padding:0.3rem 0.5rem; margin-left:0.2rem; cursor:pointer; }
-  #eventMatchesPanel { background:#f9f9f9; padding:0.75rem; border:1px solid #ccc; margin-top:0.75rem; }
-  .section-title { margin-top:1rem; }
-  .teams { display:grid; grid-template-columns: 1fr 1fr; gap:1rem; }
-  .form-inline { display:flex; flex-wrap:wrap; align-items:center; }
-  .row { margin-bottom:0.35rem; }
-  .hint { font-size: 0.85rem; color:#666; }
+body { font-family: Arial, sans-serif; margin:0; padding:0; }
+header { background:#1a1a1a; color:white; padding:1rem; text-align:center; }
+main { padding:1rem; }
+form.form-inline input, form.form-inline select { margin-right:0.5rem; margin-bottom:0.3rem; }
+table { width:100%; border-collapse:collapse; margin-top:1rem; }
+table th, table td { border:1px solid #ccc; padding:0.5rem; text-align:center; }
+button { padding:0.3rem 0.5rem; margin-left:0.2rem; cursor:pointer; }
+#eventEditPanel { background:#f9f9f9; padding:0.75rem; border:1px solid #ccc; margin-top:0.75rem; }
+.section-title { margin-top:1rem; }
+.teams { display:grid; grid-template-columns: 1fr 1fr; gap:1rem; }
+.form-inline { display:flex; flex-wrap:wrap; align-items:center; }
+.row { margin-bottom:0.35rem; }
+.hint { font-size: 0.85rem; color:#666; }
+input[type=number]{width:60px;}
 </style>
 </head>
 <body>
@@ -66,58 +67,127 @@
     </tbody>
   </table>
 
-  <div id="eventMatchesPanel" style="display:none;">
-    <h3 id="eventMatchesTitle">Partidas del Evento</h3>
-    <div id="eventMatchesList" class="hint">No hay partidas aún</div>
+  <!-- Panel de edición -->
+  <div id="eventEditPanel" style="display:none;">
+    <h3 id="editEventTitle"></h3>
+    <div class="form-inline">
+      <input type="text" id="editEventName" placeholder="Nombre del evento">
+      <select id="editEventTeamSize">
+        <option value="">Tamaño de equipo</option>
+        <option value="1">1vs1</option>
+        <option value="2">2vs2</option>
+        <option value="3">3vs3</option>
+        <option value="4">4vs4</option>
+        <option value="5">5vs5</option>
+      </select>
+      <select id="editEventNumTeams">
+        <option value="">Número de equipos</option>
+        <option value="2">2</option>
+        <option value="4">4</option>
+        <option value="8">8</option>
+        <option value="16">16</option>
+      </select>
+      <select id="editEventBadge">
+        <option value="">Selecciona Badge</option>
+        <option value="champion">Champion 👑</option>
+        <option value="finalist">Finalist 🥈</option>
+        <option value="semifinalist">Semifinalist 🥉</option>
+        <option value="participant">Participant 🎯</option>
+      </select>
+      <input type="number" id="editEventRounds" placeholder="Rondas" min="0">
+      <button id="saveEventBtn">Guardar Cambios</button>
+    </div>
+
+    <h4 class="section-title">Equipos / Jugadores</h4>
+    <div id="editTeamsContainer" class="teams"></div>
+
+    <h4 class="section-title">Partidas del Evento</h4>
+    <div id="editEventMatches" class="hint">No hay partidas aún</div>
   </div>
 </main>
 
 <script>
 const API_URL = window.location.origin;
-let allEvents = [], currentEvent = null;
+let allEvents = [], allPlayers = [], currentEvent = null;
+
+// --- Funciones básicas ---
+function sanitizeInt(n){ const x=parseInt(n,10); return Number.isFinite(x)?x:0; }
+
+async function loadPlayers(){
+  const res = await fetch('/players',{credentials:'include'});
+  if(!res.ok){ alert('Error cargando jugadores'); return; }
+  allPlayers = await res.json();
+}
 
 async function loadEvents(){
-  const res = await fetch('/events', {credentials:'include'});
+  const res = await fetch('/events',{credentials:'include'});
   if(!res.ok){ alert('Error cargando eventos'); return; }
   allEvents = await res.json();
   renderEvents();
 }
 
 function renderEvents(){
-  const tbody = document.getElementById('eventsTableBody');
-  tbody.innerHTML = '';
+  const tbody=document.getElementById('eventsTableBody'); tbody.innerHTML='';
   if(!allEvents.length){ tbody.innerHTML='<tr><td colspan="6">No hay eventos creados</td></tr>'; return; }
-
   allEvents.forEach((ev,i)=>{
-    const row = document.createElement('tr');
-    row.innerHTML = `
+    const row=document.createElement('tr');
+    row.innerHTML=`
       <td>${ev.name}</td>
       <td>${ev.teamSize}</td>
       <td>${ev.numTeams}</td>
-      <td>${ev.rounds || 0}</td>
-      <td>${ev.badge || '-'}</td>
+      <td>${ev.rounds||0}</td>
+      <td>${ev.badge||'-'}</td>
       <td><button class="btn-edit" data-index="${i}">Editar</button></td>
     `;
     tbody.appendChild(row);
   });
 
   document.querySelectorAll('.btn-edit').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      currentEvent = allEvents[btn.dataset.index];
-      const res = await fetch(`/events/${currentEvent._id}/matches`, {credentials:'include'});
-      const matches = res.ok ? await res.json() : [];
-      document.getElementById('eventMatchesTitle').innerText = `Partidas: ${currentEvent.name}`;
-      document.getElementById('eventMatchesList').innerHTML = matches.length ? matches.map((m,i)=>`<div>#${i+1}: ${m.map} | Ganador: ${m.winnerTeam} | Score: ${m.score}</div>`).join('') : 'No hay partidas aún';
-      document.getElementById('eventMatchesPanel').style.display = 'block';
-    });
+    btn.addEventListener('click',()=>editEvent(btn.dataset.index));
   });
 }
 
-document.getElementById('createEventBtn').addEventListener('click', async ()=>{
-  const name = document.getElementById('eventName').value.trim();
-  const teamSize = parseInt(document.getElementById('eventTeamSize').value);
-  const numTeams = parseInt(document.getElementById('eventNumTeams').value);
-  if(!name || !teamSize || !numTeams){ return alert('Completa todos los campos'); }
+async function editEvent(index){
+  currentEvent = allEvents[index];
+  document.getElementById('eventEditPanel').style.display='block';
+  document.getElementById('editEventTitle').innerText = `Editar Evento: ${currentEvent.name}`;
+  document.getElementById('editEventName').value = currentEvent.name;
+  document.getElementById('editEventTeamSize').value = currentEvent.teamSize;
+  document.getElementById('editEventNumTeams').value = currentEvent.numTeams;
+  document.getElementById('editEventBadge').value = currentEvent.badge || '';
+  document.getElementById('editEventRounds').value = currentEvent.rounds || 0;
+
+  // Mostrar equipos
+  const teamsContainer = document.getElementById('editTeamsContainer'); 
+  teamsContainer.innerHTML='';
+  if(currentEvent.teams){
+    Object.keys(currentEvent.teams).forEach((teamKey)=>{
+      const div=document.createElement('div');
+      div.innerHTML=`<h5>Equipo ${teamKey}</h5>`;
+      currentEvent.teams[teamKey].forEach(p=>{
+        const row=document.createElement('div'); row.className='form-inline row';
+        row.innerHTML=`
+          <input type="text" value="${p.name}" disabled>
+          <input type="text" value="${p.tag}" disabled>
+        `;
+        div.appendChild(row);
+      });
+      teamsContainer.appendChild(div);
+    });
+  }
+
+  // Mostrar partidas
+  const res = await fetch(`/events/${currentEvent._id}/matches`, {credentials:'include'});
+  const matches = res.ok ? await res.json() : [];
+  document.getElementById('editEventMatches').innerHTML = matches.length ? matches.map((m,i)=>`<div>#${i+1}: ${m.map} | Ganador: ${m.winnerTeam} | Score: ${m.score}</div>`).join('') : 'No hay partidas aún';
+}
+
+// --- Crear evento ---
+document.getElementById('createEventBtn').addEventListener('click', async()=>{
+  const name=document.getElementById('eventName').value.trim();
+  const teamSize=parseInt(document.getElementById('eventTeamSize').value);
+  const numTeams=parseInt(document.getElementById('eventNumTeams').value);
+  if(!name||!teamSize||!numTeams){ return alert('Completa todos los campos'); }
 
   const res = await fetch('/events',{
     method:'POST',
@@ -127,7 +197,6 @@ document.getElementById('createEventBtn').addEventListener('click', async ()=>{
   });
   const data = await res.json().catch(()=>({}));
   if(!res.ok) return alert(data.error||'Error creando evento');
-
   alert('Evento creado. Ahora puedes editarlo.');
   document.getElementById('eventName').value='';
   document.getElementById('eventTeamSize').value='';
@@ -135,9 +204,31 @@ document.getElementById('createEventBtn').addEventListener('click', async ()=>{
   await loadEvents();
 });
 
+// --- Guardar cambios ---
+document.getElementById('saveEventBtn').addEventListener('click', async()=>{
+  if(!currentEvent) return alert('No hay evento seleccionado');
+  const updatedEvent={
+    name: document.getElementById('editEventName').value.trim(),
+    teamSize: parseInt(document.getElementById('editEventTeamSize').value),
+    numTeams: parseInt(document.getElementById('editEventNumTeams').value),
+    badge: document.getElementById('editEventBadge').value,
+    rounds: sanitizeInt(document.getElementById('editEventRounds').value),
+  };
+  const res = await fetch(`/events/${currentEvent._id}`,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    credentials:'include',
+    body: JSON.stringify(updatedEvent)
+  });
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) return alert(data.error||'Error guardando evento');
+  alert('Cambios guardados');
+  await loadEvents();
+});
+
 document.getElementById('backToAdminBtn').addEventListener('click',()=>{window.location.href='/admin.html';});
 
-(async function init(){ await loadEvents(); })();
+(async function init(){ await loadPlayers(); await loadEvents(); })();
 </script>
 
 </body>
