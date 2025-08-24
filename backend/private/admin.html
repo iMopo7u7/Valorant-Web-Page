@@ -18,7 +18,7 @@ table th, table td { border:1px solid #ccc; padding:0.5rem; text-align:center; }
 button { padding:0.3rem 0.5rem; margin-left:0.2rem; cursor:pointer; }
 section { display:none; }
 section.active { display:block; }
-.edit-form { background:#f9f9f9; padding:0.5rem; margin-top:0.5rem; border:1px solid #ccc; display:none; }
+.edit-form { background:#f9f9f9; padding:0.5rem; margin-top:0.5rem; border:1px solid #ccc; }
 .edit-form input { margin-right:0.5rem; margin-bottom:0.3rem; }
 </style>
 </head>
@@ -66,7 +66,6 @@ section.active { display:block; }
       </tbody>
     </table>
   </section>
-
 </main>
 
 <script>
@@ -91,14 +90,35 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   window.location.href = '/login.html';
 });
 
-// Cargar jugadores
+// ======================
+// DASHBOARD
+// ======================
+async function loadDashboard(){
+  const [playersRes, matchesRes, lastMatchRes] = await Promise.all([
+    fetch('/players-count',{credentials:'include'}),
+    fetch('/matches-count',{credentials:'include'}),
+    fetch('/last-match',{credentials:'include'})
+  ]);
+
+  const playersData = await playersRes.json();
+  const matchesData = await matchesRes.json();
+  const lastMatchData = await lastMatchRes.json();
+
+  document.getElementById('totalPlayers').textContent = playersData.count || 0;
+  document.getElementById('totalMatches').textContent = matchesData.count || 0;
+  document.getElementById('lastMatchDate').textContent = lastMatchData.date ? new Date(lastMatchData.date).toLocaleString() : 'N/A';
+}
+
+// ======================
+// JUGADORES
+// ======================
 async function loadPlayers(){
   const res = await fetch('/players',{credentials:'include'});
   allPlayers = await res.json();
   updatePlayersTable();
+  loadDashboard(); // actualizar dashboard también
 }
 
-// Actualizar tabla
 function updatePlayersTable(){
   const tbody = document.getElementById('playersTableBody');
   tbody.innerHTML = '';
@@ -120,12 +140,14 @@ function updatePlayersTable(){
   });
 }
 
-// Mostrar formulario para editar (inline)
+// Evita múltiples formularios abiertos
+let currentEditRow = null;
+
 function showEditForm(player, row){
-  // Crear fila debajo
-  const editRow = document.createElement('tr');
-  editRow.classList.add('edit-form-row');
-  editRow.innerHTML = `
+  if(currentEditRow) currentEditRow.remove(); // cerrar cualquier edit abierto
+  currentEditRow = document.createElement('tr');
+  currentEditRow.classList.add('edit-form-row');
+  currentEditRow.innerHTML = `
     <td colspan="3">
       <div class="edit-form">
         <input placeholder="Nombre" value="${player.name}" class="edit-name" required>
@@ -137,18 +159,22 @@ function showEditForm(player, row){
         <button class="btn-cancel">Cancelar</button>
       </div>
     </td>`;
-  row.after(editRow);
+  row.after(currentEditRow);
 
-  editRow.querySelector('.btn-cancel').addEventListener('click',()=>editRow.remove());
-  editRow.querySelector('.btn-save').addEventListener('click', async ()=>{
-    const newName = editRow.querySelector('.edit-name').value.trim();
-    const newTag = editRow.querySelector('.edit-tag').value.trim();
+  currentEditRow.querySelector('.btn-cancel').addEventListener('click', ()=>{
+    currentEditRow.remove();
+    currentEditRow = null;
+  });
+
+  currentEditRow.querySelector('.btn-save').addEventListener('click', async ()=>{
+    const newName = currentEditRow.querySelector('.edit-name').value.trim();
+    const newTag = currentEditRow.querySelector('.edit-tag').value.trim();
     const social = {
-      twitch: editRow.querySelector('.edit-twitch').value.trim(),
-      twitter: editRow.querySelector('.edit-twitter').value.trim(),
-      tracker: editRow.querySelector('.edit-tracker').value.trim()
+      twitch: currentEditRow.querySelector('.edit-twitch').value.trim(),
+      twitter: currentEditRow.querySelector('.edit-twitter').value.trim(),
+      tracker: currentEditRow.querySelector('.edit-tracker').value.trim()
     };
-    if(!newName||!newTag) return alert('Nombre y tag son requeridos');
+    if(!newName || !newTag) return alert('Nombre y tag son requeridos');
 
     const res = await fetch('/players',{
       method:'PUT',
@@ -158,7 +184,8 @@ function showEditForm(player, row){
     });
     const data = await res.json();
     if(!res.ok) return alert(data.error||'Error al actualizar');
-    editRow.remove();
+    currentEditRow.remove();
+    currentEditRow = null;
     loadPlayers();
   });
 }
