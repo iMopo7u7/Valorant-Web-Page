@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS
+// --- CORS ---
 const allowedOrigins = [
   "https://valorant-10-mans-frontend.onrender.com",
   "https://valorant-10-mans.onrender.com"
@@ -38,7 +38,7 @@ app.options('*', cors({
 
 app.use(express.json());
 
-// Sesiones
+// --- Sesiones ---
 const sessionStore = MongoStore.create({
   mongoUrl: process.env.MONGODB_URI,
   collectionName: "sessions",
@@ -52,7 +52,7 @@ app.use(session({
   cookie: { maxAge: 60 * 60 * 1000 }
 }));
 
-// MongoDB
+// --- MongoDB ---
 if (!process.env.MONGODB_URI) {
   console.error("❌ ERROR: MONGODB_URI no está definido.");
   process.exit(1);
@@ -72,11 +72,11 @@ async function connectDB() {
   }
 }
 
-// Rutas estáticas
+// --- Rutas estáticas ---
 app.use(express.static(path.join(__dirname, "../frontend")));
 app.use("/private", express.static(path.join(__dirname, "private")));
 
-// Login / Admin
+// --- Login / Admin ---
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
 
@@ -93,7 +93,7 @@ app.get("/check-session",(req,res)=>res.json({loggedIn: !!req.session.isAdmin}))
 app.get("/admin.html", requireAdmin, (req,res)=>res.sendFile(path.join(__dirname,"private/admin.html")));
 app.get("/events.html", requireAdmin, (req,res)=>res.sendFile(path.join(__dirname,"private/events.html")));
 
-// CRUD Players
+// --- CRUD Players ---
 app.post("/players", requireAdmin, async (req,res)=>{
   try{
     const { name, tag, badges=[], social={} } = req.body;
@@ -137,7 +137,7 @@ app.delete("/players", requireAdmin, async (req,res)=>{
   }catch(err){ console.error(err); res.status(500).json({error:"Error al eliminar jugador"}); }
 });
 
-// CRUD Events
+// --- CRUD Events ---
 app.post("/events", requireAdmin, async (req,res)=>{
   try{
     const { name, teamSize, numTeams, rounds=0, teams={}, badge } = req.body;
@@ -151,6 +151,14 @@ app.post("/events", requireAdmin, async (req,res)=>{
 app.get("/events", requireAdmin, async (req,res)=>{
   try{ res.json(await eventsCollection.find().sort({ createdAt:-1 }).toArray()); }catch(err){ console.error(err); res.status(500).json({ error:"Error al obtener eventos" }); }
 });
+app.get("/events/:id", requireAdmin, async (req,res)=>{
+  try{
+    const { id } = req.params;
+    const event = await eventsCollection.findOne({ _id:new ObjectId(id) });
+    if(!event) return res.status(404).json({ error:"Evento no encontrado" });
+    res.json(event);
+  }catch(err){ console.error(err); res.status(500).json({ error:"Error al obtener evento" }); }
+});
 app.get("/events/:id/matches", requireAdmin, async (req,res)=>{
   try{
     const { id } = req.params;
@@ -160,7 +168,7 @@ app.get("/events/:id/matches", requireAdmin, async (req,res)=>{
   }catch(err){ console.error(err); res.status(500).json({ error:"Error al obtener partidas del evento" }); }
 });
 
-// Registrar match y actualizar stats de jugadores
+// --- Registrar match y actualizar stats de jugadores ---
 app.post("/events/:id/matches", requireAdmin, async (req,res)=>{
   try{
     const { id } = req.params;
@@ -170,15 +178,26 @@ app.post("/events/:id/matches", requireAdmin, async (req,res)=>{
     const event = await eventsCollection.findOne({ _id:new ObjectId(id) });
     if(!event) return res.status(404).json({ error:"Evento no encontrado" });
 
+    // --- Validación de número máximo de partidas ---
+    const maxMatches = event.numTeams - 1;
+    if((event.matches?.length || 0) >= maxMatches){
+      return res.status(400).json({ error:"Ya se registraron todas las partidas necesarias para este torneo" });
+    }
+
+    // --- Validar cantidad exacta de jugadores por equipo ---
+    if(teamA.length !== event.teamSize || teamB.length !== event.teamSize){
+      return res.status(400).json({ error:`Cada equipo debe tener exactamente ${event.teamSize} jugadores` });
+    }
+
     const newMatch = { map, winnerTeam, score, teamA, teamB, date:new Date() };
     await eventsCollection.updateOne({ _id:new ObjectId(id) }, { $push:{ matches:newMatch } });
 
     // --- Actualizar stats de jugadores ---
-    const updatePlayerStats = async (player)=>{
+    const updatePlayerStats = async (player, teamLabel)=>{
       if(!player || !player.name) return;
       const dbPlayer = await playersCollection.findOne({ name:player.name });
-      if(!dbPlayer) return; // Evitar error si no existe
-      const winsIncrement = (winnerTeam==='A' && teamA.includes(player)) || (winnerTeam==='B' && teamB.includes(player)) ? 1 : 0;
+      if(!dbPlayer) return;
+      const won = (winnerTeam==='A' && teamLabel==='A') || (winnerTeam==='B' && teamLabel==='B') ? 1 : 0;
       await playersCollection.updateOne({ name:player.name },{
         $inc:{
           totalKills: player.kills || 0,
@@ -188,19 +207,19 @@ app.post("/events/:id/matches", requireAdmin, async (req,res)=>{
           totalFirstBloods: player.firstBloods || 0,
           totalHeadshotKills: player.hsPercent || 0,
           matchesPlayed:1,
-          wins:winsIncrement
+          wins: won
         }
       });
     };
 
-    // actualizar cada jugador
-    for(const p of [...teamA, ...teamB]) await updatePlayerStats(p);
+    for(const p of teamA) await updatePlayerStats(p, 'A');
+    for(const p of teamB) await updatePlayerStats(p, 'B');
 
     res.json({ message:"Partida añadida y stats actualizadas", match:newMatch });
   }catch(err){ console.error(err); res.status(500).json({ error:"Error al añadir partida" }); }
 });
 
-// Leaderboard
+// --- Leaderboard ---
 app.get("/leaderboard", async (req,res)=>{
   try{
     const players = await playersCollection.find().toArray();
@@ -237,7 +256,7 @@ app.get("/leaderboard", async (req,res)=>{
   }catch(err){ console.error(err); res.status(500).json({ error:"Error al generar leaderboard" }); }
 });
 
-// Logout
+// --- Logout ---
 app.post("/logout",(req,res)=>{
   req.session.destroy(err=>{
     if(err) return res.status(500).json({error:"Error cerrando sesión"});
@@ -246,5 +265,5 @@ app.post("/logout",(req,res)=>{
   });
 });
 
-// Iniciar servidor
+// --- Iniciar servidor ---
 connectDB().then(()=>app.listen(PORT,()=>console.log(`🚀 Servidor corriendo en puerto ${PORT}`)));
