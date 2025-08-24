@@ -32,6 +32,13 @@
   <!-- Crear evento -->
   <div id="createEventForm" class="form-inline" style="margin-bottom:1rem;">
     <input type="text" id="eventName" placeholder="Nombre del evento" required>
+    <select id="eventBadge">
+      <option value="">Selecciona Badge</option>
+      <option value="champion">Champion 👑</option>
+      <option value="finalist">Finalist 🥈</option>
+      <option value="semifinalist">Semifinalist 🥉</option>
+      <option value="participant">Participant 🎯</option>
+    </select>
     <select id="eventTeamSize">
       <option value="">Tamaño de equipo</option>
       <option value="1">1vs1</option>
@@ -54,10 +61,10 @@
     <thead>
       <tr>
         <th>Nombre</th>
-        <th>Tamaño</th>
+        <th>Equipo / Jugadores</th>
         <th># Equipos</th>
-        <th>Equipos Definidos</th>
-        <th>Partidas</th>
+        <th># Partidas</th>
+        <th>Badge</th>
         <th>Acciones</th>
       </tr>
     </thead>
@@ -66,12 +73,6 @@
     </tbody>
   </table>
 
-  <div id="eventTeamsPanel" style="display:none;">
-    <h3 id="eventTeamsTitle">Definir Equipos</h3>
-    <div id="teamsContainer" class="teams"></div>
-    <button id="saveTeamsBtn" style="margin-top:0.5rem;">Guardar Equipos</button>
-  </div>
-
   <div id="eventMatchesPanel" style="display:none;">
     <h3 id="eventMatchesTitle">Partidas del Evento</h3>
     <div id="eventMatchesList" class="hint">No hay partidas aún</div>
@@ -79,17 +80,7 @@
     <h4 class="section-title">Agregar Partida</h4>
     <div id="addEventMatchForm">
       <div class="form-inline row">
-        <label>Equipo A:</label>
-        <select id="eventTeamSelectA"></select>
-        <label>Equipo B:</label>
-        <select id="eventTeamSelectB"></select>
-        <label>Ganador:</label>
-        <select id="eventWinnerTeam">
-          <option value="">Seleccionar</option>
-          <option value="A">Equipo A</option>
-          <option value="B">Equipo B</option>
-        </select>
-        <label>Mapa:</label>
+        <label style="margin-right:6px;">Mapa:</label>
         <select id="eventMatchMap">
           <option value="">Selecciona mapa</option>
           <option value="Bind">Bind</option>
@@ -98,8 +89,36 @@
           <option value="Ascent">Ascent</option>
           <option value="Icebox">Icebox</option>
           <option value="Breeze">Breeze</option>
+          <option value="Corrode">Corrode</option>
+          <option value="Abyss">Abyss</option>
+          <option value="Sunset">Sunset</option>
+          <option value="Lotus">Lotus</option>
+          <option value="Pearl">Pearl</option>
+          <option value="Fracture">Fracture</option>
         </select>
-        <input type="text" id="eventMatchScore" placeholder="Marcador (Ej: 13-8)">
+        <label style="margin:0 6px;">Ganador:</label>
+        <select id="eventWinnerTeam">
+          <option value="">Seleccionar</option>
+          <option value="A">Equipo A</option>
+          <option value="B">Equipo B</option>
+        </select>
+        <label style="margin:0 6px;">Marcador:</label>
+        <input type="text" id="eventMatchScore" placeholder="Ej: 13-8">
+      </div>
+
+      <div class="teams">
+        <div>
+          <h5>Equipo A</h5>
+          <div id="eventTeamA"></div>
+        </div>
+        <div>
+          <h5>Equipo B</h5>
+          <div id="eventTeamB"></div>
+        </div>
+      </div>
+
+      <div class="hint" style="margin-top:6px;">
+        Ingresa estadísticas por jugador: Kills, Deaths, Assists, ACS, HS%, First Bloods.
       </div>
 
       <div class="form-inline" style="margin-top:8px;">
@@ -112,176 +131,188 @@
 
 <script>
 const API_URL = window.location.origin;
-let allEvents = [], allPlayers = [], currentEvent = null, eventTeams = {};
+let allEvents = [], allPlayers = [], currentEvent = null, currentEventMatches = [], currentTeamSize = 5;
 
+// --- Utils ---
+function sanitizeInt(n){ const x=parseInt(n,10); return Number.isFinite(x)?x:0; }
+
+// --- Load players ---
 async function loadPlayers(){
   const res = await fetch('/players',{credentials:'include'});
-  allPlayers = res.ok ? await res.json() : [];
+  allPlayers = res.ok? await res.json() : [];
 }
 
+// --- Load events ---
 async function loadEvents(){
   const res = await fetch('/events',{credentials:'include'});
-  allEvents = res.ok ? await res.json() : [];
+  allEvents = res.ok? await res.json() : [];
   renderEvents();
 }
 
+// --- Badge icons ---
+function getBadgeIcon(type){
+  switch(type){
+    case 'champion': return '👑'; 
+    case 'finalist': return '🥈'; 
+    case 'semifinalist': return '🥉'; 
+    case 'participant': return '🎯'; 
+    default: return type; 
+  }
+}
+
+// --- Render events table ---
 function renderEvents(){
-  const tbody=document.getElementById('eventsTableBody');
+  const tbody=document.getElementById('eventsTableBody'); 
   tbody.innerHTML='';
-  if(!allEvents.length){ tbody.innerHTML='<tr><td colspan="6">No hay eventos</td></tr>'; return; }
+  if(!allEvents.length){ 
+    tbody.innerHTML='<tr><td colspan="6">No hay eventos creados</td></tr>'; 
+    return; 
+  }
   allEvents.forEach((ev,i)=>{
     const row=document.createElement('tr');
     row.innerHTML=`
       <td>${ev.name}</td>
       <td>${ev.teamSize}vs${ev.teamSize}</td>
       <td>${ev.numTeams}</td>
-      <td>${ev.teams ? Object.keys(ev.teams).length : 0}</td>
-      <td>${ev.matches ? ev.matches.length : 0}</td>
-      <td><button class="btn-edit" data-index="${i}">Editar</button></td>
+      <td>${ev.matches.length||0}</td>
+      <td>${getBadgeIcon(ev.badge)}</td>
+      <td><button class="btn-view" data-index="${i}">Ver / Editar</button></td>
     `;
     tbody.appendChild(row);
   });
 
-  document.querySelectorAll('.btn-edit').forEach(btn=>{
-    btn.addEventListener('click',()=>{
+  document.querySelectorAll('.btn-view').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.btn-view').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
       currentEvent = allEvents[btn.dataset.index];
-      showTeamsPanel();
-      showMatchesPanel();
+      currentTeamSize = parseInt(currentEvent.teamSize,10);
+      document.getElementById('teamSizeLabel').textContent = currentTeamSize;
+      document.getElementById('eventMatchesTitle').innerText = `Partidas: ${currentEvent.name}`;
+      currentEventMatches = currentEvent.matches || [];
+      renderEventMatchesList(currentEvent, currentEventMatches);
+      document.getElementById('eventMatchesPanel').style.display='block';
+      populateEventTeams();
     });
   });
 }
 
-function showTeamsPanel(){
-  document.getElementById('eventTeamsPanel').style.display='block';
-  document.getElementById('eventTeamsTitle').innerText = `Definir Equipos: ${currentEvent.name}`;
-  const container = document.getElementById('teamsContainer');
-  container.innerHTML='';
-  eventTeams = currentEvent.teams || {};
-
-  for(let i=0;i<currentEvent.numTeams;i++){
-    const teamLabel = String.fromCharCode(65+i);
-    eventTeams[teamLabel] = eventTeams[teamLabel] || [];
-    const div = document.createElement('div');
-    div.innerHTML = `<h5>Equipo ${teamLabel}</h5>`;
-    for(let j=0;j<currentEvent.teamSize;j++){
-      const select=document.createElement('select');
-      select.className='player-select';
-      select.innerHTML=`<option value="">-- Selecciona jugador --</option>` + allPlayers.map(p=>`<option value="${p.name}||${p.tag}" ${eventTeams[teamLabel][j]&&eventTeams[teamLabel][j].name===p.name?'selected':''}>${p.name} (${p.tag})</option>`).join('');
-      div.appendChild(select);
-    }
-    container.appendChild(div);
-  }
+// --- Render matches inside event ---
+function renderEventMatchesList(ev,matches){
+  const list=document.getElementById('eventMatchesList');
+  list.innerHTML = matches.length? matches.map((m,idx)=>`<div>#${idx+1}: ${(m.teamA?.map(p=>p.name).join(',')||'A')} vs ${(m.teamB?.map(p=>p.name).join(',')||'B')} | ${m.map||'-'} | Ganador: ${m.winnerTeam||'-'} | Score: ${m.score||'-'}</div>`).join('') 
+  : 'No hay partidas aún';
 }
 
-document.getElementById('saveTeamsBtn').addEventListener('click', async()=>{
-  const selects = document.querySelectorAll('#teamsContainer .player-select');
-  let valid = true;
-  const used = new Set();
-  selects.forEach(sel=>{
-    if(!sel.value) valid=false;
-    if(used.has(sel.value)) valid=false;
-    used.add(sel.value);
-  });
-  if(!valid) return alert('Selecciona todos los jugadores y no repitas');
-  // Guardar equipos
-  Object.keys(eventTeams).forEach((teamLabel,i)=>{
-    eventTeams[teamLabel]=[];
-    document.querySelectorAll('#teamsContainer div')[i].querySelectorAll('select').forEach(sel=>{
-      const [name,tag]=sel.value.split('||');
-      eventTeams[teamLabel].push({name,tag});
-    });
-  });
-  // Enviar al backend
-  const res = await fetch(`/events/${currentEvent._id}`,{
-    method:'PUT',
+// --- Create event ---
+document.getElementById('createEventBtn').addEventListener('click', async ()=>{
+  const name=document.getElementById('eventName').value.trim();
+  const teamSize=parseInt(document.getElementById('eventTeamSize').value);
+  const numTeams=parseInt(document.getElementById('eventNumTeams').value);
+  const badge=document.getElementById('eventBadge').value;
+  if(!name || !teamSize || !numTeams){ return alert('Completa nombre, tamaño de equipo y número de equipos'); }
+
+  // Inicializa equipos vacíos
+  const eventTeams={};
+  for(let i=0;i<numTeams;i++){ eventTeams[String.fromCharCode(65+i)] = []; }
+
+  const res = await fetch('/events',{
+    method:'POST',
     headers:{'Content-Type':'application/json'},
     credentials:'include',
-    body:JSON.stringify({teams:eventTeams})
+    body:JSON.stringify({name,teamSize,numTeams,badge,teams:eventTeams,matches:[]})
   });
-  if(!res.ok) return alert('Error guardando equipos');
-  alert('Equipos guardados');
+  if(!res.ok) return alert('Error creando evento');
+  alert('Evento creado exitosamente');
+  document.getElementById('eventName').value='';
+  document.getElementById('eventTeamSize').value='';
+  document.getElementById('eventNumTeams').value='';
+  document.getElementById('eventBadge').value='';
   loadEvents();
 });
 
-function showMatchesPanel(){
-  document.getElementById('eventMatchesPanel').style.display='block';
-  document.getElementById('eventMatchesTitle').innerText = `Partidas del Evento: ${currentEvent.name}`;
-  renderMatchesList();
-  populateMatchSelectors();
-}
+// --- Populate teams for editing / registering match ---
+function populateEventTeams(){
+  const teamContainers = {A: document.getElementById('eventTeamA'), B: document.getElementById('eventTeamB')};
+  teamContainers.A.innerHTML=''; teamContainers.B.innerHTML='';
 
-function renderMatchesList(){
-  const list=document.getElementById('eventMatchesList');
-  const matches = currentEvent.matches || [];
-  if(!matches.length){ list.innerHTML='No hay partidas'; return; }
-  list.innerHTML = matches.map((m,idx)=>`<div>#${idx+1}: ${m.teamA.map(p=>p.name).join(',')} vs ${m.teamB.map(p=>p.name).join(',')} | Ganador: ${m.winnerTeam} | ${m.map} | ${m.score}</div>`).join('');
-}
+  if(!currentEvent || !currentEvent.teams) return;
 
-function populateMatchSelectors(){
-  const selA=document.getElementById('eventTeamSelectA');
-  const selB=document.getElementById('eventTeamSelectB');
-  selA.innerHTML=''; selB.innerHTML='';
-  Object.keys(eventTeams).forEach(t=>{
-    selA.innerHTML+=`<option value="${t}">${t}</option>`;
-    selB.innerHTML+=`<option value="${t}">${t}</option>`;
+  const teamKeys = Object.keys(currentEvent.teams);
+  teamKeys.forEach((teamKey,idx)=>{
+    const container = idx===0? teamContainers.A : teamContainers.B;
+    currentEvent.teams[teamKey].forEach(player=>{
+      const row=document.createElement('div'); 
+      row.className='form-inline row';
+      row.innerHTML=`
+        <input type="text" value="${player.name}" disabled>
+        <input type="number" class="kill" placeholder="Kills" min="0">
+        <input type="number" class="death" placeholder="Deaths" min="0">
+        <input type="number" class="assist" placeholder="Assists" min="0">
+        <input type="number" class="acs" placeholder="ACS" min="0">
+        <input type="number" class="fb" placeholder="FirstBloods" min="0">
+        <input type="number" class="hs" placeholder="HS%" min="0">
+      `;
+      container.appendChild(row);
+    });
   });
 }
 
-document.getElementById('submitEventMatchBtn').addEventListener('click', async()=>{
-  const tA=document.getElementById('eventTeamSelectA').value;
-  const tB=document.getElementById('eventTeamSelectB').value;
-  const winner=document.getElementById('eventWinnerTeam').value;
+// --- Register match ---
+document.getElementById('submitEventMatchBtn').addEventListener('click', async ()=>{
+  if(!currentEvent) return alert('Selecciona evento');
   const map=document.getElementById('eventMatchMap').value;
+  const winnerTeam=document.getElementById('eventWinnerTeam').value;
   const score=document.getElementById('eventMatchScore').value.trim();
-  if(!tA||!tB||!winner||!map||!score) return alert('Completa todos los campos');
-  if(tA===tB) return alert('Elige equipos diferentes');
+  if(!map || !winnerTeam || !score) return alert('Completa mapa, ganador y marcador');
 
-  const match = {
-    teamA: eventTeams[tA],
-    teamB: eventTeams[tB],
-    winnerTeam: winner,
-    map,
-    score
-  };
-  // Guardar partida en el evento
-  const res = await fetch(`/events/${currentEvent._id}/matches`,{
+  const teams = {};
+  ['A','B'].forEach(teamLabel=>{
+    const container = teamLabel==='A'? document.getElementById('eventTeamA') : document.getElementById('eventTeamB');
+    teams[teamLabel] = [...container.querySelectorAll('.row')].map(row=>({
+      name: row.querySelector('input[type=text]').value,
+      kills: sanitizeInt(row.querySelector('.kill').value),
+      deaths: sanitizeInt(row.querySelector('.death').value),
+      assists: sanitizeInt(row.querySelector('.assist').value),
+      acs: sanitizeInt(row.querySelector('.acs').value),
+      firstBloods: sanitizeInt(row.querySelector('.fb').value),
+      hsPercent: sanitizeInt(row.querySelector('.hs').value)
+    }));
+  });
+
+  const match={map, winnerTeam, score, teamA: teams.A, teamB: teams.B};
+  const res=await fetch(`/events/${currentEvent._id}/matches`,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     credentials:'include',
     body:JSON.stringify(match)
   });
-  if(!res.ok) return alert('Error guardando partida');
-  currentEvent = await res.json(); // Devuelve el evento actualizado con matches
-  renderMatchesList();
+  if(!res.ok) return alert('Error agregando partida');
+
+  alert('Partida registrada');
+  currentEvent.matches.push(match);
+  renderEventMatchesList(currentEvent,currentEvent.matches);
+  populateEventTeams();
+  document.getElementById('eventMatchMap').value='';
+  document.getElementById('eventWinnerTeam').value='';
+  document.getElementById('eventMatchScore').value='';
 });
 
-document.getElementById('closeEventMatches').addEventListener('click',()=>{
+// --- Close matches panel ---
+document.getElementById('closeEventMatches').addEventListener('click', ()=>{
   document.getElementById('eventMatchesPanel').style.display='none';
   currentEvent=null;
+  currentEventMatches=[];
 });
 
-document.getElementById('backToAdminBtn').addEventListener('click',()=>{window.location.href='/admin.html';});
+// --- Back to admin ---
+document.getElementById('backToAdminBtn').addEventListener('click', ()=>{window.location.href='/admin.html';});
 
-document.getElementById('createEventBtn').addEventListener('click', async()=>{
-  const name=document.getElementById('eventName').value.trim();
-  const teamSize=parseInt(document.getElementById('eventTeamSize').value);
-  const numTeams=parseInt(document.getElementById('eventNumTeams').value);
-  if(!name||!teamSize||!numTeams) return alert('Completa datos');
-  const res = await fetch('/events',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body:JSON.stringify({name,teamSize,numTeams,teams:{},matches:[]})
-  });
-  if(!res.ok) return alert('Error creando evento');
-  alert('Evento creado');
-  document.getElementById('eventName').value='';
-  document.getElementById('eventTeamSize').value='';
-  document.getElementById('eventNumTeams').value='';
-  loadEvents();
-});
-
-(async function init(){ await loadPlayers(); await loadEvents(); })();
+// --- Init ---
+(async function init(){ 
+  await loadPlayers(); 
+  await loadEvents(); 
+})();
 </script>
 
 </body>
