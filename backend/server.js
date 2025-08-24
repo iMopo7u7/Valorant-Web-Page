@@ -70,14 +70,13 @@ if (!process.env.MONGODB_URI) {
   process.exit(1);
 }
 
-let db, playersCollection, matchesCollection, eventsCollection;
+let db, playersCollection, eventsCollection;
 async function connectDB() {
   try {
     const client = new MongoClient(process.env.MONGODB_URI);
     await client.connect();
     db = client.db("valorantDB");
     playersCollection = db.collection("players");
-    matchesCollection = db.collection("matches");
     eventsCollection = db.collection("events");
     console.log("✅ Conectado a MongoDB");
   } catch (err) {
@@ -192,20 +191,7 @@ app.put("/players", requireAdmin, async (req, res) => {
       { $set: { name: newName, tag: newTag, social: social || {} } }
     );
 
-    const matches = await matchesCollection.find({ "match.name": oldName, "match.tag": oldTag }).toArray();
-    for (const match of matches) {
-      let modified = false;
-      match.match.forEach(player => {
-        if (player.name === oldName && player.tag === oldTag) {
-          player.name = newName;
-          player.tag = newTag;
-          modified = true;
-        }
-      });
-      if (modified) await matchesCollection.updateOne({ _id: match._id }, { $set: { match: match.match } });
-    }
-
-    res.json({ message: "Jugador actualizado correctamente en players y matches" });
+    res.json({ message: "Jugador actualizado correctamente" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al actualizar jugador" });
@@ -218,10 +204,6 @@ app.delete("/players", requireAdmin, async (req, res) => {
     if (!name || !tag) return res.status(400).json({ error: "Nombre y tag requeridos" });
 
     await playersCollection.deleteOne({ name, tag });
-    await matchesCollection.updateMany(
-      { "match.name": name, "match.tag": tag },
-      { $pull: { match: { name, tag } } }
-    );
 
     res.json({ message: "Jugador eliminado correctamente" });
   } catch (err) {
@@ -231,89 +213,11 @@ app.delete("/players", requireAdmin, async (req, res) => {
 });
 
 // -------------------
-// --- CRUD Matches
-// -------------------
-app.post("/matches", requireAdmin, async (req, res) => {
-  try {
-    const { match, winnerTeam, score, map, eventId } = req.body;
-    if (!Array.isArray(match) || match.length === 0) return res.status(400).json({ error: "Formato inválido" });
-    if (!score || typeof score !== "string") return res.status(400).json({ error: "Score final requerido" });
-    if (!map || typeof map !== "string") return res.status(400).json({ error: "Mapa requerido" });
-
-    const newMatch = { match, winnerTeam, score, map, date: new Date() };
-    await matchesCollection.insertOne(newMatch);
-
-    if (eventId) {
-      await eventsCollection.updateOne(
-        { _id: new ObjectId(eventId) },
-        { $push: { matches: newMatch } }
-      );
-    }
-
-    for (const p of match) {
-      const playerTeam = match.indexOf(p) < 5 ? "A" : "B";
-      const headshotKills = Math.round((p.hsPercent / 100) * p.kills);
-
-      await playersCollection.updateOne(
-        { name: p.name, tag: p.tag },
-        {
-          $inc: {
-            totalKills: p.kills,
-            totalDeaths: p.deaths,
-            totalAssists: p.assists,
-            totalACS: p.acs,
-            totalFirstBloods: p.firstBloods,
-            totalHeadshotKills: headshotKills,
-            matchesPlayed: 1,
-            wins: playerTeam === winnerTeam ? 1 : 0
-          },
-        }
-      );
-    }
-
-    res.json({ message: "Partida añadida exitosamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al añadir partida" });
-  }
-});
-
-app.get("/matches", requireAdmin, async (req, res) => {
-  try {
-    const matches = await matchesCollection.find().sort({ date: -1 }).toArray();
-    res.json(matches);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener partidas" });
-  }
-});
-
-app.put("/matches/:id", requireAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { map, winnerTeam, score } = req.body;
-    if (!map || !winnerTeam || !score) return res.status(400).json({ error: "Faltan datos" });
-
-    const result = await matchesCollection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { map, winnerTeam, score } }
-    );
-
-    if (result.matchedCount === 0) return res.status(404).json({ error: "Partida no encontrada" });
-
-    res.json({ message: "Partida actualizada correctamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al actualizar partida" });
-  }
-});
-
-// -------------------
 // --- CRUD Events / Torneos
 // -------------------
 app.post("/events", requireAdmin, async (req, res) => {
   try {
-    const { name, teamSize, numTeams, rounds = 0 } = req.body;
+    const { name, teamSize, numTeams, rounds = 0, teams = {}, badge } = req.body;
     if (!name || !teamSize || !numTeams)
       return res.status(400).json({ error: "Completa todos los campos" });
 
@@ -326,6 +230,8 @@ app.post("/events", requireAdmin, async (req, res) => {
       numTeams,
       rounds,
       matches: [],
+      teams,       
+      badge,       
       createdAt: new Date()
     };
 
@@ -356,6 +262,25 @@ app.get("/events/:id/matches", requireAdmin, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al obtener partidas del evento" });
+  }
+});
+
+app.post("/events/:id/matches", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { map, winnerTeam, score, teamA, teamB } = req.body;
+    if (!map || !winnerTeam || !score) return res.status(400).json({ error: "Completa mapa, ganador y marcador" });
+
+    const event = await eventsCollection.findOne({ _id: new ObjectId(id) });
+    if (!event) return res.status(404).json({ error: "Evento no encontrado" });
+
+    const newMatch = { map, winnerTeam, score, teamA, teamB, date: new Date() };
+    await eventsCollection.updateOne({ _id: new ObjectId(id) }, { $push: { matches: newMatch } });
+
+    res.json({ message: "Partida añadida al evento correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al añadir partida" });
   }
 });
 
@@ -400,70 +325,6 @@ app.get("/leaderboard", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al generar leaderboard" });
-  }
-});
-
-app.get("/matches/:name/:tag", async (req, res) => {
-  try {
-    const { name, tag } = req.params;
-    const matches = await matchesCollection.find({ match: { $elemMatch: { name, tag } } }).sort({ date: -1 }).toArray();
-    res.json(matches.map(m => ({
-      match: m.match,
-      winnerTeam: m.winnerTeam,
-      score: m.score,
-      date: m.date
-    })));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener historial" });
-  }
-});
-
-app.get("/matches-count", async (req, res) => {
-  try {
-    const count = await matchesCollection.countDocuments();
-    res.json({ count });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener total de partidas" });
-  }
-});
-
-app.get("/players-count", async (req, res) => {
-  try {
-    const count = await playersCollection.countDocuments();
-    res.json({ count });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener total de jugadores" });
-  }
-});
-
-app.get("/last-match", async (req, res) => {
-  try {
-    const lastMatch = await matchesCollection.find().sort({ date: -1 }).limit(1).toArray();
-    if (lastMatch.length === 0) return res.json({ date: null });
-    res.json({ date: lastMatch[0].date });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener última partida" });
-  }
-});
-
-app.get("/events-public", async (req, res) => {
-  try {
-    const events = await eventsCollection.find().sort({ createdAt: -1 }).toArray();
-    res.json(events.map(e => ({
-      _id: e._id,
-      name: e.name,
-      teamSize: e.teamSize,
-      numTeams: e.numTeams,
-      rounds: e.rounds,
-      matches: e.matches || []
-    })));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener eventos" });
   }
 });
 
