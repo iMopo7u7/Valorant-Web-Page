@@ -25,7 +25,6 @@
 <header><h1>EVENTOS / TORNEOS</h1></header>
 
 <main>
-  <!-- Acciones superiores -->
   <div class="form-inline" style="margin-bottom:1rem;">
     <button id="backToAdminBtn">Regresar a Admin</button>
   </div>
@@ -33,7 +32,13 @@
   <!-- Crear evento -->
   <div id="createEventForm" class="form-inline" style="margin-bottom:1rem;">
     <input type="text" id="eventName" placeholder="Nombre del evento" required>
-    <input type="text" id="eventBadge" placeholder="Badge del torneo (para el campeón)">
+    <select id="eventBadge">
+      <option value="">Selecciona Badge</option>
+      <option value="champion">Champion 👑</option>
+      <option value="finalist">Finalist 🥈</option>
+      <option value="semifinalist">Semifinalist 🥉</option>
+      <option value="participant">Participant 🎯</option>
+    </select>
     <select id="eventTeamSize">
       <option value="">Tamaño de equipo</option>
       <option value="1">1vs1</option>
@@ -50,7 +55,6 @@
       <option value="16">16</option>
     </select>
     <button id="createEventBtn">Crear Evento</button>
-
     <div id="teamsDefinition" style="margin-top:10px; display:none;">
       <h4>Definir jugadores de cada equipo</h4>
       <div id="teamsContainer" class="teams"></div>
@@ -58,7 +62,6 @@
     </div>
   </div>
 
-  <!-- Lista de eventos -->
   <table>
     <thead>
       <tr>
@@ -75,7 +78,6 @@
     </tbody>
   </table>
 
-  <!-- Panel de partidas de evento -->
   <div id="eventMatchesPanel" style="display:none;">
     <h3 id="eventMatchesTitle">Partidas del Evento</h3>
     <div id="eventMatchesList" class="hint">No hay partidas aún</div>
@@ -99,14 +101,12 @@
           <option value="Pearl">Pearl</option>
           <option value="Fracture">Fracture</option>
         </select>
-
         <label style="margin:0 6px;">Ganador:</label>
         <select id="eventWinnerTeam">
           <option value="">Seleccionar</option>
           <option value="A">Equipo A</option>
           <option value="B">Equipo B</option>
         </select>
-
         <label style="margin:0 6px;">Marcador:</label>
         <input type="text" id="eventMatchScore" placeholder="Ej: 13-8">
       </div>
@@ -124,7 +124,7 @@
 
       <div class="hint" style="margin-top:6px;">
         Se requieren <span id="teamSizeLabel">5</span> jugadores por equipo.  
-        (Por si acaso, cada jugador se envía con ACS, First Bloods y HS% en 0 si no los llenas aquí.)
+        Cada jugador se envía con ACS, First Bloods y HS% en 0 si no los llenas.
       </div>
 
       <div class="form-inline" style="margin-top:8px;">
@@ -136,231 +136,216 @@
 </main>
 
 <script>
-  const API_URL = window.location.origin;
-  let allEvents = [];
-  let allPlayers = [];
-  let currentTeamSize = 5;
-  let currentEvent = null;
-  let currentEventMatches = [];
-  let eventTeams = {}; // Equipos definidos al crear evento
+const API_URL = window.location.origin;
+let allEvents = [], allPlayers = [], currentTeamSize = 5, currentEvent = null, currentEventMatches = [], eventTeams = {};
 
-  // --- Utilidades ---
-  function sanitizeInt(n) { const x = parseInt(n,10); return Number.isFinite(x)?x:0; }
-  function uniqueSelectionsOK(containerA, containerB){
-    const values = [];
-    [...containerA.querySelectorAll('.player-select'), ...containerB.querySelectorAll('.player-select')].forEach(sel=>{
-      const v = sel.value.trim(); if(!v) return;
-      if(values.includes(v)) return false;
-      values.push(v);
+function sanitizeInt(n){ const x=parseInt(n,10); return Number.isFinite(x)?x:0; }
+function uniqueSelectionsOK(containerA, containerB){
+  const values = [];
+  [...containerA.querySelectorAll('.player-select'), ...containerB.querySelectorAll('.player-select')].forEach(sel=>{
+    const v=sel.value.trim(); if(!v) return; if(values.includes(v)) return false; values.push(v);
+  });
+  return true;
+}
+
+async function loadPlayers(){
+  const res = await fetch('/players',{credentials:'include'});
+  if(!res.ok){ alert('Error cargando jugadores'); return; }
+  allPlayers = await res.json();
+}
+
+async function loadEvents(){
+  const res = await fetch('/events',{credentials:'include'});
+  if(!res.ok){ alert('Error cargando eventos'); return; }
+  allEvents = await res.json();
+  renderEvents();
+}
+
+function getBadgeIcon(type){
+  switch(type){ case 'champion': return '👑'; case 'finalist': return '🥈'; case 'semifinalist': return '🥉'; case 'participant': return '🎯'; default: return type; }
+}
+
+function renderEvents(){
+  const tbody=document.getElementById('eventsTableBody'); tbody.innerHTML='';
+  if(!allEvents.length){ tbody.innerHTML='<tr><td colspan="6">No hay eventos creados</td></tr>'; return; }
+  allEvents.forEach((ev,i)=>{
+    const row=document.createElement('tr');
+    row.innerHTML=`
+      <td>${ev.name}</td>
+      <td>${ev.teamSize}vs${ev.teamSize}</td>
+      <td>${ev.numTeams}</td>
+      <td>${ev.rounds||0}</td>
+      <td>${getBadgeIcon(ev.badge)}</td>
+      <td><button class="btn-view" data-index="${i}">Ver / Editar</button></td>
+    `;
+    tbody.appendChild(row);
+  });
+  document.querySelectorAll('.btn-view').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      document.querySelectorAll('.btn-view').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentEvent = allEvents[btn.dataset.index];
+      currentTeamSize = parseInt(currentEvent.teamSize,10);
+      document.getElementById('teamSizeLabel').textContent = currentTeamSize;
+      document.getElementById('eventMatchesTitle').innerText = `Partidas: ${currentEvent.name}`;
+      const res = await fetch(`/events/${currentEvent._id}/matches`, {credentials:'include'});
+      currentEventMatches = res.ok? await res.json():[];
+      renderEventMatchesList(currentEvent,currentEventMatches);
+      document.getElementById('eventMatchesPanel').style.display='block';
+      populateEventTeams();
     });
-    return true;
-  }
+  });
+}
 
-  // --- Cargar jugadores ---
-  async function loadPlayers(){
-    const res = await fetch('/players',{credentials:'include'});
-    if(!res.ok){ alert('Error cargando jugadores'); return; }
-    allPlayers = await res.json();
-  }
+function renderEventMatchesList(ev,matches){
+  const list=document.getElementById('eventMatchesList');
+  if(!matches.length){ list.innerHTML='No hay partidas aún'; return; }
+  list.innerHTML = matches.map((m,idx)=>`<div>#${idx+1}: ${(m.teamA?.map(p=>p.name).join(',')||'A')} vs ${(m.teamB?.map(p=>p.name).join(',')||'B')} | ${m.map||'-'} | Ganador: ${m.winnerTeam||'-'} | Score: ${m.score||'-'}</div>`).join('');
+}
 
-  // --- Cargar eventos ---
-  async function loadEvents(){
-    const res = await fetch('/events',{credentials:'include'});
-    if(!res.ok){ alert('Error cargando eventos'); return; }
-    allEvents = await res.json();
-    renderEvents();
-  }
+document.getElementById('createEventBtn').addEventListener('click',()=>{
+  const numTeams = parseInt(document.getElementById('eventNumTeams').value);
+  const teamSize = parseInt(document.getElementById('eventTeamSize').value) || 5;
+  if(!numTeams || !teamSize){ alert('Selecciona tamaño de equipo y número de equipos'); return; }
 
-  // --- Renderizar tabla de eventos ---
-  function renderEvents(){
-    const tbody=document.getElementById('eventsTableBody'); tbody.innerHTML='';
-    if(!allEvents.length){ tbody.innerHTML='<tr><td colspan="6">No hay eventos creados</td></tr>'; return; }
-    allEvents.forEach((ev,i)=>{
-      const row=document.createElement('tr');
-      row.innerHTML=`
-        <td>${ev.name}</td>
-        <td>${ev.teamSize}vs${ev.teamSize}</td>
-        <td>${ev.numTeams}</td>
-        <td>${ev.rounds || 0}</td>
-        <td>${ev.badge || '--'}</td>
-        <td><button class="btn-view" data-index="${i}">Ver / Editar</button></td>
-      `;
-      tbody.appendChild(row);
-    });
-    document.querySelectorAll('.btn-view').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
-        document.querySelectorAll('.btn-view').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        currentEvent = allEvents[btn.dataset.index];
-        currentTeamSize = parseInt(currentEvent.teamSize,10);
-        document.getElementById('teamSizeLabel').textContent = currentTeamSize;
-        document.getElementById('eventMatchesTitle').innerText = `Partidas: ${currentEvent.name}`;
-        const res = await fetch(`/events/${currentEvent._id}/matches`, {credentials:'include'});
-        currentEventMatches = res.ok? await res.json():[];
-        renderEventMatchesList(currentEvent,currentEventMatches);
-        document.getElementById('eventMatchesPanel').style.display='block';
-        populateEventTeams();
-      });
-    });
-  }
-
-  // --- Renderizar lista de partidas ---
-  function renderEventMatchesList(ev,matches){
-    const list=document.getElementById('eventMatchesList');
-    if(!matches.length){ list.innerHTML='No hay partidas aún'; return; }
-    const html = matches.map((m,idx)=>{
-      return `<div>#${idx+1}: ${(m.teamA?.map(p=>p.name).join(',')||'A')} vs ${(m.teamB?.map(p=>p.name).join(',')||'B')} | ${m.map||'-'} | Ganador: ${m.winnerTeam||'-'} | Score: ${m.score||'-'}</div>`;
-    }).join('');
-    list.innerHTML=html;
-  }
-
-  // --- Crear evento con equipos ---
-  document.getElementById('createEventBtn').addEventListener('click',()=>{
-    const numTeams = parseInt(document.getElementById('eventNumTeams').value);
-    const teamSize = parseInt(document.getElementById('eventTeamSize').value) || 5;
-    if(!numTeams || !teamSize){ alert('Selecciona tamaño de equipo y número de equipos'); return; }
-
-    const container = document.getElementById('teamsContainer'); container.innerHTML='';
-    eventTeams = {};
-    for(let i=0;i<numTeams;i++){
-      const teamLabel = String.fromCharCode(65+i);
-      eventTeams[teamLabel] = [];
-      const div = document.createElement('div'); div.innerHTML = `<h5>Equipo ${teamLabel}</h5>`;
-      for(let j=0;j<teamSize;j++){
-        const select=document.createElement('select'); select.className='player-select';
-        select.innerHTML=`<option value="">-- Selecciona jugador --</option>` + allPlayers.map(p=>`<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('');
-        div.appendChild(select);
-      }
-      container.appendChild(div);
+  const container = document.getElementById('teamsContainer'); container.innerHTML=''; eventTeams={};
+  for(let i=0;i<numTeams;i++){
+    const teamLabel = String.fromCharCode(65+i); eventTeams[teamLabel]=[];
+    const div = document.createElement('div'); div.innerHTML = `<h5>Equipo ${teamLabel}</h5>`;
+    for(let j=0;j<teamSize;j++){
+      const select=document.createElement('select'); select.className='player-select';
+      select.innerHTML=`<option value="">-- Selecciona jugador --</option>` + allPlayers.map(p=>`<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('');
+      div.appendChild(select);
     }
-    document.getElementById('teamsDefinition').style.display='block';
-  });
-
-  document.getElementById('saveTeamsBtn').addEventListener('click',()=>{
-    const selectedValues = new Set();
-    const selects = document.querySelectorAll('#teamsContainer .player-select');
-    let valid=true;
-    selects.forEach(sel=>{ const v=sel.value; if(!v || selectedValues.has(v)) valid=false; selectedValues.add(v); });
-    if(!valid){ alert('Selecciona todos los jugadores y no repitas jugadores'); return; }
-
-    Object.keys(eventTeams).forEach((teamLabel,i)=>{
-      eventTeams[teamLabel] = [];
-      document.querySelectorAll('#teamsContainer div')[i].querySelectorAll('.player-select').forEach(sel=>{
-        const [name,tag]=sel.value.split('||');
-        eventTeams[teamLabel].push({name,tag});
-      });
-    });
-    alert('Equipos guardados');
-  });
-
-  // --- Enviar evento al backend ---
-  document.getElementById('createEventBtn').addEventListener('dblclick', async()=>{
-    const name=document.getElementById('eventName').value.trim();
-    const teamSize=document.getElementById('eventTeamSize').value;
-    const numTeams=document.getElementById('eventNumTeams').value;
-    const badge=document.getElementById('eventBadge').value.trim();
-    if(!name||!teamSize||!numTeams) return alert('Completa datos');
-    if(Object.keys(eventTeams).length!==parseInt(numTeams)) return alert('Define todos los equipos');
-    const res=await fetch('/events',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-      body:JSON.stringify({name,teamSize,numTeams,badge,teams:eventTeams})});
-    const data=await res.json().catch(()=>({}));
-    if(!res.ok) return alert((data.error)||'Error');
-    alert('Evento creado');
-    document.getElementById('eventName').value='';
-    document.getElementById('eventTeamSize').value='';
-    document.getElementById('eventNumTeams').value='';
-    document.getElementById('eventBadge').value='';
-    document.getElementById('teamsContainer').innerHTML='';
-    document.getElementById('teamsDefinition').style.display='none';
-    eventTeams={};
-    loadEvents();
-  });
-
-  // --- Construir selects de stats de partida ---
-  function populateEventTeams(){
-    const teamAContainer=document.getElementById('eventTeamA'); 
-    const teamBContainer=document.getElementById('eventTeamB'); 
-    teamAContainer.innerHTML=''; teamBContainer.innerHTML='';
-    if(!currentEvent || !currentEvent.teams) return;
-
-    const teamKeys = Object.keys(currentEvent.teams);
-    const teamA=currentEvent.teams[teamKeys[0]] || [];
-    const teamB=currentEvent.teams[teamKeys[1]] || [];
-
-    const createRow=(player)=>{
-      const row=document.createElement('div'); row.className='form-inline row';
-      row.innerHTML=`
-        <input type="text" value="${player.name}" disabled>
-        <input type="number" class="kill" placeholder="Kills" min="0">
-        <input type="number" class="death" placeholder="Deaths" min="0">
-        <input type="number" class="assist" placeholder="Assists" min="0">
-        <input type="number" class="acs" placeholder="ACS" min="0">
-        <input type="number" class="fb" placeholder="FirstBloods" min="0">
-        <input type="number" class="hs" placeholder="HS%" min="0">
-      `;
-      return row;
-    };
-
-    teamA.forEach(p=>teamAContainer.appendChild(createRow(p)));
-    teamB.forEach(p=>teamBContainer.appendChild(createRow(p)));
+    container.appendChild(div);
   }
+  document.getElementById('teamsDefinition').style.display='block';
+});
 
-  // --- Registrar partida ---
-  document.getElementById('submitEventMatchBtn').addEventListener('click', async()=>{
-    if(!currentEvent) return alert('Selecciona evento');
-    const map=document.getElementById('eventMatchMap').value;
-    const winnerTeam=document.getElementById('eventWinnerTeam').value;
-    const score=document.getElementById('eventMatchScore').value.trim();
-    if(!map||!winnerTeam||!score) return alert('Completa mapa, ganador y marcador');
+document.getElementById('saveTeamsBtn').addEventListener('click',()=>{
+  const selectedValues = new Set();
+  const selects = document.querySelectorAll('#teamsContainer .player-select');
+  let valid=true;
+  selects.forEach(sel=>{ const v=sel.value; if(!v || selectedValues.has(v)) valid=false; selectedValues.add(v); });
+  if(!valid){ alert('Selecciona todos los jugadores y no repitas jugadores'); return; }
 
-    const teamA=[...document.getElementById('eventTeamA').querySelectorAll('.row')].map(row=>({
-      name: row.querySelector('input[type=text]').value,
-      kills: sanitizeInt(row.querySelector('.kill').value),
-      deaths: sanitizeInt(row.querySelector('.death').value),
-      assists: sanitizeInt(row.querySelector('.assist').value),
-      acs: sanitizeInt(row.querySelector('.acs').value),
-      firstBloods: sanitizeInt(row.querySelector('.fb').value),
-      hsPercent: sanitizeInt(row.querySelector('.hs').value)
-    }));
-
-    const teamB=[...document.getElementById('eventTeamB').querySelectorAll('.row')].map(row=>({
-      name: row.querySelector('input[type=text]').value,
-      kills: sanitizeInt(row.querySelector('.kill').value),
-      deaths: sanitizeInt(row.querySelector('.death').value),
-      assists: sanitizeInt(row.querySelector('.assist').value),
-      acs: sanitizeInt(row.querySelector('.acs').value),
-      firstBloods: sanitizeInt(row.querySelector('.fb').value),
-      hsPercent: sanitizeInt(row.querySelector('.hs').value)
-    }));
-
-    const match={map, winnerTeam, score, teamA, teamB, eventId:currentEvent._id};
-
-    const res=await fetch('/matches',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      credentials:'include',
-      body:JSON.stringify(match)
+  Object.keys(eventTeams).forEach((teamLabel,i)=>{
+    eventTeams[teamLabel] = [];
+    document.querySelectorAll('#teamsContainer div')[i].querySelectorAll('.player-select').forEach(sel=>{
+      const [name,tag]=sel.value.split('||');
+      eventTeams[teamLabel].push({name,tag});
     });
-    const data=await res.json().catch(()=>({}));
-    if(!res.ok) return alert((data.error)||'Error');
-    alert('Partida añadida');
-    const res2=await fetch(`/events/${currentEvent._id}/matches`, {credentials:'include'});
-    currentEventMatches=res2.ok? await res2.json():[];
-    renderEventMatchesList(currentEvent,currentEventMatches);
-    populateEventTeams();
-    document.getElementById('eventMatchMap').value='';
-    document.getElementById('eventWinnerTeam').value='';
-    document.getElementById('eventMatchScore').value='';
   });
+  alert('Equipos guardados');
+});
 
-  // --- Cerrar panel ---
-  document.getElementById('closeEventMatches').addEventListener('click',()=>{document.getElementById('eventMatchesPanel').style.display='none'; currentEvent=null; currentEventMatches=[];});
+// --- Enviar evento al backend ---
+document.getElementById('createEventBtn').addEventListener('dblclick', async()=>{
+  const name=document.getElementById('eventName').value.trim();
+  const teamSize=document.getElementById('eventTeamSize').value;
+  const numTeams=document.getElementById('eventNumTeams').value;
+  const badge=document.getElementById('eventBadge').value;
+  if(!name||!teamSize||!numTeams) return alert('Completa datos');
+  if(Object.keys(eventTeams).length!==parseInt(numTeams)) return alert('Define todos los equipos');
+  const validBadges=['champion','finalist','semifinalist','participant'];
+  if(badge && !validBadges.includes(badge)) return alert('Badge inválido');
 
-  // --- Regresar a admin ---
-  document.getElementById('backToAdminBtn').addEventListener('click',()=>{window.location.href='/admin.html';});
+  const res = await fetch('/events',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    credentials:'include',
+    body:JSON.stringify({name,teamSize,numTeams,badge,teams:eventTeams})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok) return alert((data.error)||'Error');
+  alert('Evento creado');
+  document.getElementById('eventName').value='';
+  document.getElementById('eventTeamSize').value='';
+  document.getElementById('eventNumTeams').value='';
+  document.getElementById('eventBadge').value='';
+  document.getElementById('teamsContainer').innerHTML='';
+  document.getElementById('teamsDefinition').style.display='none';
+  eventTeams={};
+  loadEvents();
+});
 
-  // --- Init ---
-  (async function init(){ await loadPlayers(); await loadEvents(); })();
+function populateEventTeams(){
+  const teamAContainer=document.getElementById('eventTeamA'); 
+  const teamBContainer=document.getElementById('eventTeamB'); 
+  teamAContainer.innerHTML=''; teamBContainer.innerHTML='';
+  if(!currentEvent || !currentEvent.teams) return;
+
+  const teamKeys = Object.keys(currentEvent.teams);
+  const teamA=currentEvent.teams[teamKeys[0]] || [];
+  const teamB=currentEvent.teams[teamKeys[1]] || [];
+
+  const createRow=(player)=>{
+    const row=document.createElement('div'); row.className='form-inline row';
+    row.innerHTML=`
+      <input type="text" value="${player.name}" disabled>
+      <input type="number" class="kill" placeholder="Kills" min="0">
+      <input type="number" class="death" placeholder="Deaths" min="0">
+      <input type="number" class="assist" placeholder="Assists" min="0">
+      <input type="number" class="acs" placeholder="ACS" min="0">
+      <input type="number" class="fb" placeholder="FirstBloods" min="0">
+      <input type="number" class="hs" placeholder="HS%" min="0">
+    `;
+    return row;
+  };
+  teamA.forEach(p=>teamAContainer.appendChild(createRow(p)));
+  teamB.forEach(p=>teamBContainer.appendChild(createRow(p)));
+}
+
+document.getElementById('submitEventMatchBtn').addEventListener('click', async()=>{
+  if(!currentEvent) return alert('Selecciona evento');
+  const map=document.getElementById('eventMatchMap').value;
+  const winnerTeam=document.getElementById('eventWinnerTeam').value;
+  const score=document.getElementById('eventMatchScore').value.trim();
+  if(!map||!winnerTeam||!score) return alert('Completa mapa, ganador y marcador');
+
+  const teamA=[...document.getElementById('eventTeamA').querySelectorAll('.row')].map(row=>({
+    name: row.querySelector('input[type=text]').value,
+    kills: sanitizeInt(row.querySelector('.kill').value),
+    deaths: sanitizeInt(row.querySelector('.death').value),
+    assists: sanitizeInt(row.querySelector('.assist').value),
+    acs: sanitizeInt(row.querySelector('.acs').value),
+    firstBloods: sanitizeInt(row.querySelector('.fb').value),
+    hsPercent: sanitizeInt(row.querySelector('.hs').value)
+  }));
+
+  const teamB=[...document.getElementById('eventTeamB').querySelectorAll('.row')].map(row=>({
+    name: row.querySelector('input[type=text]').value,
+    kills: sanitizeInt(row.querySelector('.kill').value),
+    deaths: sanitizeInt(row.querySelector('.death').value),
+    assists: sanitizeInt(row.querySelector('.assist').value),
+    acs: sanitizeInt(row.querySelector('.acs').value),
+    firstBloods: sanitizeInt(row.querySelector('.fb').value),
+    hsPercent: sanitizeInt(row.querySelector('.hs').value)
+  }));
+
+  const match={map, winnerTeam, score, teamA, teamB, eventId:currentEvent._id};
+  const res=await fetch('/matches',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    credentials:'include',
+    body:JSON.stringify(match)
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok) return alert((data.error)||'Error');
+  alert('Partida añadida');
+  const res2=await fetch(`/events/${currentEvent._id}/matches`, {credentials:'include'});
+  currentEventMatches=res2.ok? await res2.json():[];
+  renderEventMatchesList(currentEvent,currentEventMatches);
+  populateEventTeams();
+  document.getElementById('eventMatchMap').value='';
+  document.getElementById('eventWinnerTeam').value='';
+  document.getElementById('eventMatchScore').value='';
+});
+
+document.getElementById('closeEventMatches').addEventListener('click',()=>{document.getElementById('eventMatchesPanel').style.display='none'; currentEvent=null; currentEventMatches=[];});
+document.getElementById('backToAdminBtn').addEventListener('click',()=>{window.location.href='/admin.html';});
+
+(async function init(){ await loadPlayers(); await loadEvents(); })();
 </script>
 
 </body>
