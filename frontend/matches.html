@@ -4,404 +4,166 @@
   <meta charset="UTF-8">
   <title>Matches Valorant</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    
-    :root {
-      /* Valorant Color Palette */
-      --valorant-red: #ff4655;
-      --valorant-red-glow: #ff4655;
-      --valorant-dark: #0f1419;
-      --valorant-darker: #0a0e13;
-      --valorant-gray: #1e2328;
-      --valorant-gray-light: #2c3137;
-      --valorant-gray-lighter: #383e45;
-      --valorant-text: #ece8e1;
-      --valorant-text-muted: #a0a0a0;
-      --valorant-accent: #53212b;
-      --valorant-border: #3c3c41;
-      
-      /* Gradients */
-      --gradient-primary: linear-gradient(135deg, #ff4655 0%, #bd3944 100%);
-      --gradient-dark: linear-gradient(135deg, #0f1419 0%, #1e2328 100%);
-      --gradient-card: linear-gradient(145deg, #1e2328 0%, #2c3137 100%);
-      
-      /* Shadows */
-      --shadow-neon: 0 0 20px rgba(255, 70, 85, 0.3);
-      --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
-      --shadow-table: 0 4px 16px rgba(0, 0, 0, 0.3);
-      
-      /* Transitions */
-      --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      --transition-fast: all 0.2s ease;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--valorant-darker);
-      background-image: 
-        radial-gradient(circle at 20% 80%, rgba(255, 70, 85, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255, 70, 85, 0.08) 0%, transparent 50%);
-      color: var(--valorant-text);
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
       margin: 0;
       padding: 20px;
-      min-height: 100vh;
-      line-height: 1.6;
     }
-
     h1 {
       text-align: center;
-      color: var(--valorant-red);
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin: 0 0 2rem 0;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      text-shadow: 
-        0 0 10px rgba(255, 70, 85, 0.5),
-        0 0 20px rgba(255, 70, 85, 0.3),
-        0 0 40px rgba(255, 70, 85, 0.1);
-      position: relative;
+      color: #ff4655;
     }
-
-    h1::after {
-      content: '';
-      position: absolute;
-      bottom: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100px;
-      height: 3px;
-      background: var(--gradient-primary);
-      border-radius: 2px;
-      box-shadow: var(--shadow-neon);
+    #search {
+      display: block;
+      margin: 15px auto;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      width: 250px;
+      font-size: 16px;
+      text-align: center;
     }
-
     ul {
       list-style: none;
       padding: 0;
-      max-width: 1000px;
-      margin: 0 auto;
+      max-width: 800px;
+      margin: auto;
     }
-
     li {
-      background: var(--gradient-card);
-      margin: 20px 0;
-      padding: 0;
-      border-radius: 16px;
+      background: #1e1e1e;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: var(--transition-smooth);
-      border: 1px solid var(--valorant-border);
-      box-shadow: var(--shadow-card);
-      overflow: hidden;
-      position: relative;
+      transition: background 0.2s;
     }
-
-    li::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: var(--gradient-primary);
-      opacity: 0;
-      transition: var(--transition-smooth);
-    }
-
     li:hover {
-      transform: translateY(-4px);
-      box-shadow: 
-        var(--shadow-card),
-        0 0 30px rgba(255, 70, 85, 0.2);
-      border-color: var(--valorant-red);
+      background: #292929;
     }
-
-    li:hover::before {
-      opacity: 1;
-    }
-
     .match-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      font-weight: 600;
-      padding: 20px 24px;
-      background: rgba(255, 70, 85, 0.05);
-      border-bottom: 1px solid var(--valorant-border);
-      font-size: 1.1rem;
+      font-weight: bold;
     }
-
-    .match-header span {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      position: relative;
-    }
-
-    .match-header span:first-child::before {
-      content: '🗺️';
-      font-size: 1.2rem;
-    }
-
-    .match-header span:nth-child(2)::before {
-      content: '🎯';
-      font-size: 1.2rem;
-    }
-
-    .match-header span:last-child::before {
-      content: '👑';
-      font-size: 1.2rem;
-    }
-
     .details {
-      margin: 0;
-      padding: 24px;
+      margin-top: 10px;
       display: none;
-      background: rgba(0, 0, 0, 0.2);
-      animation: slideDown 0.3s ease-out;
     }
-
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .details h3 {
-      color: var(--valorant-red);
-      font-size: 1.4rem;
-      font-weight: 600;
-      margin: 0 0 20px 0;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
-      background: var(--valorant-gray);
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: var(--shadow-table);
     }
-
     th, td {
-      padding: 16px 12px;
+      border: 1px solid #333;
+      padding: 6px;
       text-align: center;
-      border-bottom: 1px solid var(--valorant-border);
-      font-size: 0.95rem;
     }
-
     th {
-      background: var(--gradient-primary);
-      color: white;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-size: 0.9rem;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+      background: #222;
     }
-
-    tbody tr {
-      transition: var(--transition-fast);
-      position: relative;
-    }
-
-    tbody tr:hover {
-      background: var(--valorant-gray-light);
-      transform: scale(1.01);
-    }
-
-    tbody tr:nth-child(even) {
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    tbody tr:nth-child(even):hover {
-      background: var(--valorant-gray-light);
-    }
-
-    td:first-child {
-      font-weight: 500;
-      color: var(--valorant-red);
-      text-align: left;
-      padding-left: 20px;
-    }
-
-    td:not(:first-child) {
-      font-weight: 600;
-      font-family: 'Courier New', monospace;
-    }
-
-    /* Highlight top performers */
-    tbody tr:hover td:nth-child(2),
-    tbody tr:hover td:nth-child(5) {
-      color: var(--valorant-red);
-      text-shadow: 0 0 8px rgba(255, 70, 85, 0.4);
-    }
-
-    /* Mobile Responsive */
-    @media (max-width: 768px) {
-      body {
-        padding: 10px;
-      }
-
-      h1 {
-        font-size: 2rem;
-      }
-
-      .match-header {
-        flex-direction: column;
-        gap: 12px;
-        text-align: center;
-        padding: 16px;
-      }
-
-      .match-header span {
-        justify-content: center;
-      }
-
-      .details {
-        padding: 16px;
-      }
-
-      table {
-        font-size: 0.85rem;
-      }
-
-      th, td {
-        padding: 12px 8px;
-      }
-
-      td:first-child {
-        padding-left: 12px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 1.5rem;
-      }
-
-      table {
-        font-size: 0.8rem;
-      }
-
-      th, td {
-        padding: 8px 4px;
-      }
-    }
-
-    /* Loading state */
-    ul:empty::before {
-      content: 'Cargando partidas...';
-      display: block;
+    .team-title {
+      margin-top: 15px;
       text-align: center;
-      color: var(--valorant-text-muted);
-      font-style: italic;
-      padding: 40px;
-      background: var(--gradient-card);
-      border-radius: 16px;
-      border: 1px solid var(--valorant-border);
-    }
-
-    /* Scrollbar styling */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: var(--valorant-gray);
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--gradient-primary);
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--valorant-red);
+      font-weight: bold;
+      color: #ff4655;
     }
   </style>
 </head>
 <body>
   <h1>Historial de Partidas</h1>
+  <input type="text" id="search" placeholder="🔍 Buscar jugador (name#tag)">
   <ul id="matchesList"></ul>
 
   <script>
-    const API_BASE_URL = "https://valorant-10-mans.onrender.com"; // 🔧 Cambia si tu backend está en otro host
+    const API_BASE_URL = "https://valorant-10-mans.onrender.com";
+    let matchesCache = [];
 
     async function loadMatches() {
       try {
         const res = await fetch(`${API_BASE_URL}/matches`);
-        const matches = await res.json();
-
-        const list = document.getElementById("matchesList");
-        list.innerHTML = "";
-
-        matches.forEach((match, idx) => {
-          const li = document.createElement("li");
-
-          // Header con mapa, score y ganador
-          li.innerHTML = `
-            <div class="match-header">
-              <span>Mapa: ${match.map}</span>
-              <span>Score: ${match.score}</span>
-              <span>Ganador: ${match.winnerTeam}</span>
-            </div>
-            <div class="details" id="details-${idx}">
-              <h3>Estadísticas de jugadores</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Jugador</th>
-                    <th>Kills</th>
-                    <th>Deaths</th>
-                    <th>Assists</th>
-                    <th>ACS</th>
-                    <th>First Bloods</th>
-                    <th>HS%</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${match.match.map(p => `
-                    <tr>
-                      <td>${p.name}#${p.tag}</td>
-                      <td>${p.kills}</td>
-                      <td>${p.deaths}</td>
-                      <td>${p.assists}</td>
-                      <td>${p.acs}</td>
-                      <td>${p.firstBloods}</td>
-                      <td>${p.hsPercent}%</td>
-                    </tr>
-                  `).join("")}
-                </tbody>
-              </table>
-            </div>
-          `;
-
-          // Toggle para mostrar detalles
-          li.addEventListener("click", () => {
-            const details = document.getElementById(`details-${idx}`);
-            details.style.display = details.style.display === "block" ? "none" : "block";
-          });
-
-          list.appendChild(li);
-        });
+        matchesCache = await res.json();
+        renderMatches(matchesCache);
       } catch (err) {
         console.error("Error cargando partidas:", err);
       }
     }
+
+    function renderMatches(matches) {
+      const list = document.getElementById("matchesList");
+      list.innerHTML = "";
+
+      matches.forEach((match, idx) => {
+        const li = document.createElement("li");
+
+        // Header con mapa, score y ganador
+        li.innerHTML = `
+          <div class="match-header">
+            <span>Mapa: ${match.map}</span>
+            <span>Score: ${match.score}</span>
+            <span>Ganador: ${match.winnerTeam}</span>
+          </div>
+          <div class="details" id="details-${idx}">
+            <h3>Estadísticas de jugadores</h3>
+            <div class="team-title">Team A</div>
+            ${renderTeam(match.match.slice(0, 5))}
+            <div class="team-title">Team B</div>
+            ${renderTeam(match.match.slice(5))}
+          </div>
+        `;
+
+        // Toggle con "solo uno abierto"
+        li.addEventListener("click", () => {
+          document.querySelectorAll(".details").forEach(d => d.style.display = "none");
+          const details = document.getElementById(`details-${idx}`);
+          details.style.display = "block";
+        });
+
+        list.appendChild(li);
+      });
+    }
+
+    function renderTeam(teamPlayers) {
+      return `
+        <table>
+          <thead>
+            <tr>
+              <th>Jugador</th>
+              <th>Kills</th>
+              <th>Deaths</th>
+              <th>Assists</th>
+              <th>ACS</th>
+              <th>First Bloods</th>
+              <th>HS%</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${teamPlayers.map(p => `
+              <tr>
+                <td>${p.name}#${p.tag}</td>
+                <td>${p.kills}</td>
+                <td>${p.deaths}</td>
+                <td>${p.assists}</td>
+                <td>${p.acs}</td>
+                <td>${p.firstBloods}</td>
+                <td>${p.hsPercent}%</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // Filtro por jugador
+    document.getElementById("search").addEventListener("input", (e) => {
+      const query = e.target.value.toLowerCase();
+      const filtered = matchesCache.filter(m =>
+        m.match.some(p => `${p.name}#${p.tag}`.toLowerCase().includes(query))
+      );
+      renderMatches(filtered);
+    });
 
     loadMatches();
   </script>
