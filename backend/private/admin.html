@@ -1,356 +1,1645 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Panel Admin Valorant</title>
-<style>
-body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4; }
-header { background:#1a1a1a; color:white; padding:1rem; text-align:center; }
-nav { background:#333; }
-nav ul { list-style:none; display:flex; margin:0; padding:0; flex-wrap: wrap; }
-nav li { margin:0; }
-nav a { display:block; padding:1rem; color:white; text-decoration:none; }
-nav a.active { background:#555; }
-main { padding:1rem; }
-form input, form select { margin-right:0.5rem; margin-bottom:0.3rem; padding:0.3rem; }
-table { width:100%; border-collapse:collapse; margin-top:1rem; background:white; }
-table th, table td { border:1px solid #ccc; padding:0.5rem; text-align:center; }
-button { padding:0.3rem 0.5rem; margin-left:0.2rem; cursor:pointer; }
-section { display:none; }
-section.active { display:block; }
-.edit-row input { width: 90%; }
-.team-row input, .team-row select { margin-right:0.3rem; margin-bottom:0.2rem; width: 80px; }
-.alert { color: green; margin-top: 0.5rem; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin Valorant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css">
+    <style>
+    :root {
+        --valorant-red: #ff4655;
+        --valorant-red-glow: #ff4655;
+        --valorant-blue: #389ef0;
+        --valorant-dark: #0f1419;
+        --valorant-darker: #0a0e13;
+        --valorant-gray: #1e2328;
+        --valorant-light-gray: #536471;
+        --valorant-white: #ffffff;
+        
+        --background: var(--valorant-darker);
+        --surface: var(--valorant-dark);
+        --surface-hover: var(--valorant-gray);
+        --primary: var(--valorant-red);
+        --primary-hover: #e63946;
+        --text-primary: var(--valorant-white);
+        --text-secondary: #9ca3af;
+        --text-muted: var(--valorant-light-gray);
+        --border: #2d3748;
+        --border-hover: var(--valorant-red);
+        
+        --shadow-neon: 0 0 20px rgba(255, 70, 85, 0.3);
+        --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.3);
+        --shadow-intense: 0 0 30px rgba(255, 70, 85, 0.5);
+        
+        --transition-fast: 0.2s ease;
+        --transition-smooth: 0.3s ease;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Rajdhani', sans-serif;
+        background: var(--background);
+        color: var(--text-primary);
+        display: flex;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    /* Sidebar Styles */
+    .sidebar {
+        width: 280px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        padding: 2rem 0;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 100;
+    }
+
+    .sidebar-header {
+        padding: 0 2rem 2rem;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 2rem;
+    }
+
+    .sidebar-title {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .valorant-logo {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary), #e63946);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        box-shadow: var(--shadow-neon);
+    }
+
+    .sidebar-nav {
+        padding: 0 1rem;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-radius: 8px;
+        transition: var(--transition-smooth);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .nav-item:hover {
+        background: var(--surface-hover);
+        color: var(--text-primary);
+        transform: translateX(5px);
+    }
+
+    .nav-item.active {
+        background: linear-gradient(90deg, rgba(255, 70, 85, 0.2), transparent);
+        color: var(--primary);
+        border-left: 3px solid var(--primary);
+    }
+
+    .nav-item i {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* Main Content */
+    .main-content {
+        margin-left: 280px;
+        flex: 1;
+        padding: 2rem;
+        background: var(--background);
+    }
+
+    .main-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .page-title {
+        font-family: 'Orbitron', monospace;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary);
+        text-shadow: 0 0 10px rgba(255, 70, 85, 0.3);
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 1rem;
+    }
+
+    /* Content Sections */
+    .content-section {
+        display: none;
+    }
+
+    .content-section.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: var(--transition-smooth);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card:hover {
+        border-color: var(--primary);
+        box-shadow: var(--shadow-neon);
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--primary), #e63946);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+
+    .stat-content h3 {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .stat-number {
+        font-family: 'Orbitron', monospace;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-change {
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .stat-change.positive { color: #10b981; }
+    .stat-change.negative { color: #ef4444; }
+    .stat-change.neutral { color: var(--text-secondary); }
+
+    /* Section Header */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .section-header h2 {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.5rem;
+        color: var(--primary);
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition-smooth);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary), #e63946);
+        color: white;
+        box-shadow: var(--shadow-neon);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #e63946, #dc2626);
+        box-shadow: var(--shadow-intense);
+        transform: translateY(-2px);
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: var(--primary);
+        border: 2px solid var(--primary);
+    }
+
+    .btn-outline:hover {
+        background: var(--primary);
+        color: white;
+        box-shadow: var(--shadow-neon);
+    }
+
+    .btn-danger {
+        background: #dc2626;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #b91c1c;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    /* Players Section */
+    .search-bar {
+        position: relative;
+        margin-bottom: 2rem;
+        max-width: 400px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 1rem 1rem 1rem 3rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1rem;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: var(--shadow-neon);
+    }
+
+    .search-bar i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+    }
+
+    .players-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .player-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: var(--transition-smooth);
+    }
+
+    .player-card:hover {
+        border-color: var(--primary);
+        box-shadow: var(--shadow-card);
+        transform: translateY(-2px);
+    }
+
+    .player-avatar {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--primary), #e63946);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Orbitron', monospace;
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: white;
+        margin-bottom: 1rem;
+    }
+
+    .player-info h4 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .player-tag {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .player-socials {
+        display: flex;
+        gap: 0.5rem;
+        margin: 1rem 0;
+    }
+
+    .social-link {
+        width: 32px;
+        height: 32px;
+        background: var(--background);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: var(--transition-fast);
+    }
+
+    .social-link:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .player-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    /* Forms */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1rem;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: var(--shadow-neon);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    /* Match Form */
+    .match-form {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 2rem;
+    }
+
+    .teams-container {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 2rem;
+        margin: 2rem 0;
+    }
+
+    .team-section {
+        background: var(--background);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .team-section h3 {
+        color: var(--primary);
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    .vs-divider {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Orbitron', monospace;
+        font-weight: 700;
+        font-size: 1.5rem;
+        color: var(--primary);
+        text-shadow: 0 0 10px rgba(255, 70, 85, 0.5);
+    }
+
+    .player-slot {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        align-items: center;
+    }
+
+    .player-slot select {
+        flex: 1;
+    }
+
+    .player-stats {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .player-stats input {
+        width: 80px;
+    }
+
+    .team-score {
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    .team-score input {
+        width: 100px;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    /* Tables */
+    .matches-table {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .matches-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .matches-table th,
+    .matches-table td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .matches-table th {
+        background: var(--background);
+        font-weight: 600;
+        color: var(--primary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.9rem;
+    }
+
+    .matches-table tr:hover {
+        background: var(--background);
+    }
+
+    .match-result {
+        font-family: 'Orbitron', monospace;
+        font-weight: 700;
+        color: var(--valorant-blue);
+    }
+
+    .filters {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .filter-select {
+        padding: 0.5rem 1rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-family: 'Rajdhani', sans-serif;
+    }
+
+    /* Modals */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        backdrop-filter: blur(5px);
+    }
+
+    .modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .modal-header h3 {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.25rem;
+        color: var(--primary);
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: var(--transition-fast);
+    }
+
+    .modal-close:hover {
+        color: var(--primary);
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        padding: 1.5rem;
+        border-top: 1px solid var(--border);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        
+        .main-content {
+            margin-left: 0;
+        }
+        
+        .teams-container {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .vs-divider {
+            order: 2;
+            padding: 1rem 0;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .main-content {
+            padding: 1rem;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .players-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .main-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+        
+        .header-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--background);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, var(--primary), #e63946);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #e63946, #dc2626);
+    }
+
+    /* Alert styles */
+    .alert {
+        color: #10b981;
+        margin-top: 0.5rem;
+        display: block;
+    }
+
+    /* Team rows for match creation */
+    .team-row {
+        margin-bottom: 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .team-row input, .team-row select {
+        margin-right: 0.3rem;
+        margin-bottom: 0.2rem;
+        padding: 0.5rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--text-primary);
+    }
+
+    .edit-row input {
+        width: 90%;
+    }
+    </style>
 </head>
 <body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2 class="sidebar-title">
+                <span class="valorant-logo">V</span>
+                Admin Panel
+            </h2>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                <i data-lucide="bar-chart-3"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#players" class="nav-item" data-section="players">
+                <i data-lucide="users"></i>
+                <span>Jugadores</span>
+            </a>
+            <a href="#addMatch" class="nav-item" data-section="addMatch">
+                <i data-lucide="sword"></i>
+                <span>Agregar Partida</span>
+            </a>
+            <a href="#matches" class="nav-item" data-section="matches">
+                <i data-lucide="list"></i>
+                <span>Partidas</span>
+            </a>
+            <a href="#" id="logoutBtn" class="nav-item">
+                <i data-lucide="log-out"></i>
+                <span>Cerrar Sesión</span>
+            </a>
+        </nav>
+    </aside>
 
-<header><h1>PANEL DE ADMINISTRADOR</h1></header>
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="main-header">
+            <h1 class="page-title">Dashboard</h1>
+            <div class="header-actions">
+                <button class="btn btn-primary">
+                    <i data-lucide="save"></i>
+                    Guardar Cambios
+                </button>
+            </div>
+        </header>
 
-<nav>
-  <ul>
-    <li><a href="#dashboard" class="active">Dashboard</a></li>
-    <li><a href="#players">Gestionar Jugadores</a></li>
-    <li><a href="#addMatch">Agregar Partida</a></li>
-    <li><a href="#matches">Partidas</a></li>
-    <li><a href="#" id="logoutBtn">Cerrar Sesión</a></li>
-  </ul>
-</nav>
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="content-section active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i data-lucide="users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Total Jugadores</h3>
+                        <span class="stat-number" id="totalPlayers">0</span>
+                        <span class="stat-change positive" id="playersChange">+0 este mes</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i data-lucide="sword"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Total Partidas</h3>
+                        <span class="stat-number" id="totalMatches">0</span>
+                        <span class="stat-change positive" id="matchesChange">+0 esta semana</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i data-lucide="clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Última Partida</h3>
+                        <span class="stat-number" id="lastMatchDate">N/A</span>
+                        <span class="stat-change neutral">Actualizado en tiempo real</span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-<main>
-  <section id="dashboard" class="active">
-    <h2>Dashboard / Resumen</h2>
-    <p>Total Jugadores: <span id="totalPlayers">0</span></p>
-    <p>Partidas Registradas: <span id="totalMatches">0</span></p>
-    <p>Última partida agregada: <span id="lastMatchDate">N/A</span></p>
-  </section>
+        <!-- Players Section -->
+        <section id="players" class="content-section">
+            <div class="section-header">
+                <h2>Gestión de Jugadores</h2>
+                <button class="btn btn-primary" id="add-player-btn">
+                    <i data-lucide="plus"></i>
+                    Agregar Jugador
+                </button>
+            </div>
 
-  <section id="players">
-    <h2>Gestionar Jugadores</h2>
-    <form id="addPlayerForm">
-      <input type="text" id="playerName" placeholder="Nombre" required>
-      <input type="text" id="playerTag" placeholder="Tag" required>
-      <button type="submit">Registrar</button>
-      <span id="playerAlert" class="alert"></span>
-    </form>
-    <table>
-      <thead>
-        <tr><th>Nombre</th><th>Tag</th><th>Partidas</th><th>Kills</th><th>Deaths</th><th>Assists</th><th>Redes</th><th>Acciones</th></tr>
-      </thead>
-      <tbody id="playersTableBody"><tr><td colspan="8">No hay jugadores registrados</td></tr></tbody>
-    </table>
-  </section>
+            <div class="players-container">
+                <div class="search-bar">
+                    <input type="text" placeholder="Buscar jugador..." class="search-input">
+                    <i data-lucide="search"></i>
+                </div>
 
-  <section id="addMatch">
-    <h2>Agregar Partida</h2>
-    <div id="addMatchForm" style="margin-bottom:1rem;">
-      <label>Mapa:</label>
-      <select id="matchMap">
-        <option value="">Selecciona mapa</option>
-        <option value="Bind">Bind</option>
-        <option value="Haven">Haven</option>
-        <option value="Split">Split</option>
-        <option value="Ascent">Ascent</option>
-        <option value="Icebox">Icebox</option>
-        <option value="Breeze">Breeze</option>
-        <option value="Corrode">Corrode</option>
-        <option value="Abyss">Abyss</option>
-        <option value="Sunset">Sunset</option>
-        <option value="Lotus">Lotus</option>
-        <option value="Pearl">Pearl</option>
-        <option value="Fracture">Fracture</option>
-      </select>
-      <label>Ganador:</label>
-      <select id="winnerTeam">
-        <option value="">Seleccionar</option>
-        <option value="A">Equipo A</option>
-        <option value="B">Equipo B</option>
-      </select>
-      <label>Marcador final:</label>
-      <input type="text" id="matchScore" placeholder="Ej: 13-8">
+                <table class="matches-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Tag</th>
+                            <th>Partidas</th>
+                            <th>Kills</th>
+                            <th>Deaths</th>
+                            <th>Assists</th>
+                            <th>Redes</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playersTableBody">
+                        <tr><td colspan="8">No hay jugadores registrados</td></tr>
+                    </tbody>
+                </table>
+            </div>
 
-      <h4>Equipo A</h4>
-      <div id="teamA"></div>
-      <h4>Equipo B</h4>
-      <div id="teamB"></div>
+            <!-- Add/Edit Player Modal -->
+            <div id="player-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="player-modal-title">Agregar Jugador</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <form class="modal-body" id="addPlayerForm">
+                        <div class="form-group">
+                            <label>Nombre del Jugador</label>
+                            <input type="text" id="playerName" placeholder="Ej: TenZ" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tag</label>
+                            <input type="text" id="playerTag" placeholder="Ej: #VAL" required>
+                        </div>
+                        <span id="playerAlert" class="alert"></span>
+                    </form>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" id="cancel-player-btn">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" form="addPlayerForm">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-      <button id="submitMatchBtn">Registrar Partida</button>
-      <span id="matchAlert" class="alert"></span>
-    </div>
-  </section>
+        <!-- Add Match Section -->
+        <section id="addMatch" class="content-section">
+            <div class="section-header">
+                <h2>Agregar Partida</h2>
+            </div>
 
-  <section id="matches">
-    <h2>Partidas</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Mapa</th>
-          <th>Score</th>
-          <th>Ganador</th>
-          <th>Fecha</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="matchesTableBody">
-        <tr><td colspan="5">No hay partidas registradas</td></tr>
-      </tbody>
-    </table>
-  </section>
-</main>
+            <form class="match-form" id="addMatchForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Mapa</label>
+                        <select id="matchMap" required>
+                            <option value="">Selecciona mapa</option>
+                            <option value="Bind">Bind</option>
+                            <option value="Haven">Haven</option>
+                            <option value="Split">Split</option>
+                            <option value="Ascent">Ascent</option>
+                            <option value="Icebox">Icebox</option>
+                            <option value="Breeze">Breeze</option>
+                            <option value="Corrode">Corrode</option>
+                            <option value="Abyss">Abyss</option>
+                            <option value="Sunset">Sunset</option>
+                            <option value="Lotus">Lotus</option>
+                            <option value="Pearl">Pearl</option>
+                            <option value="Fracture">Fracture</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Ganador</label>
+                            <select id="winnerTeam" required>
+                                <option value="">Seleccionar</option>
+                                <option value="A">Equipo A</option>
+                                <option value="B">Equipo B</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Marcador final</label>
+                            <input type="text" id="matchScore" placeholder="Ej: 13-8" required>
+                        </div>
+                    </div>
+                </div>
 
-<script>
-const API_URL = window.location.origin;
-let allPlayers = [];
-let allMatches = [];
+                <div class="teams-container">
+                    <div class="team-section">
+                        <h3>Equipo A</h3>
+                        <div id="teamA"></div>
+                        <div class="team-score">
+                            <label>Rounds Ganados</label>
+                            <input type="number" name="team-a-score" min="0" max="13">
+                        </div>
+                    </div>
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Navegación
-  const navLinks = document.querySelectorAll('nav a');
-  const sections = document.querySelectorAll('section');
-  navLinks.forEach(link => {
-    link.addEventListener('click', e => {
-      e.preventDefault();
-      navLinks.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
-      sections.forEach(s => s.style.display = 'none');
-      const target = document.querySelector(link.getAttribute('href'));
-      if(target) target.style.display = 'block';
-    });
-  });
-  sections[0].style.display = 'block';
+                    <div class="vs-divider">VS</div>
 
-  // Logout
-  document.getElementById('logoutBtn').addEventListener('click', async () => {
-    await fetch('/logout', { method: 'POST', credentials: 'include' });
-    window.location.href = '/login.html';
-  });
+                    <div class="team-section">
+                        <h3>Equipo B</h3>
+                        <div id="teamB"></div>
+                        <div class="team-score">
+                            <label>Rounds Ganados</label>
+                            <input type="number" name="team-b-score" min="0" max="13">
+                        </div>
+                    </div>
+                </div>
 
-  // Registrar nuevo jugador
-  document.getElementById('addPlayerForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const name = document.getElementById('playerName').value.trim();
-    const tag = document.getElementById('playerTag').value.trim();
-    if(!name || !tag) return alert('Nombre y tag son obligatorios');
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" id="cancel-match-btn">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Partida</button>
+                </div>
+                <span id="matchAlert" class="alert"></span>
+            </form>
+        </section>
 
-    try {
-      const res = await fetch('/players', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        credentials:'include',
-        body: JSON.stringify({ name, tag, social:{} })
-      });
-      const data = await res.json();
-      if(!res.ok) return alert(data.error||'Error al agregar jugador');
+        <!-- Matches Section -->
+        <section id="matches" class="content-section">
+            <div class="section-header">
+                <h2>Partidas</h2>
+                <div class="filters">
+                    <select class="filter-select" id="mapFilter">
+                        <option value="">Todos los mapas</option>
+                        <option value="Bind">Bind</option>
+                        <option value="Haven">Haven</option>
+                        <option value="Split">Split</option>
+                        <option value="Ascent">Ascent</option>
+                        <option value="Icebox">Icebox</option>
+                        <option value="Breeze">Breeze</option>
+                        <option value="Corrode">Corrode</option>
+                        <option value="Abyss">Abyss</option>
+                        <option value="Sunset">Sunset</option>
+                        <option value="Lotus">Lotus</option>
+                        <option value="Pearl">Pearl</option>
+                        <option value="Fracture">Fracture</option>
+                    </select>
+                    <select class="filter-select" id="dateFilter">
+                        <option value="all">Todo el tiempo</option>
+                        <option value="month">Último mes</option>
+                        <option value="week">Última semana</option>
+                        <option value="today">Hoy</option>
+                    </select>
+                </div>
+            </div>
 
-      document.getElementById('playerName').value = '';
-      document.getElementById('playerTag').value = '';
-      document.getElementById('playerAlert').innerText = 'Jugador registrado correctamente';
-      setTimeout(()=>document.getElementById('playerAlert').innerText='',2000);
-      loadPlayers();
-    } catch(err){ console.error(err); alert('Error de conexión'); }
-  });
+            <div class="matches-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Mapa</th>
+                            <th>Score</th>
+                            <th>Ganador</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matchesTableBody">
+                        <tr><td colspan="6">No hay partidas registradas</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
 
-  loadPlayers();
-  loadMatches();
-});
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+    const API_URL = window.location.origin;
+    let allPlayers = [];
+    let allMatches = [];
+    let currentEditingPlayer = null;
 
-// Cargar jugadores
-async function loadPlayers() {
-  const res = await fetch('/players', { credentials:'include' });
-  allPlayers = await res.json();
-  updatePlayersTable();
-  populateTeams();
-  updateDashboard();
-}
-
-function updatePlayersTable() {
-  const tbody = document.getElementById('playersTableBody');
-  tbody.innerHTML = '';
-  if(!allPlayers.length){ tbody.innerHTML='<tr><td colspan="8">No hay jugadores registrados</td></tr>'; return; }
-
-  allPlayers.forEach((p,index)=>{
-    const row = document.createElement('tr');
-    row.classList.add('player-row');
-    row.innerHTML = `
-      <td><input type="text" value="${p.name}" class="edit-name"></td>
-      <td><input type="text" value="${p.tag}" class="edit-tag"></td>
-      <td>${p.matchesPlayed||0}</td>
-      <td>${p.totalKills||0}</td>
-      <td>${p.totalDeaths||0}</td>
-      <td>${p.totalAssists||0}</td>
-      <td>
-        <input type="text" placeholder="Tracker" value="${p.social?.tracker||''}" class="edit-tracker"><br>
-        <input type="text" placeholder="Twitter" value="${p.social?.twitter||''}" class="edit-twitter"><br>
-        <input type="text" placeholder="Twitch" value="${p.social?.twitch||''}" class="edit-twitch">
-      </td>
-      <td>
-        <button class="btn-save">Guardar</button>
-        <button class="btn-delete">Eliminar</button>
-        <span class="alert edit-alert" style="margin-left:5px;color:green;"></span>
-      </td>
-    `;
-    tbody.appendChild(row);
-
-    row.querySelector('.btn-save').addEventListener('click', async () => {
-      const newName = row.querySelector('.edit-name').value.trim();
-      const newTag = row.querySelector('.edit-tag').value.trim();
-      const tracker = row.querySelector('.edit-tracker').value.trim();
-      const twitter = row.querySelector('.edit-twitter').value.trim();
-      const twitch = row.querySelector('.edit-twitch').value.trim();
-      if(!newName||!newTag) return alert('Nombre y tag son obligatorios');
-
-      try{
-        const res = await fetch('/players',{
-          method:'PUT',
-          headers:{'Content-Type':'application/json'},
-          credentials:'include',
-          body: JSON.stringify({ oldName:p.name, oldTag:p.tag, newName, newTag, social:{tracker,twitter,twitch} })
-        });
-        if(!res.ok) return alert((await res.json()).error||'Error actualizando jugador');
-        row.querySelector('.edit-alert').innerText='Editado correctamente';
-        setTimeout(()=>row.querySelector('.edit-alert').innerText='',2000);
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Navigation functionality
+        initNavigation();
+        
+        // Modal functionality
+        initModals();
+        
+        // Form functionality
+        initForms();
+        
+        // Load initial data
         loadPlayers();
-      }catch(err){ console.error(err); alert('Error de conexión'); }
-    });
-
-    row.querySelector('.btn-delete').addEventListener('click', async () => {
-      if(!confirm(`Eliminar jugador ${p.name}?`)) return;
-      const res = await fetch('/players',{ method:'DELETE', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ name:p.name, tag:p.tag })});
-      if(!res.ok) return alert((await res.json()).error||'Error eliminando jugador');
-      loadPlayers();
-    });
-  });
-}
-
-// Dashboard
-async function updateDashboard(){
-  document.getElementById('totalPlayers').innerText=allPlayers.length;
-  const resMatches=await fetch('/matches-count',{credentials:'include'});
-  const dataMatches=await resMatches.json();
-  document.getElementById('totalMatches').innerText=dataMatches.count||0;
-  const resLast=await fetch('/last-match',{credentials:'include'});
-  const last=await resLast.json();
-  document.getElementById('lastMatchDate').innerText=last.date?new Date(last.date).toLocaleString():'N/A';
-}
-
-// Equipos
-function populateTeams(){
-  const teamA=document.getElementById('teamA'); const teamB=document.getElementById('teamB');
-  teamA.innerHTML=''; teamB.innerHTML='';
-  const createRow=()=>{ const row=document.createElement('div'); row.className='team-row';
-    row.innerHTML=`
-      <select class="player-select"><option value="">-- Selecciona jugador --</option>${allPlayers.map(p=>`<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('')}</select>
-      <input type="number" placeholder="ACS" class="acs" min="0">
-      <input type="number" placeholder="Kills" class="kill" min="0">
-      <input type="number" placeholder="Deaths" class="death" min="0">
-      <input type="number" placeholder="Assists" class="assist" min="0">
-      <input type="number" placeholder="HS%" class="hs" min="0" max="100">
-      <input type="number" placeholder="FirstBloods" class="fb" min="0">
-    `;
-    return row;
-  };
-  for(let i=0;i<5;i++){ teamA.appendChild(createRow()); teamB.appendChild(createRow()); }
-}
-
-// Registrar partida
-document.getElementById('submitMatchBtn').addEventListener('click', async () => {
-  const map=document.getElementById('matchMap').value;
-  const winnerTeam=document.getElementById('winnerTeam').value;
-  const score=document.getElementById('matchScore').value.trim();
-  if(!map||!winnerTeam||!score) return alert('Completa todos los campos de la partida');
-
-  const matchPlayers=[];
-  const rows=[...document.querySelectorAll('#teamA .team-row'),...document.querySelectorAll('#teamB .team-row')];
-  for(const row of rows){
-    const select=row.querySelector('.player-select'); if(!select.value) continue;
-    const [name, tag]=select.value.split('||');
-    matchPlayers.push({
-      name, tag,
-      acs:parseInt(row.querySelector('.acs').value)||0,
-      kills:parseInt(row.querySelector('.kill').value)||0,
-      deaths:parseInt(row.querySelector('.death').value)||0,
-      assists:parseInt(row.querySelector('.assist').value)||0,
-      hsPercent:parseFloat(row.querySelector('.hs').value)||0,
-      firstBloods:parseInt(row.querySelector('.fb').value)||0
-    });
-  }
-  if(!matchPlayers.length) return alert('No hay jugadores seleccionados');
-
-  try{
-    const res=await fetch('/matches',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({match:matchPlayers,winnerTeam,score,map})});
-    const data=await res.json();
-    if(!res.ok) return alert(data.error||'Error al registrar partida');
-    document.getElementById('matchAlert').innerText='Partida registrada correctamente';
-    setTimeout(()=>document.getElementById('matchAlert').innerText='',2000);
-    loadPlayers(); loadMatches();
-  }catch(err){ console.error(err); alert('Error de conexión'); }
-});
-
-// Cargar partidas y permitir edición
-async function loadMatches(){
-  const res=await fetch('/matches',{ credentials:'include' });
-  allMatches=await res.json();
-  const tbody=document.getElementById('matchesTableBody'); tbody.innerHTML='';
-  if(!allMatches.length){ tbody.innerHTML='<tr><td colspan="5">No hay partidas registradas</td></tr>'; return; }
-
-  allMatches.forEach((m,index)=>{
-    const row=document.createElement('tr');
-    row.innerHTML=`
-      <td><input type="text" value="${m.map}" class="edit-map"></td>
-      <td><input type="text" value="${m.score}" class="edit-score"></td>
-      <td><input type="text" value="${m.winnerTeam}" class="edit-winner"></td>
-      <td>${new Date(m.date).toLocaleString()}</td>
-      <td>
-        <button class="btn-save-match">Guardar</button>
-        <button class="btn-delete-match">Eliminar</button>
-        <span class="alert edit-alert" style="margin-left:5px;color:green;"></span>
-      </td>
-    `;
-    tbody.appendChild(row);
-
-    row.querySelector('.btn-save-match').addEventListener('click', async ()=>{
-      const updated={map: row.querySelector('.edit-map').value.trim(), score: row.querySelector('.edit-score').value.trim(), winnerTeam: row.querySelector('.edit-winner').value.trim()};
-      if(!updated.map||!updated.score||!updated.winnerTeam) return alert('Todos los campos son obligatorios');
-      try{
-        const res=await fetch(`/matches/${m._id}`,{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(updated)});
-        if(!res.ok) return alert((await res.json()).error||'Error actualizando partida');
-        row.querySelector('.edit-alert').innerText='Editado correctamente';
-        setTimeout(()=>row.querySelector('.edit-alert').innerText='',2000);
         loadMatches();
-      }catch(err){ console.error(err); alert('Error de conexión'); }
+        
+        // Responsive sidebar
+        initResponsiveSidebar();
+        
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await fetch('/logout', { method: 'POST', credentials: 'include' });
+                window.location.href = '/login.html';
+            } catch (err) {
+                console.error('Logout error:', err);
+            }
+        });
     });
 
-    row.querySelector('.btn-delete-match').addEventListener('click', async ()=>{
-      if(!confirm('Eliminar esta partida?')) return;
-      try{
-        const res=await fetch(`/matches/${m._id}`,{method:'DELETE',credentials:'include'});
-        if(!res.ok) return alert((await res.json()).error||'Error eliminando partida');
-        loadMatches();
-      }catch(err){ console.error(err); alert('Error de conexión'); }
-    });
-  });
-}
-</script>
+    // Navigation Management
+    function initNavigation() {
+        const navItems = document.querySelectorAll('.nav-item');
+        const contentSections = document.querySelectorAll('.content-section');
+        const pageTitle = document.querySelector('.page-title');
+        
+        navItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (this.id === 'logoutBtn') return;
+                
+                e.preventDefault();
+                
+                const targetSection = this.getAttribute('data-section');
+                
+                // Update active nav item
+                navItems.forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Update content sections
+                contentSections.forEach(section => section.classList.remove('active'));
+                const targetElement = document.getElementById(targetSection);
+                if (targetElement) {
+                    targetElement.classList.add('active');
+                }
+                
+                // Update page title
+                const sectionNames = {
+                    'dashboard': 'Dashboard',
+                    'players': 'Gestión de Jugadores',
+                    'addMatch': 'Agregar Partida',
+                    'matches': 'Partidas'
+                };
+                
+                pageTitle.textContent = sectionNames[targetSection] || 'Dashboard';
+                
+                // Add animation effect
+                targetElement.style.opacity = '0';
+                setTimeout(() => {
+                    targetElement.style.opacity = '1';
+                }, 50);
+            });
+        });
+    }
+
+    // Modal Management
+    function initModals() {
+        const modals = document.querySelectorAll('.modal');
+        const modalTriggers = document.querySelectorAll('[id$="-btn"]');
+        const modalCloses = document.querySelectorAll('.modal-close');
+        
+        // Open modals
+        modalTriggers.forEach(trigger => {
+            trigger.addEventListener('click', function() {
+                const modalId = this.id.replace('-btn', '-modal');
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        });
+        
+        // Close modals
+        modalCloses.forEach(close => {
+            close.addEventListener('click', function() {
+                const modal = this.closest('.modal');
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            });
+        });
+        
+        // Close modal on outside click
+        modals.forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        });
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const activeModal = document.querySelector('.modal.active');
+                if (activeModal) {
+                    activeModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                }
+            }
+        });
+        
+        // Player modal specific handlers
+        document.getElementById('cancel-player-btn').addEventListener('click', function() {
+            document.getElementById('player-modal').classList.remove('active');
+        });
+        
+        document.getElementById('cancel-match-btn').addEventListener('click', function() {
+            document.getElementById('addMatchForm').reset();
+        });
+    }
+
+    // Form Management
+    function initForms() {
+        // Search functionality
+        const searchInput = document.querySelector('.search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const playerRows = document.querySelectorAll('#playersTableBody tr');
+                
+                playerRows.forEach(row => {
+                    if (row.cells.length < 2) return;
+                    
+                    const playerName = row.cells[0].textContent.toLowerCase();
+                    const playerTag = row.cells[1].textContent.toLowerCase();
+                    
+                    if (playerName.includes(searchTerm) || playerTag.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+        
+        // Add player form
+        document.getElementById('addPlayerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('playerName').value.trim();
+            const tag = document.getElementById('playerTag').value.trim();
+            
+            if (!name || !tag) {
+                showAlert('playerAlert', 'Nombre y tag son obligatorios', 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/players', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ name, tag, social: {} })
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    showAlert('playerAlert', data.error || 'Error al agregar jugador', 'error');
+                    return;
+                }
+                
+                // Reset form and close modal
+                this.reset();
+                document.getElementById('player-modal').classList.remove('active');
+                showAlert('playerAlert', 'Jugador registrado correctamente', 'success');
+                
+                // Reload players
+                loadPlayers();
+            } catch (err) {
+                console.error('Error adding player:', err);
+                showAlert('playerAlert', 'Error de conexión', 'error');
+            }
+        });
+        
+        // Add match form
+        document.getElementById('addMatchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const map = document.getElementById('matchMap').value;
+            const winnerTeam = document.getElementById('winnerTeam').value;
+            const score = document.getElementById('matchScore').value.trim();
+            
+            if (!map || !winnerTeam || !score) {
+                showAlert('matchAlert', 'Completa todos los campos de la partida', 'error');
+                return;
+            }
+            
+            const matchPlayers = [];
+            const rows = [...document.querySelectorAll('#teamA .team-row'), ...document.querySelectorAll('#teamB .team-row')];
+            
+            for (const row of rows) {
+                const select = row.querySelector('.player-select');
+                if (!select.value) continue;
+                
+                const [name, tag] = select.value.split('||');
+                matchPlayers.push({
+                    name, tag,
+                    acs: parseInt(row.querySelector('.acs').value) || 0,
+                    kills: parseInt(row.querySelector('.kill').value) || 0,
+                    deaths: parseInt(row.querySelector('.death').value) || 0,
+                    assists: parseInt(row.querySelector('.assist').value) || 0,
+                    hsPercent: parseFloat(row.querySelector('.hs').value) || 0,
+                    firstBloods: parseInt(row.querySelector('.fb').value) || 0
+                });
+            }
+            
+            if (!matchPlayers.length) {
+                showAlert('matchAlert', 'No hay jugadores seleccionados', 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/matches', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ match: matchPlayers, winnerTeam, score, map })
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    showAlert('matchAlert', data.error || 'Error al registrar partida', 'error');
+                    return;
+                }
+                
+                // Reset form
+                this.reset();
+                showAlert('matchAlert', 'Partida registrada correctamente', 'success');
+                
+                // Reload data
+                loadPlayers();
+                loadMatches();
+            } catch (err) {
+                console.error('Error adding match:', err);
+                showAlert('matchAlert', 'Error de conexión', 'error');
+            }
+        });
+    }
+
+    // Load Players
+    async function loadPlayers() {
+        try {
+            const res = await fetch('/players', { credentials: 'include' });
+            allPlayers = await res.json();
+            updatePlayersTable();
+            populateTeams();
+            updateDashboard();
+        } catch (err) {
+            console.error('Error loading players:', err);
+        }
+    }
+
+    // Update Players Table
+    function updatePlayersTable() {
+        const tbody = document.getElementById('playersTableBody');
+        tbody.innerHTML = '';
+        
+        if (!allPlayers.length) {
+            tbody.innerHTML = '<tr><td colspan="8">No hay jugadores registrados</td></tr>';
+            return;
+        }
+        
+        allPlayers.forEach((p, index) => {
+            const row = document.createElement('tr');
+            row.classList.add('player-row');
+            row.innerHTML = `
+                <td><input type="text" value="${p.name}" class="edit-name"></td>
+                <td><input type="text" value="${p.tag}" class="edit-tag"></td>
+                <td>${p.matchesPlayed || 0}</td>
+                <td>${p.totalKills || 0}</td>
+                <td>${p.totalDeaths || 0}</td>
+                <td>${p.totalAssists || 0}</td>
+                <td>
+                    <input type="text" placeholder="Tracker" value="${p.social?.tracker || ''}" class="edit-tracker"><br>
+                    <input type="text" placeholder="Twitter" value="${p.social?.twitter || ''}" class="edit-twitter"><br>
+                    <input type="text" placeholder="Twitch" value="${p.social?.twitch || ''}" class="edit-twitch">
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-primary btn-save">Guardar</button>
+                    <button class="btn btn-sm btn-danger btn-delete">Eliminar</button>
+                    <span class="alert edit-alert" style="margin-left:5px;color:green;"></span>
+                </td>
+            `;
+            tbody.appendChild(row);
+            
+            // Save button event
+            row.querySelector('.btn-save').addEventListener('click', async () => {
+                const newName = row.querySelector('.edit-name').value.trim();
+                const newTag = row.querySelector('.edit-tag').value.trim();
+                const tracker = row.querySelector('.edit-tracker').value.trim();
+                const twitter = row.querySelector('.edit-twitter').value.trim();
+                const twitch = row.querySelector('.edit-twitch').value.trim();
+                
+                if (!newName || !newTag) {
+                    alert('Nombre y tag son obligatorios');
+                    return;
+                }
+                
+                try {
+                    const res = await fetch('/players', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ 
+                            oldName: p.name, 
+                            oldTag: p.tag, 
+                            newName, 
+                            newTag, 
+                            social: { tracker, twitter, twitch } 
+                        })
+                    });
+                    
+                    if (!res.ok) {
+                        alert((await res.json()).error || 'Error actualizando jugador');
+                        return;
+                    }
+                    
+                    row.querySelector('.edit-alert').innerText = 'Editado correctamente';
+                    setTimeout(() => {
+                        row.querySelector('.edit-alert').innerText = '';
+                    }, 2000);
+                    
+                    loadPlayers();
+                } catch (err) {
+                    console.error('Error updating player:', err);
+                    alert('Error de conexión');
+                }
+            });
+            
+            // Delete button event
+            row.querySelector('.btn-delete').addEventListener('click', async () => {
+                if (!confirm(`¿Eliminar jugador ${p.name}?`)) return;
+                
+                try {
+                    const res = await fetch('/players', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ name: p.name, tag: p.tag })
+                    });
+                    
+                    if (!res.ok) {
+                        alert((await res.json()).error || 'Error eliminando jugador');
+                        return;
+                    }
+                    
+                    loadPlayers();
+                } catch (err) {
+                    console.error('Error deleting player:', err);
+                    alert('Error de conexión');
+                }
+            });
+        });
+    }
+
+    // Populate Teams for Match Creation
+    function populateTeams() {
+        const teamA = document.getElementById('teamA');
+        const teamB = document.getElementById('teamB');
+        teamA.innerHTML = '';
+        teamB.innerHTML = '';
+        
+        const createRow = () => {
+            const row = document.createElement('div');
+            row.className = 'team-row';
+            row.innerHTML = `
+                <select class="player-select">
+                    <option value="">-- Selecciona jugador --</option>
+                    ${allPlayers.map(p => `<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('')}
+                </select>
+                <input type="number" placeholder="ACS" class="acs" min="0">
+                <input type="number" placeholder="Kills" class="kill" min="0">
+                <input type="number" placeholder="Deaths" class="death" min="0">
+                <input type="number" placeholder="Assists" class="assist" min="0">
+                <input type="number" placeholder="HS%" class="hs" min="0" max="100">
+                <input type="number" placeholder="FirstBloods" class="fb" min="0">
+            `;
+            return row;
+        };
+        
+        for (let i = 0; i < 5; i++) {
+            teamA.appendChild(createRow());
+            teamB.appendChild(createRow());
+        }
+    }
+
+    // Load Matches
+    async function loadMatches() {
+        try {
+            const res = await fetch('/matches', { credentials: 'include' });
+            allMatches = await res.json();
+            updateMatchesTable();
+            updateDashboard();
+        } catch (err) {
+            console.error('Error loading matches:', err);
+        }
+    }
+
+    // Update Matches Table
+    function updateMatchesTable() {
+        const tbody = document.getElementById('matchesTableBody');
+        tbody.innerHTML = '';
+        
+        if (!allMatches.length) {
+            tbody.innerHTML = '<tr><td colspan="6">No hay partidas registradas</td></tr>';
+            return;
+        }
+        
+        allMatches.forEach((m, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td><input type="text" value="${m.map}" class="edit-map"></td>
+                <td><input type="text" value="${m.score}" class="edit-score"></td>
+                <td><input type="text" value="${m.winnerTeam}" class="edit-winner"></td>
+                <td>${formatRelativeTime(new Date(m.date))}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary btn-save-match">Guardar</button>
+                    <button class="btn btn-sm btn-danger btn-delete-match">Eliminar</button>
+                    <span class="alert edit-alert" style="margin-left:5px;color:green;"></span>
+                </td>
+            `;
+            tbody.appendChild(row);
+            
+            // Save match button event
+            row.querySelector('.btn-save-match').addEventListener('click', async () => {
+                const updated = {
+                    map: row.querySelector('.edit-map').value.trim(),
+                    score: row.querySelector('.edit-score').value.trim(),
+                    winnerTeam: row.querySelector('.edit-winner').value.trim()
+                };
+                
+                if (!updated.map || !updated.score || !updated.winnerTeam) {
+                    alert('Todos los campos son obligatorios');
+                    return;
+                }
+                
+                try {
+                    const res = await fetch(`/matches/${m._id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(updated)
+                    });
+                    
+                    if (!res.ok) {
+                        alert((await res.json()).error || 'Error actualizando partida');
+                        return;
+                    }
+                    
+                    row.querySelector('.edit-alert').innerText = 'Editado correctamente';
+                    setTimeout(() => {
+                        row.querySelector('.edit-alert').innerText = '';
+                    }, 2000);
+                    
+                    loadMatches();
+                } catch (err) {
+                    console.error('Error updating match:', err);
+                    alert('Error de conexión');
+                }
+            });
+            
+            // Delete match button event
+            row.querySelector('.btn-delete-match').addEventListener('click', async () => {
+                if (!confirm('¿Eliminar esta partida?')) return;
+                
+                try {
+                    const res = await fetch(`/matches/${m._id}`, {
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
+                    
+                    if (!res.ok) {
+                        alert((await res.json()).error || 'Error eliminando partida');
+                        return;
+                    }
+                    
+                    loadMatches();
+                } catch (err) {
+                    console.error('Error deleting match:', err);
+                    alert('Error de conexión');
+                }
+            });
+        });
+    }
+
+    // Update Dashboard
+    async function updateDashboard() {
+        // Update player count
+        document.getElementById('totalPlayers').innerText = allPlayers.length;
+        
+        // Update match count
+        try {
+            const resMatches = await fetch('/matches-count', { credentials: 'include' });
+            const dataMatches = await resMatches.json();
+            document.getElementById('totalMatches').innerText = dataMatches.count || 0;
+        } catch (err) {
+            console.error('Error loading match count:', err);
+        }
+        
+        // Update last match date
+        try {
+            const resLast = await fetch('/last-match', { credentials: 'include' });
+            const last = await resLast.json();
+            const lastMatchDate = last.date ? new Date(last.date) : null;
+            document.getElementById('lastMatchDate').innerText = lastMatchDate ? formatRelativeTime(lastMatchDate) : 'N/A';
+        } catch (err) {
+            console.error('Error loading last match:', err);
+        }
+    }
+
+    // Helper Functions
+    function formatRelativeTime(date) {
+        const now = new Date();
+        const diffMs = now - date;
+        const diffSecs = Math.floor(diffMs / 1000);
+        const diffMins = Math.floor(diffSecs / 60);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+        const diffMonths = Math.floor(diffDays / 30);
+        
+        if (diffMonths > 0) {
+            return `hace ${diffMonths} mes${diffMonths > 1 ? 'es' : ''}`;
+        } else if (diffDays > 0) {
+            return `hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+        } else if (diffHours > 0) {
+            return `hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+        } else if (diffMins > 0) {
+            return `hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+        } else {
+            return 'hace unos segundos';
+        }
+    }
+
+    function showAlert(elementId, message, type = 'success') {
+        const alertElement = document.getElementById(elementId);
+        if (!alertElement) return;
+        
+        alertElement.innerText = message;
+        alertElement.style.color = type === 'success' ? '#10b981' : '#ef4444';
+        
+        setTimeout(() => {
+            alertElement.innerText = '';
+        }, 3000);
+    }
+
+    function initResponsiveSidebar() {
+        const sidebarToggle = document.createElement('button');
+        sidebarToggle.innerHTML = '<i data-lucide="menu"></i>';
+        sidebarToggle.classList.add('sidebar-toggle');
+        sidebarToggle.style.position = 'fixed';
+        sidebarToggle.style.top = '1rem';
+        sidebarToggle.style.left = '1rem';
+        sidebarToggle.style.zIndex = '1000';
+        sidebarToggle.style.background = 'var(--primary)';
+        sidebarToggle.style.color = 'white';
+        sidebarToggle.style.border = 'none';
+        sidebarToggle.style.borderRadius = '50%';
+        sidebarToggle.style.width = '40px';
+        sidebarToggle.style.height = '40px';
+        sidebarToggle.style.display = 'none';
+        sidebarToggle.style.cursor = 'pointer';
+        document.body.appendChild(sidebarToggle);
+        
+        const sidebar = document.querySelector('.sidebar');
+        
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+        
+        function checkScreenSize() {
+            if (window.innerWidth <= 1024) {
+                sidebarToggle.style.display = 'flex';
+                sidebarToggle.style.alignItems = 'center';
+                sidebarToggle.style.justifyContent = 'center';
+            } else {
+                sidebarToggle.style.display = 'none';
+                sidebar.classList.remove('open');
+            }
+        }
+        
+        window.addEventListener('resize', checkScreenSize);
+        checkScreenSize();
+    }
+    </script>
 </body>
 </html>
