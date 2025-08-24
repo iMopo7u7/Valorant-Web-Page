@@ -124,8 +124,11 @@ section.active { display:block; }
 <script>
 const API_URL = window.location.origin;
 let allPlayers = [];
+let allMatches = [];
 
-// -------- Navegación --------
+// -------------------------
+// Navegación
+// -------------------------
 const navLinks = document.querySelectorAll('nav a');
 const sections = document.querySelectorAll('section');
 navLinks.forEach(link => {
@@ -140,13 +143,17 @@ navLinks.forEach(link => {
 });
 sections[0].style.display = 'block';
 
-// -------- Logout --------
+// -------------------------
+// Logout
+// -------------------------
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   await fetch('/logout', { method: 'POST', credentials: 'include' });
   window.location.href = '/login.html';
 });
 
-// -------- Cargar jugadores --------
+// -------------------------
+// Cargar jugadores
+// -------------------------
 async function loadPlayers() {
   const res = await fetch('/players', { credentials: 'include' });
   allPlayers = await res.json();
@@ -155,6 +162,7 @@ async function loadPlayers() {
   updateDashboard();
 }
 
+// Actualiza tabla de jugadores y asigna eventos
 function updatePlayersTable() {
   const tbody = document.getElementById('playersTableBody');
   tbody.innerHTML = '';
@@ -162,7 +170,8 @@ function updatePlayersTable() {
     tbody.innerHTML = '<tr><td colspan="7">No hay jugadores registrados</td></tr>';
     return;
   }
-  allPlayers.forEach(p => {
+
+  allPlayers.forEach((p, index) => {
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${p.name}</td>
@@ -171,12 +180,56 @@ function updatePlayersTable() {
       <td>${p.totalKills || 0}</td>
       <td>${p.totalDeaths || 0}</td>
       <td>${p.totalAssists || 0}</td>
-      <td><button class="btn-edit">Editar</button> <button class="btn-delete">Eliminar</button></td>`;
+      <td>
+        <button class="btn-edit">Editar</button>
+        <button class="btn-delete">Eliminar</button>
+      </td>`;
     tbody.appendChild(row);
+
+    // Eventos
+    row.querySelector('.btn-edit').addEventListener('click', () => editPlayer(index));
+    row.querySelector('.btn-delete').addEventListener('click', () => deletePlayer(index));
   });
 }
 
-// -------- Dashboard --------
+// Editar jugador
+async function editPlayer(index) {
+  const player = allPlayers[index];
+  const newName = prompt("Nuevo nombre:", player.name);
+  const newTag = prompt("Nuevo tag:", player.tag);
+  if (!newName || !newTag) return;
+
+  await fetch('/players', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      oldName: player.name,
+      oldTag: player.tag,
+      newName,
+      newTag
+    })
+  });
+  loadPlayers();
+}
+
+// Eliminar jugador
+async function deletePlayer(index) {
+  const player = allPlayers[index];
+  if (!confirm(`Eliminar jugador ${player.name}?`)) return;
+
+  await fetch('/players', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ name: player.name, tag: player.tag })
+  });
+  loadPlayers();
+}
+
+// -------------------------
+// Dashboard
+// -------------------------
 async function updateDashboard() {
   document.getElementById('totalPlayers').innerText = allPlayers.length;
   const resMatches = await fetch('/matches-count', { credentials: 'include' });
@@ -187,7 +240,9 @@ async function updateDashboard() {
   document.getElementById('lastMatchDate').innerText = last.date ? new Date(last.date).toLocaleString() : 'N/A';
 }
 
-// -------- Equipos para partidas --------
+// -------------------------
+// Equipos para partidas
+// -------------------------
 function populateTeams() {
   const teamA = document.getElementById('teamA');
   const teamB = document.getElementById('teamB');
@@ -208,7 +263,9 @@ function populateTeams() {
   for (let i=0;i<5;i++){ teamA.appendChild(createRow()); teamB.appendChild(createRow()); }
 }
 
-// -------- Registrar partida normal --------
+// -------------------------
+// Registrar partida
+// -------------------------
 document.getElementById('submitMatchBtn').addEventListener('click', async () => {
   const map = document.getElementById('matchMap').value;
   const winnerTeam = document.getElementById('winnerTeam').value;
@@ -241,24 +298,53 @@ document.getElementById('submitMatchBtn').addEventListener('click', async () => 
   });
   const data = await res.json();
   if(!res.ok) return alert(data.error||'Error al registrar partida');
-  alert(data.message); loadPlayers(); loadMatches();
+  alert(data.message);
+  loadPlayers(); 
+  loadMatches();
 });
 
-// -------- Cargar partidas normales --------
+// -------------------------
+// Cargar partidas
+// -------------------------
 async function loadMatches(){
   const res = await fetch('/matches', { credentials:'include' });
-  const matches = await res.json();
+  allMatches = await res.json();
   const tbody = document.getElementById('matchesTableBody');
   tbody.innerHTML = '';
-  if (!matches.length) return tbody.innerHTML='<tr><td colspan="5">No hay partidas registradas</td></tr>';
-  matches.forEach(m=>{
+  if (!allMatches.length) return tbody.innerHTML='<tr><td colspan="5">No hay partidas registradas</td></tr>';
+  allMatches.forEach(m=>{
     const row=document.createElement('tr');
-    row.innerHTML=`<td>${m.map}</td><td>${m.score}</td><td>${m.winnerTeam}</td><td>${new Date(m.date).toLocaleString()}</td><td><button>Editar</button></td>`;
+    row.dataset.id = m._id;
+    row.innerHTML=`<td>${m.map}</td><td>${m.score}</td><td>${m.winnerTeam}</td><td>${new Date(m.date).toLocaleString()}</td><td><button class="btn-edit-match">Editar</button></td>`;
     tbody.appendChild(row);
+  });
+  attachMatchActions();
+}
+
+// Editar partida
+function attachMatchActions() {
+  document.querySelectorAll('.btn-edit-match').forEach((btn, index) => {
+    btn.addEventListener('click', async () => {
+      const match = allMatches[index];
+      const newMap = prompt("Nuevo mapa:", match.map);
+      const newScore = prompt("Nuevo score:", match.score);
+      const newWinner = prompt("Ganador (A/B):", match.winnerTeam);
+      if(!newMap || !newScore || !newWinner) return;
+
+      await fetch(`/matches/${match._id}`, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        credentials:'include',
+        body: JSON.stringify({ map: newMap, score: newScore, winnerTeam: newWinner })
+      });
+      loadMatches();
+    });
   });
 }
 
-// Inicializar
+// -------------------------
+// Inicializar todo
+// -------------------------
 loadPlayers();
 loadMatches();
 </script>
