@@ -1,13 +1,13 @@
+// server.js
 import express from "express";
 import cors from "cors";
-import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 import session from "express-session";
 import MongoStore from "connect-mongo";
+import { MongoClient } from "mongodb";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Importar rutas modulares
 import leaderboardRoutesFunc from "./routes/leaderboard.js";
 import adminRoutesFunc from "./routes/admin.js";
 import eventsRoutesFunc from "./routes/events.js";
@@ -20,7 +20,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // -------------------
-// --- CORS
+// CORS
 // -------------------
 const allowedOrigins = [
   "https://valorant-10-mans-frontend.onrender.com",
@@ -46,12 +46,12 @@ app.options('*', cors({
 }));
 
 // -------------------
-// --- Body parser
+// Body parser
 // -------------------
 app.use(express.json());
 
 // -------------------
-// --- Sesiones con MongoStore
+// Sesiones
 // -------------------
 const sessionStore = MongoStore.create({
   mongoUrl: process.env.MONGODB_URI,
@@ -68,7 +68,7 @@ app.use(session({
 }));
 
 // -------------------
-// --- Conexión MongoDB
+// Conexión MongoDB
 // -------------------
 if (!process.env.MONGODB_URI) {
   console.error("❌ ERROR: MONGODB_URI no está definido.");
@@ -76,6 +76,7 @@ if (!process.env.MONGODB_URI) {
 }
 
 let db, playersCollection, eventsCollection;
+
 async function connectDB() {
   try {
     const client = new MongoClient(process.env.MONGODB_URI);
@@ -84,14 +85,6 @@ async function connectDB() {
     playersCollection = db.collection("players");
     eventsCollection = db.collection("events");
     console.log("✅ Conectado a MongoDB");
-
-    // -------------------
-    // --- Montar rutas
-    // -------------------
-    app.use("/", leaderboardRoutesFunc(playersCollection, eventsCollection));
-    app.use("/", adminRoutesFunc(playersCollection, eventsCollection));
-    app.use("/", eventsRoutesFunc(playersCollection, eventsCollection));
-
   } catch (err) {
     console.error("❌ Error conectando a MongoDB:", err);
     process.exit(1);
@@ -99,47 +92,43 @@ async function connectDB() {
 }
 
 // -------------------
-// --- Rutas estáticas
+// Rutas estáticas
 // -------------------
 app.use(express.static(path.join(__dirname, "../frontend")));
 app.use("/private", express.static(path.join(__dirname, "private")));
 
 // -------------------
-// --- Login / Admin
+// Conectar rutas modularizadas
 // -------------------
-const ADMIN_USER = process.env.ADMIN_USER || "admin";
-const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
+app.use("/leaderboard", leaderboardRoutesFunc(playersCollection, eventsCollection));
+app.use("/admin", adminRoutesFunc(playersCollection)); // admin.js maneja login, CRUD players
+app.use("/events", eventsRoutesFunc(eventsCollection, playersCollection)); // events.js maneja CRUD eventos y partidas
 
+// -------------------
+// Página de login
+// -------------------
 app.get("/login.html", (req, res) => {
   res.sendFile(path.join(__dirname, "private/login.html"));
 });
 
-app.post("/login", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    if (username === ADMIN_USER && password === ADMIN_PASS) {
-      req.session.isAdmin = true;
-      res.json({ success: true });
-    } else {
-      res.status(401).json({ error: "Usuario o contraseña incorrectos" });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error interno en login" });
-  }
-});
-
+// -------------------
+// Rutas seguras de páginas
+// -------------------
 function requireAdmin(req, res, next) {
   if (req.session.isAdmin) next();
   else res.status(403).json({ error: "Acceso denegado" });
 }
 
-app.get("/check-session", (req, res) => {
-  res.json({ loggedIn: !!req.session.isAdmin });
+app.get("/admin.html", requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, "private/admin.html"));
+});
+
+app.get("/events.html", requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, "private/events.html"));
 });
 
 // -------------------
-// --- Logout
+// Logout
 // -------------------
 app.post("/logout", (req, res) => {
   req.session.destroy(err => {
@@ -150,7 +139,7 @@ app.post("/logout", (req, res) => {
 });
 
 // -------------------
-// --- Servidor
+// Iniciar servidor
 // -------------------
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
