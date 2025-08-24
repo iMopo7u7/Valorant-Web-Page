@@ -38,6 +38,7 @@ section.active { display:block; }
 </nav>
 
 <main>
+  <!-- DASHBOARD -->
   <section id="dashboard" class="active">
     <h2>Dashboard / Resumen</h2>
     <p>Total Jugadores: <span id="totalPlayers">0</span></p>
@@ -45,6 +46,7 @@ section.active { display:block; }
     <p>Última partida agregada: <span id="lastMatchDate">N/A</span></p>
   </section>
 
+  <!-- JUGADORES -->
   <section id="players">
     <h2>Gestionar Jugadores</h2>
     <form id="addPlayerForm" class="form-inline">
@@ -66,9 +68,11 @@ section.active { display:block; }
       </tbody>
     </table>
   </section>
+
 </main>
 
 <script>
+const API_URL = window.location.origin;
 let allPlayers = [];
 
 // Navegación
@@ -90,35 +94,35 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   window.location.href = '/login.html';
 });
 
-// ======================
-// DASHBOARD
-// ======================
+// Cargar dashboard
 async function loadDashboard(){
-  const [playersRes, matchesRes, lastMatchRes] = await Promise.all([
-    fetch('/players-count',{credentials:'include'}),
-    fetch('/matches-count',{credentials:'include'}),
-    fetch('/last-match',{credentials:'include'})
-  ]);
+  try {
+    const [playersRes, matchesRes, lastRes] = await Promise.all([
+      fetch('/players-count',{credentials:'include'}),
+      fetch('/matches-count',{credentials:'include'}),
+      fetch('/last-match',{credentials:'include'})
+    ]);
+    const playersData = await playersRes.json();
+    const matchesData = await matchesRes.json();
+    const lastData = await lastRes.json();
 
-  const playersData = await playersRes.json();
-  const matchesData = await matchesRes.json();
-  const lastMatchData = await lastMatchRes.json();
-
-  document.getElementById('totalPlayers').textContent = playersData.count || 0;
-  document.getElementById('totalMatches').textContent = matchesData.count || 0;
-  document.getElementById('lastMatchDate').textContent = lastMatchData.date ? new Date(lastMatchData.date).toLocaleString() : 'N/A';
+    document.getElementById('totalPlayers').innerText = playersData.count || 0;
+    document.getElementById('totalMatches').innerText = matchesData.count || 0;
+    document.getElementById('lastMatchDate').innerText = lastData.date ? new Date(lastData.date).toLocaleString() : 'N/A';
+  } catch(e){ console.error(e); }
 }
 
-// ======================
-// JUGADORES
-// ======================
+// Cargar jugadores
 async function loadPlayers(){
-  const res = await fetch('/players',{credentials:'include'});
-  allPlayers = await res.json();
-  updatePlayersTable();
-  loadDashboard(); // actualizar dashboard también
+  try {
+    const res = await fetch('/players',{credentials:'include'});
+    allPlayers = await res.json();
+    updatePlayersTable();
+    loadDashboard();
+  } catch(e){ console.error(e); }
 }
 
+// Actualizar tabla
 function updatePlayersTable(){
   const tbody = document.getElementById('playersTableBody');
   tbody.innerHTML = '';
@@ -140,14 +144,16 @@ function updatePlayersTable(){
   });
 }
 
-// Evita múltiples formularios abiertos
-let currentEditRow = null;
-
+// Mostrar formulario para editar (inline)
 function showEditForm(player, row){
-  if(currentEditRow) currentEditRow.remove(); // cerrar cualquier edit abierto
-  currentEditRow = document.createElement('tr');
-  currentEditRow.classList.add('edit-form-row');
-  currentEditRow.innerHTML = `
+  // Si ya hay un editForm abierto, cerrarlo
+  const existing = document.querySelector('.edit-form-row');
+  if(existing) existing.remove();
+
+  // Crear fila debajo
+  const editRow = document.createElement('tr');
+  editRow.classList.add('edit-form-row');
+  editRow.innerHTML = `
     <td colspan="3">
       <div class="edit-form">
         <input placeholder="Nombre" value="${player.name}" class="edit-name" required>
@@ -159,22 +165,18 @@ function showEditForm(player, row){
         <button class="btn-cancel">Cancelar</button>
       </div>
     </td>`;
-  row.after(currentEditRow);
+  row.after(editRow);
 
-  currentEditRow.querySelector('.btn-cancel').addEventListener('click', ()=>{
-    currentEditRow.remove();
-    currentEditRow = null;
-  });
-
-  currentEditRow.querySelector('.btn-save').addEventListener('click', async ()=>{
-    const newName = currentEditRow.querySelector('.edit-name').value.trim();
-    const newTag = currentEditRow.querySelector('.edit-tag').value.trim();
+  editRow.querySelector('.btn-cancel').addEventListener('click',()=>editRow.remove());
+  editRow.querySelector('.btn-save').addEventListener('click', async ()=>{
+    const newName = editRow.querySelector('.edit-name').value.trim();
+    const newTag = editRow.querySelector('.edit-tag').value.trim();
     const social = {
-      twitch: currentEditRow.querySelector('.edit-twitch').value.trim(),
-      twitter: currentEditRow.querySelector('.edit-twitter').value.trim(),
-      tracker: currentEditRow.querySelector('.edit-tracker').value.trim()
+      twitch: editRow.querySelector('.edit-twitch').value.trim(),
+      twitter: editRow.querySelector('.edit-twitter').value.trim(),
+      tracker: editRow.querySelector('.edit-tracker').value.trim()
     };
-    if(!newName || !newTag) return alert('Nombre y tag son requeridos');
+    if(!newName||!newTag) return alert('Nombre y tag son requeridos');
 
     const res = await fetch('/players',{
       method:'PUT',
@@ -184,8 +186,7 @@ function showEditForm(player, row){
     });
     const data = await res.json();
     if(!res.ok) return alert(data.error||'Error al actualizar');
-    currentEditRow.remove();
-    currentEditRow = null;
+    editRow.remove();
     loadPlayers();
   });
 }
