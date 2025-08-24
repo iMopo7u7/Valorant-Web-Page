@@ -151,11 +151,6 @@
         text-shadow: 0 0 10px rgba(255, 70, 85, 0.3);
     }
 
-    .header-actions {
-        display: flex;
-        gap: 1rem;
-    }
-
     /* Content Sections */
     .content-section {
         display: none;
@@ -335,83 +330,6 @@
         color: var(--text-secondary);
     }
 
-    .players-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .player-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 1.5rem;
-        transition: var(--transition-smooth);
-    }
-
-    .player-card:hover {
-        border-color: var(--primary);
-        box-shadow: var(--shadow-card);
-        transform: translateY(-2px);
-    }
-
-    .player-avatar {
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, var(--primary), #e63946);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: 'Orbitron', monospace;
-        font-weight: 700;
-        font-size: 1.2rem;
-        color: white;
-        margin-bottom: 1rem;
-    }
-
-    .player-info h4 {
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin-bottom: 0.25rem;
-    }
-
-    .player-tag {
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-    }
-
-    .player-socials {
-        display: flex;
-        gap: 0.5rem;
-        margin: 1rem 0;
-    }
-
-    .social-link {
-        width: 32px;
-        height: 32px;
-        background: var(--background);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--text-secondary);
-        text-decoration: none;
-        transition: var(--transition-fast);
-    }
-
-    .social-link:hover {
-        border-color: var(--primary);
-        color: var(--primary);
-    }
-
-    .player-actions {
-        display: flex;
-        gap: 0.5rem;
-        margin-top: 1rem;
-    }
-
     /* Forms */
     .form-group {
         margin-bottom: 1.5rem;
@@ -510,18 +428,6 @@
         width: 80px;
     }
 
-    .team-score {
-        margin-top: 1rem;
-        text-align: center;
-    }
-
-    .team-score input {
-        width: 100px;
-        text-align: center;
-        font-size: 1.2rem;
-        font-weight: 700;
-    }
-
     .form-actions {
         display: flex;
         justify-content: center;
@@ -535,6 +441,7 @@
         border: 1px solid var(--border);
         border-radius: 12px;
         overflow: hidden;
+        margin-bottom: 2rem;
     }
 
     .matches-table table {
@@ -571,6 +478,7 @@
     .filters {
         display: flex;
         gap: 1rem;
+        margin-bottom: 1rem;
     }
 
     .filter-select {
@@ -691,23 +599,23 @@
             grid-template-columns: 1fr;
         }
         
-        .players-grid {
-            grid-template-columns: 1fr;
-        }
-        
         .main-header {
             flex-direction: column;
             gap: 1rem;
             align-items: flex-start;
         }
         
-        .header-actions {
-            width: 100%;
-            justify-content: flex-end;
-        }
-        
         .form-row {
             grid-template-columns: 1fr;
+        }
+        
+        .player-slot {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .player-stats {
+            flex-wrap: wrap;
         }
     }
 
@@ -736,6 +644,10 @@
         display: block;
     }
 
+    .alert.error {
+        color: #ef4444;
+    }
+
     /* Team rows for match creation */
     .team-row {
         margin-bottom: 0.5rem;
@@ -757,6 +669,49 @@
 
     .edit-row input {
         width: 90%;
+    }
+    
+    /* Table styling for players */
+    .players-table {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    
+    .players-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .players-table th,
+    .players-table td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .players-table th {
+        background: var(--background);
+        font-weight: 600;
+        color: var(--primary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.9rem;
+    }
+    
+    .players-table tr:hover {
+        background: var(--background);
+    }
+    
+    .players-table input {
+        width: 100%;
+        padding: 0.5rem;
+        background: var(--background);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--text-primary);
     }
     </style>
 </head>
@@ -799,12 +754,6 @@
         <!-- Header -->
         <header class="main-header">
             <h1 class="page-title">Dashboard</h1>
-            <div class="header-actions">
-                <button class="btn btn-primary">
-                    <i data-lucide="save"></i>
-                    Guardar Cambios
-                </button>
-            </div>
         </header>
 
         <!-- Dashboard Section -->
@@ -859,23 +808,25 @@
                     <i data-lucide="search"></i>
                 </div>
 
-                <table class="matches-table">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Tag</th>
-                            <th>Partidas</th>
-                            <th>Kills</th>
-                            <th>Deaths</th>
-                            <th>Assists</th>
-                            <th>Redes</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="playersTableBody">
-                        <tr><td colspan="8">No hay jugadores registrados</td></tr>
-                    </tbody>
-                </table>
+                <div class="players-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Tag</th>
+                                <th>Partidas</th>
+                                <th>Kills</th>
+                                <th>Deaths</th>
+                                <th>Assists</th>
+                                <th>Redes</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="playersTableBody">
+                            <tr><td colspan="8">No hay jugadores registrados</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Add/Edit Player Modal -->
@@ -950,10 +901,6 @@
                     <div class="team-section">
                         <h3>Equipo A</h3>
                         <div id="teamA"></div>
-                        <div class="team-score">
-                            <label>Rounds Ganados</label>
-                            <input type="number" name="team-a-score" min="0" max="13">
-                        </div>
                     </div>
 
                     <div class="vs-divider">VS</div>
@@ -961,10 +908,6 @@
                     <div class="team-section">
                         <h3>Equipo B</h3>
                         <div id="teamB"></div>
-                        <div class="team-score">
-                            <label>Rounds Ganados</label>
-                            <input type="number" name="team-b-score" min="0" max="13">
-                        </div>
                     </div>
                 </div>
 
@@ -1030,7 +973,6 @@
     const API_URL = window.location.origin;
     let allPlayers = [];
     let allMatches = [];
-    let currentEditingPlayer = null;
 
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize Lucide icons
@@ -1121,6 +1063,12 @@
                 if (modal) {
                     modal.classList.add('active');
                     document.body.style.overflow = 'hidden';
+                    
+                    // If it's the player modal, set to add mode
+                    if (modalId === 'player-modal') {
+                        document.getElementById('player-modal-title').textContent = 'Agregar Jugador';
+                        document.getElementById('addPlayerForm').reset();
+                    }
                 }
             });
         });
@@ -1250,14 +1198,20 @@
                 if (!select.value) continue;
                 
                 const [name, tag] = select.value.split('||');
+                const acs = parseInt(row.querySelector('.acs').value) || 0;
+                const kills = parseInt(row.querySelector('.kill').value) || 0;
+                const deaths = parseInt(row.querySelector('.death').value) || 0;
+                const assists = parseInt(row.querySelector('.assist').value) || 0;
+                const hsPercent = parseFloat(row.querySelector('.hs').value) || 0;
+                const firstBloods = parseInt(row.querySelector('.fb').value) || 0;
+                
+                if (!acs || !kills || !deaths) {
+                    showAlert('matchAlert', 'Todos los campos de estadísticas deben estar completos', 'error');
+                    return;
+                }
+                
                 matchPlayers.push({
-                    name, tag,
-                    acs: parseInt(row.querySelector('.acs').value) || 0,
-                    kills: parseInt(row.querySelector('.kill').value) || 0,
-                    deaths: parseInt(row.querySelector('.death').value) || 0,
-                    assists: parseInt(row.querySelector('.assist').value) || 0,
-                    hsPercent: parseFloat(row.querySelector('.hs').value) || 0,
-                    firstBloods: parseInt(row.querySelector('.fb').value) || 0
+                    name, tag, acs, kills, deaths, assists, hsPercent, firstBloods
                 });
             }
             
@@ -1283,6 +1237,7 @@
                 
                 // Reset form
                 this.reset();
+                populateTeams();
                 showAlert('matchAlert', 'Partida registrada correctamente', 'success');
                 
                 // Reload data
@@ -1320,7 +1275,6 @@
         
         allPlayers.forEach((p, index) => {
             const row = document.createElement('tr');
-            row.classList.add('player-row');
             row.innerHTML = `
                 <td><input type="text" value="${p.name}" class="edit-name"></td>
                 <td><input type="text" value="${p.tag}" class="edit-tag"></td>
@@ -1336,7 +1290,7 @@
                 <td>
                     <button class="btn btn-sm btn-primary btn-save">Guardar</button>
                     <button class="btn btn-sm btn-danger btn-delete">Eliminar</button>
-                    <span class="alert edit-alert" style="margin-left:5px;color:green;"></span>
+                    <span class="alert edit-alert"></span>
                 </td>
             `;
             tbody.appendChild(row);
@@ -1374,6 +1328,7 @@
                     }
                     
                     row.querySelector('.edit-alert').innerText = 'Editado correctamente';
+                    row.querySelector('.edit-alert').style.color = '#10b981';
                     setTimeout(() => {
                         row.querySelector('.edit-alert').innerText = '';
                     }, 2000);
@@ -1422,13 +1377,13 @@
             const row = document.createElement('div');
             row.className = 'team-row';
             row.innerHTML = `
-                <select class="player-select">
+                <select class="player-select" required>
                     <option value="">-- Selecciona jugador --</option>
                     ${allPlayers.map(p => `<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('')}
                 </select>
-                <input type="number" placeholder="ACS" class="acs" min="0">
-                <input type="number" placeholder="Kills" class="kill" min="0">
-                <input type="number" placeholder="Deaths" class="death" min="0">
+                <input type="number" placeholder="ACS" class="acs" min="0" required>
+                <input type="number" placeholder="Kills" class="kill" min="0" required>
+                <input type="number" placeholder="Deaths" class="death" min="0" required>
                 <input type="number" placeholder="Assists" class="assist" min="0">
                 <input type="number" placeholder="HS%" class="hs" min="0" max="100">
                 <input type="number" placeholder="FirstBloods" class="fb" min="0">
@@ -1471,11 +1426,11 @@
                 <td><input type="text" value="${m.map}" class="edit-map"></td>
                 <td><input type="text" value="${m.score}" class="edit-score"></td>
                 <td><input type="text" value="${m.winnerTeam}" class="edit-winner"></td>
-                <td>${formatRelativeTime(new Date(m.date))}</td>
+                <td>${new Date(m.date).toLocaleString()}</td>
                 <td>
                     <button class="btn btn-sm btn-primary btn-save-match">Guardar</button>
                     <button class="btn btn-sm btn-danger btn-delete-match">Eliminar</button>
-                    <span class="alert edit-alert" style="margin-left:5px;color:green;"></span>
+                    <span class="alert edit-alert"></span>
                 </td>
             `;
             tbody.appendChild(row);
@@ -1507,6 +1462,7 @@
                     }
                     
                     row.querySelector('.edit-alert').innerText = 'Editado correctamente';
+                    row.querySelector('.edit-alert').style.color = '#10b981';
                     setTimeout(() => {
                         row.querySelector('.edit-alert').innerText = '';
                     }, 2000);
