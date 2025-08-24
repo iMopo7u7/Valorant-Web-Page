@@ -272,7 +272,7 @@ app.post("/matches", requireAdmin, async (req, res) => {
   }
 });
 
-app.get("/matches", requireAdmin, async (req, res) => {
+app.get("/matches", async (req, res) => {
   try {
     const matches = await matchesCollection.find().sort({ date: -1 }).toArray();
     res.json(matches);
