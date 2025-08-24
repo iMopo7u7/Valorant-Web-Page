@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Matches Valorant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #ff4655;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      max-width: 800px;
+      margin: auto;
+    }
+    li {
+      background: #1e1e1e;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    li:hover {
+      background: #292929;
+    }
+    .match-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+    }
+    .details {
+      margin-top: 10px;
+      display: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background: #222;
+    }
+  </style>
+</head>
+<body>
+  <h1>Historial de Partidas</h1>
+  <ul id="matchesList"></ul>
+
+  <script>
+    const API_BASE_URL = "https://valorant-10-mans.onrender.com"; // 🔧 Cambia si tu backend está en otro host
+
+    async function loadMatches() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/matches`);
+        const matches = await res.json();
+
+        const list = document.getElementById("matchesList");
+        list.innerHTML = "";
+
+        matches.forEach((match, idx) => {
+          const li = document.createElement("li");
+
+          // Header con mapa, score y ganador
+          li.innerHTML = `
+            <div class="match-header">
+              <span>Mapa: ${match.map}</span>
+              <span>Score: ${match.score}</span>
+              <span>Ganador: ${match.winnerTeam}</span>
+            </div>
+            <div class="details" id="details-${idx}">
+              <h3>Estadísticas de jugadores</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Jugador</th>
+                    <th>Kills</th>
+                    <th>Deaths</th>
+                    <th>Assists</th>
+                    <th>ACS</th>
+                    <th>First Bloods</th>
+                    <th>HS%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${match.match.map(p => `
+                    <tr>
+                      <td>${p.name}#${p.tag}</td>
+                      <td>${p.kills}</td>
+                      <td>${p.deaths}</td>
+                      <td>${p.assists}</td>
+                      <td>${p.acs}</td>
+                      <td>${p.firstBloods}</td>
+                      <td>${p.hsPercent}%</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          `;
+
+          // Toggle para mostrar detalles
+          li.addEventListener("click", () => {
+            const details = document.getElementById(`details-${idx}`);
+            details.style.display = details.style.display === "block" ? "none" : "block";
+          });
+
+          list.appendChild(li);
+        });
+      } catch (err) {
+        console.error("Error cargando partidas:", err);
+      }
+    }
+
+    loadMatches();
+  </script>
+</body>
+</html>
