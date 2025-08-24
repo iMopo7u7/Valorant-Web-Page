@@ -137,7 +137,7 @@ app.get("/events.html", requireAdmin, (req, res) => {
 });
 
 // -------------------
-// --- CRUD Players 
+// --- CRUD Players
 // -------------------
 app.post("/players", requireAdmin, async (req, res) => {
   try {
@@ -215,12 +215,11 @@ app.delete("/players", requireAdmin, async (req, res) => {
 // -------------------
 // --- CRUD Events / Torneos
 // -------------------
-
-// Crear evento
 app.post("/events", requireAdmin, async (req, res) => {
   try {
-    const { name, teamSize, numTeams, badge } = req.body;
-    if (!name || !teamSize || !numTeams) return res.status(400).json({ error: "Completa todos los campos" });
+    const { name, teamSize, numTeams, rounds = 0, teams = {}, badge } = req.body;
+    if (!name || !teamSize || !numTeams)
+      return res.status(400).json({ error: "Completa todos los campos" });
 
     const exists = await eventsCollection.findOne({ name });
     if (exists) return res.status(400).json({ error: "Evento ya existe" });
@@ -229,22 +228,21 @@ app.post("/events", requireAdmin, async (req, res) => {
       name,
       teamSize,
       numTeams,
-      badge,
+      rounds,
       matches: [],
-      teams: [],
+      teams,       
+      badge,       
       createdAt: new Date()
     };
 
-    const result = await eventsCollection.insertOne(newEvent);
-    newEvent._id = result.insertedId;
-    res.json(newEvent);
+    await eventsCollection.insertOne(newEvent);
+    res.json({ message: "Evento creado correctamente" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al crear evento" });
   }
 });
 
-// Listar eventos
 app.get("/events", requireAdmin, async (req, res) => {
   try {
     const events = await eventsCollection.find().sort({ createdAt: -1 }).toArray();
@@ -255,69 +253,6 @@ app.get("/events", requireAdmin, async (req, res) => {
   }
 });
 
-// Eliminar evento
-app.delete("/events/:id", requireAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    await eventsCollection.deleteOne({ _id: new ObjectId(id) });
-    res.json({ message: "Evento eliminado correctamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al eliminar evento" });
-  }
-});
-
-// Actualizar equipos
-app.put("/events/:id/teams", requireAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const teams = req.body; // se espera un array de equipos
-    await eventsCollection.updateOne({ _id: new ObjectId(id) }, { $set: { teams } });
-    res.json({ message: "Equipos actualizados correctamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al actualizar equipos" });
-  }
-});
-
-// Añadir nueva partida
-app.post("/events/:id/matches", requireAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const match = req.body; // map, winner, score, stats, team1Id, team2Id, round
-    await eventsCollection.updateOne({ _id: new ObjectId(id) }, { $push: { matches: match } });
-    res.json({ message: "Partida añadida correctamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al añadir partida" });
-  }
-});
-
-// Actualizar partida existente
-app.put("/events/:eventId/matches/:matchId", requireAdmin, async (req, res) => {
-  try {
-    const { eventId, matchId } = req.params;
-    const matchData = req.body; // map, winner, score, stats
-
-    const event = await eventsCollection.findOne({ _id: new ObjectId(eventId) });
-    if (!event) return res.status(404).json({ error: "Evento no encontrado" });
-
-    const matches = event.matches.map(m => {
-      if (m._id?.toString() === matchId || m.id == matchData.id) {
-        return { ...m, ...matchData, completed: true };
-      }
-      return m;
-    });
-
-    await eventsCollection.updateOne({ _id: new ObjectId(eventId) }, { $set: { matches } });
-    res.json({ message: "Partida actualizada correctamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al actualizar partida" });
-  }
-});
-
-// Obtener partidas de un evento
 app.get("/events/:id/matches", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -327,6 +262,69 @@ app.get("/events/:id/matches", requireAdmin, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al obtener partidas del evento" });
+  }
+});
+
+app.post("/events/:id/matches", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { map, winnerTeam, score, teamA, teamB } = req.body;
+    if (!map || !winnerTeam || !score) return res.status(400).json({ error: "Completa mapa, ganador y marcador" });
+
+    const event = await eventsCollection.findOne({ _id: new ObjectId(id) });
+    if (!event) return res.status(404).json({ error: "Evento no encontrado" });
+
+    const newMatch = { map, winnerTeam, score, teamA, teamB, date: new Date() };
+    await eventsCollection.updateOne({ _id: new ObjectId(id) }, { $push: { matches: newMatch } });
+
+    res.json({ message: "Partida añadida al evento correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al añadir partida" });
+  }
+});
+
+// -------------------
+// --- Rutas públicas
+// -------------------
+app.get("/leaderboard", async (req, res) => {
+  try {
+    const players = await playersCollection.find().toArray();
+    const withScores = players.map(p => {
+      const matches = p.matchesPlayed || 0;
+      const avgKills = matches ? p.totalKills / matches : 0;
+      const avgDeaths = matches ? p.totalDeaths / matches : 1;
+      const avgACS = matches ? p.totalACS / matches : 0;
+      const avgAssists = matches ? p.totalAssists / matches : 0;
+      const winrate = matches ? (p.wins / matches) * 100 : 0;
+      const hsPercent = p.totalKills ? (p.totalHeadshotKills / p.totalKills) * 100 : 0;
+      const avgKDA = avgDeaths === 0 ? avgKills : avgKills / avgDeaths;
+      const cappedKills = Math.min(avgKills, 30);
+      const impactKillsScore = (p.totalFirstBloods * 1.5) + (cappedKills - p.totalFirstBloods);
+      const scoreRaw = (avgACS * 1.5) + (impactKillsScore * 1.2) + (avgAssists * 0.8) + hsPercent + winrate - avgDeaths;
+      const reliabilityFactor = Math.min(matches / 5, 1);
+      const consistencyBonus = 1 + (Math.min(matches, 20) / 100);
+
+      return {
+        name: p.name,
+        tag: p.tag,
+        avgACS,
+        avgKDA,
+        hsPercent,
+        fk: matches ? (p.totalFirstBloods / matches) : 0,
+        winrate,
+        score: Math.round(scoreRaw * consistencyBonus * reliabilityFactor),
+        matchesPlayed: matches,
+        badges: p.badges || [],
+        social: p.social || {}
+      };
+    });
+
+    withScores.sort((a, b) => b.score - a.score);
+    res.json(withScores);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al generar leaderboard" });
   }
 });
 
