@@ -82,9 +82,6 @@ async function connectDB() {
     eventsCollection = db.collection("events");
     console.log("✅ Conectado a MongoDB");
 
-    // Eliminar matchScore si existe
-    await playersCollection.updateMany({}, { $unset: { matchPoints: "" } });
-
   } catch (err) {
     console.error("❌ Error conectando a MongoDB:", err);
     process.exit(1);
