@@ -1015,49 +1015,57 @@ document.addEventListener("DOMContentLoaded", async () => {
     // --- Render Players
     // --------------------------
     async function renderPlayers() {
-        const players = await fetchPlayers();
-        playersGrid.innerHTML = "";
-        players.forEach(player => {
-            const card = document.createElement("div");
-            card.className = "player-card";
-            card.innerHTML = `
-                <div class="player-card-header">
-                    <div>
-                        <div class="player-name">${player.name}</div>
-                        <div class="player-tag">${player.tag}</div>
-                    </div>
+    const players = await fetchPlayers();
+    playersGrid.innerHTML = "";
+
+    players.forEach(player => {
+        const social = player.social || {}; // <-- Si no hay social, creamos objeto vacío
+
+        const card = document.createElement("div");
+        card.className = "player-card";
+        card.innerHTML = `
+            <div class="player-card-header">
+                <div>
+                    <div class="player-name">${player.name}</div>
+                    <div class="player-tag">${player.tag}</div>
                 </div>
-                <div class="player-social">
-                    ${player.social.twitch ? `<a href="${player.social.twitch}" target="_blank" class="social-icon">T</a>` : ""}
-                    ${player.social.twitter ? `<a href="${player.social.twitter}" target="_blank" class="social-icon">Tw</a>` : ""}
-                    ${player.social.youtube ? `<a href="${player.social.youtube}" target="_blank" class="social-icon">Y</a>` : ""}
-                </div>
-                <div class="player-card-actions">
-                    <button class="btn btn-outline btn-sm edit-btn">Editar</button>
-                    <button class="btn btn-danger btn-sm delete-btn">Eliminar</button>
-                </div>
-            `;
-            card.querySelector(".edit-btn").addEventListener("click", () => {
-                playerNameInput.value = player.name;
-                playerTagInput.value = player.tag;
-                playerSocialInputs.twitch.value = player.social.twitch || "";
-                playerSocialInputs.twitter.value = player.social.twitter || "";
-                playerSocialInputs.youtube.value = player.social.youtube || "";
-            });
-            card.querySelector(".delete-btn").addEventListener("click", async () => {
-                if (!confirm(`Eliminar a ${player.name}#${player.tag}?`)) return;
-                await fetch("/players", {
-                    method: "DELETE",
-                    credentials: "include",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ name: player.name, tag: player.tag })
-                });
-                renderPlayers();
-                renderMatchPlayers();
-            });
-            playersGrid.appendChild(card);
+            </div>
+            <div class="player-social">
+                ${social.twitch ? `<a href="${social.twitch}" target="_blank" class="social-icon">T</a>` : ""}
+                ${social.twitter ? `<a href="${social.twitter}" target="_blank" class="social-icon">Tw</a>` : ""}
+                ${social.youtube ? `<a href="${social.youtube}" target="_blank" class="social-icon">Y</a>` : ""}
+            </div>
+            <div class="player-card-actions">
+                <button class="btn btn-outline btn-sm edit-btn">Editar</button>
+                <button class="btn btn-danger btn-sm delete-btn">Eliminar</button>
+            </div>
+        `;
+
+        // Editar
+        card.querySelector(".edit-btn").addEventListener("click", () => {
+            playerNameInput.value = player.name;
+            playerTagInput.value = player.tag;
+            playerSocialInputs.twitch.value = social.twitch || "";
+            playerSocialInputs.twitter.value = social.twitter || "";
+            playerSocialInputs.youtube.value = social.youtube || "";
         });
-    }
+
+        // Eliminar
+        card.querySelector(".delete-btn").addEventListener("click", async () => {
+            if (!confirm(`Eliminar a ${player.name}#${player.tag}?`)) return;
+            await fetch("/players", {
+                method: "DELETE",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: player.name, tag: player.tag })
+            });
+            renderPlayers();
+            renderMatchPlayers();
+        });
+
+        playersGrid.appendChild(card);
+    });
+}
 
     // --------------------------
     // --- Render Matches
