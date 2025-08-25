@@ -972,21 +972,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     // --------------------------
     // --- Constantes
     // --------------------------
-    const playersGrid = document.getElementById("players-grid");
-    const matchesGrid = document.getElementById("matches-grid");
-    const playerForm = document.getElementById("player-form");
-    const matchForm = document.getElementById("match-form");
-    const playerNameInput = document.getElementById("player-name");
-    const playerTagInput = document.getElementById("player-tag");
+    const playersGrid = document.getElementById("playersGrid");
+    const matchesGrid = document.getElementById("matchesGrid");
+    const playerForm = document.getElementById("formAddPlayer");
+    const matchForm = document.getElementById("addMatchForm");
+    const playerNameInput = document.getElementById("playerName");
+    const playerTagInput = document.getElementById("playerTag");
     const playerSocialInputs = {
-        twitch: document.getElementById("player-twitch"),
-        twitter: document.getElementById("player-twitter"),
-        youtube: document.getElementById("player-youtube")
+        twitch: document.getElementById("playerSocialTwitch") || document.getElementById("playerSocial"),
+        twitter: document.getElementById("playerSocialTwitter") || document.getElementById("playerSocial"),
+        youtube: document.getElementById("playerSocialYoutube") || document.getElementById("playerSocial")
     };
-    const matchPlayersContainer = document.getElementById("match-players");
-    const matchWinnerSelect = document.getElementById("match-winner");
-    const matchScoreInput = document.getElementById("match-score");
-    const matchMapInput = document.getElementById("match-map");
+    const matchPlayersContainer = document.getElementById("teamA"); // Ajusta a tus selects de jugadores si es diferente
+    const matchWinnerSelect = document.getElementById("addMatchWinner");
+    const matchScoreInput = document.getElementById("addMatchScore");
+    const matchMapInput = document.getElementById("addMatchMap");
 
     // --------------------------
     // --- Funciones fetch
@@ -994,8 +994,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function fetchPlayers() {
         try {
             const res = await fetch("/players", { credentials: "include" });
-            const data = await res.json();
-            return data;
+            return await res.json();
         } catch (err) {
             console.error(err);
             return [];
@@ -1005,8 +1004,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function fetchMatches() {
         try {
             const res = await fetch("/matches", { credentials: "include" });
-            const data = await res.json();
-            return data;
+            return await res.json();
         } catch (err) {
             console.error(err);
             return [];
@@ -1039,7 +1037,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <button class="btn btn-danger btn-sm delete-btn">Eliminar</button>
                 </div>
             `;
-            // Editar
             card.querySelector(".edit-btn").addEventListener("click", () => {
                 playerNameInput.value = player.name;
                 playerTagInput.value = player.tag;
@@ -1047,7 +1044,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 playerSocialInputs.twitter.value = player.social.twitter || "";
                 playerSocialInputs.youtube.value = player.social.youtube || "";
             });
-            // Eliminar
             card.querySelector(".delete-btn").addEventListener("click", async () => {
                 if (!confirm(`Eliminar a ${player.name}#${player.tag}?`)) return;
                 await fetch("/players", {
@@ -1057,7 +1053,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     body: JSON.stringify({ name: player.name, tag: player.tag })
                 });
                 renderPlayers();
-                renderMatchPlayers(); // actualizar select de jugadores
+                renderMatchPlayers();
             });
             playersGrid.appendChild(card);
         });
@@ -1099,10 +1095,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             twitter: playerSocialInputs.twitter.value.trim(),
             youtube: playerSocialInputs.youtube.value.trim()
         };
-        // Checar si el jugador existe en grid
         const exists = (await fetchPlayers()).find(p => p.name === name && p.tag === tag);
         if (exists) {
-            // PUT
             await fetch("/players", {
                 method: "PUT",
                 credentials: "include",
@@ -1110,7 +1104,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 body: JSON.stringify({ oldName: exists.name, oldTag: exists.tag, newName: name, newTag: tag, social })
             });
         } else {
-            // POST
             await fetch("/players", {
                 method: "POST",
                 credentials: "include",
@@ -1140,7 +1133,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     matchForm.addEventListener("submit", async e => {
         e.preventDefault();
-        const selectedPlayers = Array.from(matchPlayersContainer.selectedOptions).map(o => {
+        const selectedPlayers = Array.from(matchPlayersContainer.selectedOptions || []).map(o => {
             const [name, tag] = o.value.split("#");
             return { name, tag, kills: 0, deaths: 0, assists: 0, acs: 0, firstBloods: 0, hsPercent: 0 };
         });
