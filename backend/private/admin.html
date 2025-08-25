@@ -787,699 +787,341 @@
     </style>
 </head>
 <body>
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2 class="sidebar-title">
-                <span class="valorant-logo">V</span>
-                Admin Panel
-            </h2>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2 class="sidebar-title"><span class="valorant-logo">V</span> Admin Panel</h2>
+        <button id="sidebarToggle">☰</button>
+    </div>
+    <nav class="sidebar-nav">
+        <a class="nav-item active" data-section="dashboard"><i data-lucide="bar-chart-3"></i><span>Dashboard</span></a>
+        <a class="nav-item" data-section="players"><i data-lucide="users"></i><span>Jugadores</span></a>
+        <a class="nav-item" data-section="addMatch"><i data-lucide="sword"></i><span>Agregar Partida</span></a>
+        <a class="nav-item" data-section="matches"><i data-lucide="list"></i><span>Partidas</span></a>
+        <a class="nav-item" id="logoutBtn"><i data-lucide="log-out"></i><span>Cerrar Sesión</span></a>
+    </nav>
+</aside>
+
+<main class="main-content">
+<header class="main-header">
+    <h1 class="page-title">Dashboard</h1>
+</header>
+
+<!-- Dashboard -->
+<section id="dashboard" class="content-section active">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon"><i data-lucide="users"></i></div>
+            <div class="stat-content">
+                <h3>Total Jugadores</h3>
+                <span class="stat-number" id="totalPlayers">0</span>
+                <span class="stat-change positive" id="playersChange">+0 este mes</span>
+            </div>
         </div>
-        
-        <nav class="sidebar-nav">
-            <a href="#dashboard" class="nav-item active" data-section="dashboard">
-                <i data-lucide="bar-chart-3"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="#players" class="nav-item" data-section="players">
-                <i data-lucide="users"></i>
-                <span>Jugadores</span>
-            </a>
-            <a href="#addMatch" class="nav-item" data-section="addMatch">
-                <i data-lucide="sword"></i>
-                <span>Agregar Partida</span>
-            </a>
-            <a href="#matches" class="nav-item" data-section="matches">
-                <i data-lucide="list"></i>
-                <span>Partidas</span>
-            </a>
-            <a href="#" id="logoutBtn" class="nav-item">
-                <i data-lucide="log-out"></i>
-                <span>Cerrar Sesión</span>
-            </a>
-        </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Header -->
-        <header class="main-header">
-            <h1 class="page-title">Dashboard</h1>
-        </header>
-
-        <!-- Dashboard Section -->
-        <section id="dashboard" class="content-section active">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i data-lucide="users"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3>Total Jugadores</h3>
-                        <span class="stat-number" id="totalPlayers">0</span>
-                        <span class="stat-change positive" id="playersChange">+0 este mes</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i data-lucide="sword"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3>Total Partidas</h3>
-                        <span class="stat-number" id="totalMatches">0</span>
-                        <span class="stat-change positive" id="matchesChange">+0 esta semana</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i data-lucide="clock"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3>Última Partida</h3>
-                        <span class="stat-number" id="lastMatchDate">N/A</span>
-                        <span class="stat-change neutral">Actualizado en tiempo real</span>
-                    </div>
-                </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i data-lucide="sword"></i></div>
+            <div class="stat-content">
+                <h3>Total Partidas</h3>
+                <span class="stat-number" id="totalMatches">0</span>
+                <span class="stat-change positive" id="matchesChange">+0 esta semana</span>
             </div>
-        </section>
-
-        <!-- Players Section -->
-        <section id="players" class="content-section">
-            <div class="section-header">
-                <h2>Gestión de Jugadores</h2>
-                <button class="btn btn-primary" id="add-player-btn">
-                    <i data-lucide="plus"></i>
-                    Agregar Jugador
-                </button>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i data-lucide="clock"></i></div>
+            <div class="stat-content">
+                <h3>Última Partida</h3>
+                <span class="stat-number" id="lastMatchDate">N/A</span>
+                <span class="stat-change neutral">Actualizado en tiempo real</span>
             </div>
+        </div>
+    </div>
+</section>
 
-            <div class="players-container">
-                <div class="search-bar">
-                    <input type="text" placeholder="Buscar jugador..." class="search-input" id="playerSearch">
-                    <i data-lucide="search"></i>
-                </div>
+<!-- Players Section -->
+<section id="players" class="content-section">
+<div class="section-header">
+    <h2>Gestión de Jugadores</h2>
+    <button class="btn btn-primary" id="add-player-btn"><i data-lucide="plus"></i> Agregar Jugador</button>
+</div>
+<div class="search-bar">
+    <input type="text" placeholder="Buscar jugador..." class="search-input" id="playerSearch">
+    <i data-lucide="search"></i>
+</div>
+<div class="players-grid" id="playersGrid"></div>
+</section>
 
-                <div class="players-grid" id="playersGrid">
-                    <!-- Jugadores se cargarán aquí como cards -->
-                </div>
+<!-- Add Match Section -->
+<section id="addMatch" class="content-section">
+<div class="section-header"><h2>Agregar Partida</h2></div>
+<form class="match-form" id="addMatchForm">
+    <div class="form-row">
+        <div class="form-group">
+            <label>Mapa</label>
+            <select id="addMatchMap" required>
+                <option value="">Selecciona mapa</option>
+                <option>Bind</option><option>Haven</option><option>Split</option>
+                <option>Ascent</option><option>Icebox</option><option>Breeze</option>
+                <option>Corrode</option><option>Abyss</option><option>Sunset</option>
+                <option>Lotus</option><option>Pearl</option><option>Fracture</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Ganador</label>
+            <select id="addMatchWinner" required>
+                <option value="">Seleccionar</option>
+                <option value="A">Equipo A</option>
+                <option value="B">Equipo B</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Marcador final</label>
+            <input type="text" id="addMatchScore" placeholder="Ej: 13-8" required>
+        </div>
+    </div>
+    <div class="teams-container">
+        <div class="team-section" id="teamAContainer"><h3>Equipo A</h3><div id="teamA"></div></div>
+        <div class="vs-divider">VS</div>
+        <div class="team-section" id="teamBContainer"><h3>Equipo B</h3><div id="teamB"></div></div>
+    </div>
+    <div class="form-actions">
+        <button type="button" class="btn btn-outline" id="cancel-match-btn">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar Partida</button>
+    </div>
+    <span id="matchAlert" class="alert hidden"></span>
+</form>
+</section>
+
+<!-- Matches Section -->
+<section id="matches" class="content-section">
+<div class="section-header">
+    <h2>Partidas</h2>
+    <div class="filters">
+        <select class="filter-select" id="mapFilter">
+            <option value="">Todos los mapas</option>
+            <option>Bind</option><option>Haven</option><option>Split</option>
+            <option>Ascent</option><option>Icebox</option><option>Breeze</option>
+            <option>Corrode</option><option>Abyss</option><option>Sunset</option>
+            <option>Lotus</option><option>Pearl</option><option>Fracture</option>
+        </select>
+        <select class="filter-select" id="dateFilter">
+            <option value="all">Todo el tiempo</option>
+            <option value="month">Último mes</option>
+            <option value="week">Última semana</option>
+            <option value="today">Hoy</option>
+        </select>
+    </div>
+</div>
+<div class="matches-grid" id="matchesGrid"></div>
+</section>
+
+<!-- Modales (Agregar/Editar Jugador y Partida) -->
+<div class="modal" id="add-player-modal">
+<div class="modal-content">
+    <div class="modal-header">
+        <h3>Agregar Jugador</h3>
+        <button class="modal-close" id="cancel-add-player">&times;</button>
+    </div>
+    <div class="modal-body">
+        <form id="formAddPlayer">
+            <div class="form-group">
+                <label>Nombre</label><input type="text" id="playerName" required>
             </div>
-
-            <!-- Add Player Modal -->
-            <div id="add-player-modal" class="modal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Agregar Jugador</h3>
-                        <button class="modal-close">&times;</button>
-                    </div>
-                    <form class="modal-body" id="addPlayerForm">
-                        <div class="form-group">
-                            <label>Nombre del Jugador</label>
-                            <input type="text" id="playerName" placeholder="Ej: TenZ" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Tag</label>
-                            <input type="text" id="playerTag" placeholder="Ej: #VAL" required>
-                        </div>
-                        <span id="playerAlert" class="alert"></span>
-                    </form>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-outline" id="cancel-add-player">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" form="addPlayerForm">Agregar</button>
-                    </div>
-                </div>
+            <div class="form-group">
+                <label>Tag</label><input type="text" id="playerTag" required>
             </div>
-
-            <!-- Edit Player Modal -->
-            <div id="edit-player-modal" class="modal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Editar Jugador</h3>
-                        <button class="modal-close">&times;</button>
-                    </div>
-                    <form class="modal-body" id="editPlayerForm">
-                        <div class="form-group">
-                            <label>Nombre del Jugador</label>
-                            <input type="text" id="editPlayerName" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Tag</label>
-                            <input type="text" id="editPlayerTag" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Twitter</label>
-                            <input type="text" id="editPlayerTwitter" placeholder="@usuario">
-                        </div>
-                        <div class="form-group">
-                            <label>Twitch</label>
-                            <input type="text" id="editPlayerTwitch" placeholder="usuario">
-                        </div>
-                        <div class="form-group">
-                            <label>Valorant Tracker</label>
-                            <input type="text" id="editPlayerTracker" placeholder="https://tracker.gg/valorant/profile/...">
-                        </div>
-                        <span id="editPlayerAlert" class="alert"></span>
-                    </form>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-outline" id="cancel-edit-player">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" form="editPlayerForm">Guardar</button>
-                    </div>
-                </div>
+            <div class="form-group">
+                <label>Redes Sociales (JSON)</label><input type="text" id="playerSocial" placeholder='{"twitch":"url","twitter":"url"}'>
             </div>
-        </section>
-
-        <!-- Add Match Section -->
-        <section id="addMatch" class="content-section">
-            <div class="section-header">
-                <h2>Agregar Partida</h2>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" id="cancelAddPlayerBtn">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Agregar</button>
             </div>
+        </form>
+    </div>
+</div>
+</div>
 
-            <form class="match-form" id="addMatchForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Mapa</label>
-                        <select id="matchMap" required>
-                            <option value="">Selecciona mapa</option>
-                            <option value="Bind">Bind</option>
-                            <option value="Haven">Haven</option>
-                            <option value="Split">Split</option>
-                            <option value="Ascent">Ascent</option>
-                            <option value="Icebox">Icebox</option>
-                            <option value="Breeze">Breeze</option>
-                            <option value="Corrode">Corrode</option>
-                            <option value="Abyss">Abyss</option>
-                            <option value="Sunset">Sunset</option>
-                            <option value="Lotus">Lotus</option>
-                            <option value="Pearl">Pearl</option>
-                            <option value="Fracture">Fracture</option>
-                        </select>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Ganador</label>
-                            <select id="winnerTeam" required>
-                                <option value="">Seleccionar</option>
-                                <option value="A">Equipo A</option>
-                                <option value="B">Equipo B</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Marcador final</label>
-                            <input type="text" id="matchScore" placeholder="Ej: 13-8" required>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="teams-container">
-                    <div class="team-section">
-                        <h3>Equipo A</h3>
-                        <div id="teamA"></div>
-                    </div>
-
-                    <div class="vs-divider">VS</div>
-
-                    <div class="team-section">
-                        <h3>Equipo B</h3>
-                        <div id="teamB"></div>
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn btn-outline" id="cancel-match-btn">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Partida</button>
-                </div>
-                <span id="matchAlert" class="alert"></span>
-            </form>
-        </section>
-
-        <!-- Matches Section -->
-        <section id="matches" class="content-section">
-            <div class="section-header">
-                <h2>Partidas</h2>
-                <div class="filters">
-                    <select class="filter-select" id="mapFilter">
-                        <option value="">Todos los mapas</option>
-                        <option value="Bind">Bind</option>
-                        <option value="Haven">Haven</option>
-                        <option value="Split">Split</option>
-                        <option value="Ascent">Ascent</option>
-                        <option value="Icebox">Icebox</option>
-                        <option value="Breeze">Breeze</option>
-                        <option value="Corrode">Corrode</option>
-                        <option value="Abyss">Abyss</option>
-                        <option value="Sunset">Sunset</option>
-                        <option value="Lotus">Lotus</option>
-                        <option value="Pearl">Pearl</option>
-                        <option value="Fracture">Fracture</option>
-                    </select>
-                    <select class="filter-select" id="dateFilter">
-                        <option value="all">Todo el tiempo</option>
-                        <option value="month">Último mes</option>
-                        <option value="week">Última semana</option>
-                        <option value="today">Hoy</option>
-                    </select>
-                </div>
+<div class="modal" id="edit-player-modal">
+<div class="modal-content">
+    <div class="modal-header">
+        <h3>Editar Jugador</h3>
+        <button class="modal-close" id="cancel-edit-player">&times;</button>
+    </div>
+    <div class="modal-body">
+        <form id="formEditPlayer">
+            <div class="form-group">
+                <label>Nombre</label><input type="text" id="editPlayerName" required>
             </div>
-
-            <div class="matches-grid" id="matchesGrid">
-                <!-- Partidas se cargarán aquí como cards -->
+            <div class="form-group">
+                <label>Tag</label><input type="text" id="editPlayerTag" required>
             </div>
-
-            <!-- Edit Match Modal -->
-            <div id="edit-match-modal" class="modal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Editar Partida</h3>
-                        <button class="modal-close">&times;</button>
-                    </div>
-                    <form class="modal-body" id="editMatchForm">
-                        <input type="hidden" id="editMatchId">
-                        <div class="form-group">
-                            <label>Mapa</label>
-                            <select id="editMatchMap" required>
-                                <option value="Bind">Bind</option>
-                                <option value="Haven">Haven</option>
-                                <option value="Split">Split</option>
-                                <option value="Ascent">Ascent</option>
-                                <option value="Icebox">Icebox</option>
-                                <option value="Breeze">Breeze</option>
-                                <option value="Corrode">Corrode</option>
-                                <option value="Abyss">Abyss</option>
-                                <option value="Sunset">Sunset</option>
-                                <option value="Lotus">Lotus</option>
-                                <option value="Pearl">Pearl</option>
-                                <option value="Fracture">Fracture</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Score</label>
-                            <input type="text" id="editMatchScore" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Ganador</label>
-                            <select id="editMatchWinner" required>
-                                <option value="A">Equipo A</option>
-                                <option value="B">Equipo B</option>
-                            </select>
-                        </div>
-                        <span id="editMatchAlert" class="alert"></span>
-                    </form>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-outline" id="cancel-edit-match">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" form="editMatchForm">Guardar</button>
-                    </div>
-                </div>
+            <div class="form-group">
+                <label>Redes Sociales (JSON)</label><input type="text" id="editPlayerSocial" placeholder='{"twitch":"url","twitter":"url"}'>
             </div>
-        </section>
-    </main>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" id="cancelEditPlayerBtn">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
 
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <script>
 const API_URL = window.location.origin;
 let allPlayers = [];
 let allMatches = [];
 let currentEditPlayer = null;
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
     initNavigation();
     initModals();
     initForms();
     loadPlayers();
     loadMatches();
-    initResponsiveSidebar();
-
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-        try {
-            await fetch('/logout', { method: 'POST', credentials: 'include' });
-            window.location.href = '/login.html';
-        } catch (err) {
-            console.error('Logout error:', err);
-        }
-    });
+    initSidebar();
+    initFilters();
 });
 
 // ---------------- Navigation ----------------
-function initNavigation() {
-    const navItems = document.querySelectorAll('.nav-item');
-    const contentSections = document.querySelectorAll('.content-section');
-    const pageTitle = document.querySelector('.page-title');
-    
-    navItems.forEach(item => {
-        if (item.id !== 'logoutBtn') {
-            item.addEventListener('click', function() {
-                const sectionId = this.getAttribute('data-section');
-                navItems.forEach(navItem => navItem.classList.remove('active'));
-                this.classList.add('active');
-                contentSections.forEach(section => section.classList.remove('active'));
-                document.getElementById(sectionId).classList.add('active');
-                pageTitle.textContent = this.querySelector('span').textContent;
+function initNavigation(){
+    const navItems=document.querySelectorAll('.nav-item');
+    const sections=document.querySelectorAll('.content-section');
+    const title=document.querySelector('.page-title');
+    navItems.forEach(i=>{
+        if(i.id!=='logoutBtn'){
+            i.addEventListener('click',()=>{ 
+                navItems.forEach(n=>n.classList.remove('active'));
+                i.classList.add('active');
+                sections.forEach(s=>s.classList.remove('active'));
+                document.getElementById(i.dataset.section).classList.add('active');
+                title.textContent=i.querySelector('span').textContent;
             });
         }
     });
+}
+
+// ---------------- Sidebar Responsive ----------------
+function initSidebar(){
+    const sidebar=document.getElementById('sidebar');
+    document.getElementById('sidebarToggle').addEventListener('click',()=> sidebar.classList.toggle('open'));
 }
 
 // ---------------- Modals ----------------
-function initModals() {
-    const modals = ['add-player', 'edit-player', 'edit-match'];
-    modals.forEach(name => {
-        const modal = document.getElementById(`${name}-modal`);
-        modal.querySelectorAll('.modal-close').forEach(btn => btn.addEventListener('click', () => modal.classList.remove('active')));
-        modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('active'); });
+function initModals(){
+    const modals=['add-player-modal','edit-player-modal'];
+    modals.forEach(id=>{
+        const modal=document.getElementById(id);
+        modal.querySelectorAll('.modal-close').forEach(btn=>btn.addEventListener('click',()=> modal.classList.remove('active')));
     });
-
-    document.getElementById('add-player-btn').addEventListener('click', () => document.getElementById('add-player-modal').classList.add('active'));
-    document.getElementById('cancel-add-player').addEventListener('click', () => document.getElementById('add-player-modal').classList.remove('active'));
-    document.getElementById('cancel-edit-player').addEventListener('click', () => document.getElementById('edit-player-modal').classList.remove('active'));
-    document.getElementById('cancel-edit-match').addEventListener('click', () => document.getElementById('edit-match-modal').classList.remove('active'));
-}
-
-// ---------------- Forms ----------------
-function initForms() {
-    // Add Player
-    document.getElementById('addPlayerForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const name = document.getElementById('playerName').value.trim();
-        const tag = document.getElementById('playerTag').value.trim();
-        try {
-            const response = await fetch(`${API_URL}/players`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, tag })
-            });
-            if (response.ok) {
-                document.getElementById('add-player-modal').classList.remove('active');
-                this.reset();
-                await loadPlayers();
-                showAlert('playerAlert', 'Jugador agregado con éxito', false);
-            } else {
-                const error = await response.json();
-                showAlert('playerAlert', error.error || 'Error al agregar jugador', true);
-            }
-        } catch (err) {
-            console.error(err);
-            showAlert('playerAlert', 'Error de conexión', true);
-        }
-    });
-
-    // Edit Player
-    document.getElementById('editPlayerForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        if (!currentEditPlayer) return;
-        const name = document.getElementById('editPlayerName').value.trim();
-        const tag = document.getElementById('editPlayerTag').value.trim();
-        const twitter = document.getElementById('editPlayerTwitter').value.trim();
-        const twitch = document.getElementById('editPlayerTwitch').value.trim();
-        const tracker = document.getElementById('editPlayerTracker').value.trim();
-
-        try {
-            const response = await fetch(`${API_URL}/players`, {
-                method: 'PUT',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    oldName: currentEditPlayer.name,
-                    oldTag: currentEditPlayer.tag,
-                    newName: name,
-                    newTag: tag,
-                    social: { twitter, twitch, tracker }
-                })
-            });
-            if (response.ok) {
-                document.getElementById('edit-player-modal').classList.remove('active');
-                await loadPlayers();
-                showAlert('editPlayerAlert', 'Jugador actualizado con éxito', false);
-            } else {
-                const error = await response.json();
-                showAlert('editPlayerAlert', error.error || 'Error al actualizar jugador', true);
-            }
-        } catch (err) {
-            console.error(err);
-            showAlert('editPlayerAlert', 'Error de conexión', true);
-        }
-    });
-
-    // Delete Player handled in renderPlayers()
-
-    // Add Match
-    document.getElementById('addMatchForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const map = document.getElementById('addMatchMap').value.trim();
-        const score = document.getElementById('addMatchScore').value.trim();
-        const winnerTeam = document.getElementById('addMatchWinner').value.trim();
-
-        // Collect players stats from form (example)
-        const matchPlayers = allPlayers.map(p => ({
-            name: p.name, tag: p.tag, kills: 0, deaths: 0, assists: 0, acs: 0, firstBloods: 0, hsPercent: 0
-        }));
-
-        try {
-            const response = await fetch(`${API_URL}/matches`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ match: matchPlayers, winnerTeam, score, map })
-            });
-            if (response.ok) {
-                document.getElementById('add-match-modal').classList.remove('active');
-                this.reset();
-                await loadMatches();
-                showAlert('matchAlert', 'Partida agregada con éxito', false);
-            } else {
-                const error = await response.json();
-                showAlert('matchAlert', error.error || 'Error al agregar partida', true);
-            }
-        } catch (err) {
-            console.error(err);
-            showAlert('matchAlert', 'Error de conexión', true);
-        }
-    });
-
-    // Edit Match
-    document.getElementById('editMatchForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const matchId = document.getElementById('editMatchId').value;
-        const map = document.getElementById('editMatchMap').value.trim();
-        const score = document.getElementById('editMatchScore').value.trim();
-        const winnerTeam = document.getElementById('editMatchWinner').value.trim();
-
-        try {
-            const response = await fetch(`${API_URL}/matches/${matchId}`, {
-                method: 'PUT',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ map, winnerTeam, score })
-            });
-            if (response.ok) {
-                document.getElementById('edit-match-modal').classList.remove('active');
-                await loadMatches();
-                showAlert('editMatchAlert', 'Partida actualizada con éxito', false);
-            } else {
-                const error = await response.json();
-                showAlert('editMatchAlert', error.error || 'Error al actualizar partida', true);
-            }
-        } catch (err) {
-            console.error(err);
-            showAlert('editMatchAlert', 'Error de conexión', true);
-        }
-    });
-
-    // Player Search
-    document.getElementById('playerSearch').addEventListener('input', function() {
-        filterPlayers(this.value.toLowerCase());
-    });
+    document.getElementById('add-player-btn').addEventListener('click',()=> document.getElementById('add-player-modal').classList.add('active'));
+    document.getElementById('cancelAddPlayerBtn').addEventListener('click',()=> document.getElementById('add-player-modal').classList.remove('active'));
+    document.getElementById('cancelEditPlayerBtn').addEventListener('click',()=> document.getElementById('edit-player-modal').classList.remove('active'));
 }
 
 // ---------------- Players ----------------
-async function loadPlayers() {
-    try {
-        const response = await fetch(`${API_URL}/players`, { credentials: 'include' });
-        allPlayers = await response.json();
-        renderPlayers(allPlayers);
-        updatePlayerStats(allPlayers);
-    } catch (err) {
-        console.error(err);
-    }
+function loadPlayers(){
+    fetch(`${API_URL}/players`).then(r=>r.json()).then(data=>{
+        allPlayers=data; renderPlayers();
+    });
+}
+function renderPlayers(){
+    const grid=document.getElementById('playersGrid'); grid.innerHTML='';
+    allPlayers.forEach(p=>{
+        const card=document.createElement('div'); card.className='player-card';
+        card.innerHTML=`
+        <div class="player-card-header">
+            <div>
+                <span class="player-name">${p.name}</span>
+                <span class="player-tag">${p.tag}</span>
+            </div>
+        </div>
+        <div class="player-social"></div>
+        <div class="player-card-actions">
+            <button class="btn btn-sm btn-primary" onclick="editPlayer('${p._id}')">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="deletePlayer('${p._id}')">Eliminar</button>
+        </div>`;
+        grid.appendChild(card);
+    });
 }
 
-function renderPlayers(players) {
-    const playersGrid = document.getElementById('playersGrid');
-    playersGrid.innerHTML = '';
-
-    players.forEach(player => {
-        const playerCard = document.createElement('div');
-        playerCard.className = 'player-card';
-        playerCard.innerHTML = `
-            <div class="player-card-header">
-                <div>
-                    <h3 class="player-name">${player.name}</h3>
-                    <p class="player-tag">${player.tag}</p>
-                </div>
-            </div>
-            <div class="player-social">
-                ${player.social?.twitter ? `<a href="https://twitter.com/${player.social.twitter.replace('@','')}" target="_blank"><i data-lucide="twitter"></i></a>` : ''}
-                ${player.social?.twitch ? `<a href="https://twitch.tv/${player.social.twitch}" target="_blank"><i data-lucide="video"></i></a>` : ''}
-                ${player.social?.tracker ? `<a href="${player.social.tracker}" target="_blank"><i data-lucide="bar-chart-3"></i></a>` : ''}
-            </div>
-            <div class="player-card-actions">
-                <button class="btn btn-outline btn-sm edit-player" data-id="${player._id}"><i data-lucide="edit"></i> Editar</button>
-                <button class="btn btn-danger btn-sm delete-player" data-id="${player._id}"><i data-lucide="trash-2"></i> Eliminar</button>
-            </div>
-        `;
-        playersGrid.appendChild(playerCard);
-    });
-
-    // Edit buttons
-    document.querySelectorAll('.edit-player').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const playerId = btn.getAttribute('data-id');
-            const player = allPlayers.find(p => p._id === playerId);
-            if (!player) return;
-            currentEditPlayer = player;
-            document.getElementById('editPlayerName').value = player.name;
-            document.getElementById('editPlayerTag').value = player.tag;
-            document.getElementById('editPlayerTwitter').value = player.social?.twitter || '';
-            document.getElementById('editPlayerTwitch').value = player.social?.twitch || '';
-            document.getElementById('editPlayerTracker').value = player.social?.tracker || '';
-            document.getElementById('edit-player-modal').classList.add('active');
-        });
-    });
-
-    // Delete buttons
-    document.querySelectorAll('.delete-player').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const playerId = btn.getAttribute('data-id');
-            const player = allPlayers.find(p => p._id === playerId);
-            if (!player || !confirm('¿Estás seguro de eliminar este jugador?')) return;
-
-            try {
-                const response = await fetch(`${API_URL}/players`, {
-                    method: 'DELETE',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: player.name, tag: player.tag })
-                });
-                if (response.ok) {
-                    await loadPlayers();
-                    alert('Jugador eliminado con éxito');
-                } else {
-                    const error = await response.json();
-                    alert(error.error || 'Error al eliminar jugador');
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Error de conexión');
-            }
-        });
-    });
-
-    lucide.createIcons();
+function editPlayer(id){ currentEditPlayer=id; const p=allPlayers.find(pl=>pl._id===id);
+    document.getElementById('editPlayerName').value=p.name;
+    document.getElementById('editPlayerTag').value=p.tag;
+    document.getElementById('editPlayerSocial').value=JSON.stringify(p.social||{});
+    document.getElementById('edit-player-modal').classList.add('active');
 }
 
-function filterPlayers(term) {
-    if (!term) return renderPlayers(allPlayers);
-    renderPlayers(allPlayers.filter(p => p.name.toLowerCase().includes(term) || p.tag.toLowerCase().includes(term)));
+function deletePlayer(id){
+    if(!confirm('Eliminar jugador?')) return;
+    fetch(`${API_URL}/players/${id}`,{method:'DELETE'}).then(r=>loadPlayers());
 }
 
-// ---------------- Matches ----------------
-async function loadMatches() {
-    try {
-        const response = await fetch(`${API_URL}/matches`, { credentials: 'include' });
-        allMatches = await response.json();
+// ---------------- Match Form ----------------
+function loadMatches(){
+    fetch(`${API_URL}/matches`).then(r=>r.json()).then(data=>{
+        allMatches=data;
         renderMatches(allMatches);
-        updateMatchStats(allMatches);
-    } catch (err) {
-        console.error(err);
-    }
+        renderTeamInputs();
+    });
+}
+function renderMatches(matches){
+    const grid=document.getElementById('matchesGrid'); grid.innerHTML='';
+    matches.forEach(m=>{
+        const card=document.createElement('div'); card.className='match-card';
+        card.innerHTML=`<div class="match-card-header">
+            <span class="match-map">${m.map}</span>
+            <span class="match-date">${new Date(m.date).toLocaleDateString()}</span>
+        </div>
+        <div class="match-score">${m.score}</div>
+        <div class="match-winner">Ganador: ${m.winner}</div>`;
+        grid.appendChild(card);
+    });
 }
 
-function renderMatches(matches) {
-    const matchesGrid = document.getElementById('matchesGrid');
-    matchesGrid.innerHTML = '';
-
-    matches.forEach(match => {
-        const matchCard = document.createElement('div');
-        matchCard.className = 'match-card';
-        matchCard.innerHTML = `
-            <div class="match-card-header">
-                <h3 class="match-map">${match.map}</h3>
-                <span class="match-date">${new Date(match.date).toLocaleDateString()}</span>
-            </div>
-            <div class="match-score">${match.score}</div>
-            <div class="match-winner">Ganador: Equipo ${match.winnerTeam}</div>
-            <div class="match-card-actions">
-                <button class="btn btn-outline btn-sm edit-match" data-id="${match._id}"><i data-lucide="edit"></i> Editar</button>
-                <button class="btn btn-danger btn-sm delete-match" data-id="${match._id}"><i data-lucide="trash-2"></i> Eliminar</button>
-            </div>
-        `;
-        matchesGrid.appendChild(matchCard);
+function renderTeamInputs(){
+    const teamA=document.getElementById('teamA'), teamB=document.getElementById('teamB'); 
+    teamA.innerHTML=''; teamB.innerHTML='';
+    allPlayers.forEach(p=>{
+        const divA=document.createElement('div'); divA.innerHTML=`<label><input type="checkbox" value="${p._id}"> ${p.name} (${p.tag})</label>`; teamA.appendChild(divA);
+        const divB=document.createElement('div'); divB.innerHTML=`<label><input type="checkbox" value="${p._id}"> ${p.name} (${p.tag})</label>`; teamB.appendChild(divB);
     });
+}
 
-    document.querySelectorAll('.edit-match').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const match = allMatches.find(m => m._id === btn.getAttribute('data-id'));
-            if (!match) return;
-            document.getElementById('editMatchId').value = match._id;
-            document.getElementById('editMatchMap').value = match.map;
-            document.getElementById('editMatchScore').value = match.score;
-            document.getElementById('editMatchWinner').value = match.winnerTeam;
-            document.getElementById('edit-match-modal').classList.add('active');
+// ---------------- Filters ----------------
+function initFilters(){
+    document.getElementById('mapFilter').addEventListener('change', applyFilters);
+    document.getElementById('dateFilter').addEventListener('change', applyFilters);
+}
+function applyFilters(){
+    let filtered=allMatches;
+    const map=document.getElementById('mapFilter').value;
+    const date=document.getElementById('dateFilter').value;
+    if(map) filtered=filtered.filter(m=>m.map===map);
+    if(date!=='all'){
+        const now=new Date();
+        filtered=filtered.filter(m=>{
+            const d=new Date(m.date);
+            if(date==='month') return d>=new Date(now.setMonth(now.getMonth()-1));
+            if(date==='week') return d>=new Date(now.setDate(now.getDate()-7));
+            if(date==='today') return d.toDateString()===new Date().toDateString();
         });
-    });
-
-    document.querySelectorAll('.delete-match').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const matchId = btn.getAttribute('data-id');
-            if (!confirm('¿Estás seguro de eliminar esta partida?')) return;
-            try {
-                const response = await fetch(`${API_URL}/matches/${matchId}`, { method: 'DELETE', credentials: 'include' });
-                if (response.ok) {
-                    await loadMatches();
-                    alert('Partida eliminada con éxito');
-                } else {
-                    const error = await response.json();
-                    alert(error.error || 'Error al eliminar partida');
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Error de conexión');
-            }
-        });
-    });
-
-    lucide.createIcons();
-}
-
-// ---------------- Stats ----------------
-function updatePlayerStats(players) {
-    document.getElementById('totalPlayers').textContent = players.length;
-    document.getElementById('playersChange').textContent = `+${players.length} este mes`;
-}
-
-function updateMatchStats(matches) {
-    document.getElementById('totalMatches').textContent = matches.length;
-    document.getElementById('matchesChange').textContent = `+${matches.length} esta semana`;
-    if (matches.length > 0) {
-        const lastMatch = matches.reduce((a,b) => new Date(a.date) > new Date(b.date) ? a : b);
-        document.getElementById('lastMatchDate').textContent = new Date(lastMatch.date).toLocaleDateString();
     }
+    renderMatches(filtered);
 }
 
-// ---------------- Helper ----------------
-function showAlert(id, msg, isError) {
-    const el = document.getElementById(id);
-    el.textContent = msg;
-    el.classList.remove('hidden');
-    el.style.color = isError ? 'red' : 'green';
-    setTimeout(() => el.classList.add('hidden'), 3000);
-}
+// Cancel Match Form
+document.getElementById('cancel-match-btn').addEventListener('click',()=>{
+    document.getElementById('addMatchForm').reset();
+    renderTeamInputs();
+});
 
-// ---------------- Responsive Sidebar ----------------
-function initResponsiveSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const toggle = document.getElementById('sidebarToggle');
-    toggle.addEventListener('click', () => sidebar.classList.toggle('collapsed'));
-}
+// Logout
+document.getElementById('logoutBtn').addEventListener('click',async()=>{
+    await fetch('/logout',{method:'POST',credentials:'include'}); window.location.href='/login.html';
+});
 </script>
 </body>
 </html>
