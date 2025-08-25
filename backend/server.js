@@ -80,6 +80,9 @@ async function connectDB() {
     matchesCollection = db.collection("matches");
     eventsCollection = db.collection("events");
     console.log("✅ Conectado a MongoDB");
+
+    // Recalcular puntos históricos al iniciar
+    await recalcAllPlayersPoints();
   } catch (err) {
     console.error("❌ Error conectando a MongoDB:", err);
     process.exit(1);
@@ -87,10 +90,66 @@ async function connectDB() {
 }
 
 // -------------------
-// --- Rutas estáticas
+// --- Función de cálculo de puntos
 // -------------------
-app.use(express.static(path.join(__dirname, "../frontend")));
-app.use("/private", express.static(path.join(__dirname, "private")));
+function calculateMatchPoints(playerStats, matchWinnerTeam, playerTeam) {
+  // Base points por equipo
+  const won = playerTeam === matchWinnerTeam;
+
+  let basePoints = 0;
+
+  // Factores de stats
+  const killsFactor = playerStats.kills;
+  const deathsFactor = playerStats.deaths;
+  const assistsFactor = playerStats.assists;
+  const acsFactor = playerStats.acs;
+  const fbFactor = playerStats.firstBloods;
+
+  // Score simple inicial
+  let points = 0;
+
+  points += killsFactor * 1.2;          // Kills
+  points += assistsFactor * 0.8;        // Assists
+  points += acsFactor / 100;            // ACS escalado
+  points += fbFactor * 2;               // First Bloods
+  points -= deathsFactor * 0.8;         // Deaths penalizan
+
+  // Ajuste por victoria/derrota
+  points += won ? 5 : -5;
+
+  // Limitar a -20 / 20
+  points = Math.max(Math.min(points, 20), -20);
+
+  // Puntos bonus
+  let bonus = 0;
+  if (killsFactor >= 25 || acsFactor >= 250) bonus = 5;
+  else if (killsFactor >= 20 || acsFactor >= 220) bonus = 3;
+  else if (killsFactor >= 15 || acsFactor >= 200) bonus = 1;
+
+  return { totalPoints: points + bonus, basePoints: points, bonus };
+}
+
+// -------------------
+// --- Recalcular puntos históricos
+// -------------------
+async function recalcAllPlayersPoints() {
+  const allPlayers = await playersCollection.find().toArray();
+  for (const player of allPlayers) {
+    const matches = await matchesCollection.find({ "match.name": player.name, "match.tag": player.tag }).toArray();
+    let totalPoints = 0;
+    for (const m of matches) {
+      const playerTeam = m.match.findIndex(p => p.name === player.name && p.tag === player.tag) < 5 ? "A" : "B";
+      const pStats = m.match.find(p => p.name === player.name && p.tag === player.tag);
+      const { totalPoints: mp } = calculateMatchPoints(pStats, m.winnerTeam, playerTeam);
+      totalPoints += mp;
+    }
+    await playersCollection.updateOne(
+      { name: player.name, tag: player.tag },
+      { $set: { matchPoints: totalPoints } }
+    );
+  }
+  console.log("✅ Recalculados puntos de todos los jugadores");
+}
 
 // -------------------
 // --- Login / Admin
@@ -98,22 +157,13 @@ app.use("/private", express.static(path.join(__dirname, "private")));
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
 
-app.get("/login.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "private/login.html"));
-});
-
 app.post("/login", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    if (username === ADMIN_USER && password === ADMIN_PASS) {
-      req.session.isAdmin = true;
-      res.json({ success: true });
-    } else {
-      res.status(401).json({ error: "Usuario o contraseña incorrectos" });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error interno en login" });
+  const { username, password } = req.body;
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    req.session.isAdmin = true;
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ error: "Usuario o contraseña incorrectos" });
   }
 });
 
@@ -121,14 +171,6 @@ function requireAdmin(req, res, next) {
   if (req.session.isAdmin) next();
   else res.status(403).json({ error: "Acceso denegado" });
 }
-
-app.get("/check-session", (req, res) => {
-  res.json({ loggedIn: !!req.session.isAdmin });
-});
-
-app.get("/admin.html", requireAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, "private/admin.html"));
-});
 
 // -------------------
 // --- CRUD Players
@@ -153,7 +195,8 @@ app.post("/players", requireAdmin, async (req, res) => {
       matchesPlayed: 0,
       wins: 0,
       badges,
-      social
+      social,
+      matchPoints: 0 // nuevo campo
     };
 
     await playersCollection.insertOne(newPlayer);
@@ -174,79 +217,20 @@ app.get("/players", requireAdmin, async (req, res) => {
   }
 });
 
-app.put("/players", requireAdmin, async (req, res) => {
-  try {
-    const { oldName, oldTag, newName, newTag, social } = req.body;
-    if (!oldName || !oldTag || !newName || !newTag)
-      return res.status(400).json({ error: "Todos los campos son requeridos" });
-
-    await playersCollection.updateOne(
-      { name: oldName, tag: oldTag },
-      { $set: { name: newName, tag: newTag, social: social || {} } }
-    );
-
-    const matches = await matchesCollection.find({ "match.name": oldName, "match.tag": oldTag }).toArray();
-    for (const match of matches) {
-      let modified = false;
-      match.match.forEach(player => {
-        if (player.name === oldName && player.tag === oldTag) {
-          player.name = newName;
-          player.tag = newTag;
-          modified = true;
-        }
-      });
-      if (modified) await matchesCollection.updateOne({ _id: match._id }, { $set: { match: match.match } });
-    }
-
-    res.json({ message: "Jugador actualizado correctamente en players y matches" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al actualizar jugador" });
-  }
-});
-
-app.delete("/players", requireAdmin, async (req, res) => {
-  try {
-    const { name, tag } = req.body;
-    if (!name || !tag) return res.status(400).json({ error: "Nombre y tag requeridos" });
-
-    await playersCollection.deleteOne({ name, tag });
-    await matchesCollection.updateMany(
-      { "match.name": name, "match.tag": tag },
-      { $pull: { match: { name, tag } } }
-    );
-
-    res.json({ message: "Jugador eliminado correctamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al eliminar jugador" });
-  }
-});
-
 // -------------------
-// --- CRUD Matches
+// --- CRUD Matches con puntos
 // -------------------
 app.post("/matches", requireAdmin, async (req, res) => {
   try {
-    const { match, winnerTeam, score, map, eventId } = req.body;
+    const { match, winnerTeam, score, map } = req.body;
     if (!Array.isArray(match) || match.length === 0) return res.status(400).json({ error: "Formato inválido" });
-    if (!score || typeof score !== "string") return res.status(400).json({ error: "Score final requerido" });
-    if (!map || typeof map !== "string") return res.status(400).json({ error: "Mapa requerido" });
 
     const newMatch = { match, winnerTeam, score, map, date: new Date() };
     await matchesCollection.insertOne(newMatch);
 
-    // Si la partida pertenece a un evento
-    if (eventId) {
-      await eventsCollection.updateOne(
-        { _id: new ObjectId(eventId) },
-        { $push: { matches: newMatch } }
-      );
-    }
-
     for (const p of match) {
       const playerTeam = match.indexOf(p) < 5 ? "A" : "B";
-      const headshotKills = Math.round((p.hsPercent / 100) * p.kills);
+      const { totalPoints } = calculateMatchPoints(p, winnerTeam, playerTeam);
 
       await playersCollection.updateOne(
         { name: p.name, tag: p.tag },
@@ -257,9 +241,9 @@ app.post("/matches", requireAdmin, async (req, res) => {
             totalAssists: p.assists,
             totalACS: p.acs,
             totalFirstBloods: p.firstBloods,
-            totalHeadshotKills: headshotKills,
             matchesPlayed: 1,
-            wins: playerTeam === winnerTeam ? 1 : 0
+            wins: playerTeam === winnerTeam ? 1 : 0,
+            matchPoints: totalPoints
           },
         }
       );
@@ -272,198 +256,40 @@ app.post("/matches", requireAdmin, async (req, res) => {
   }
 });
 
-app.get("/matches", async (req, res) => {
-  try {
-    const matches = await matchesCollection.find().sort({ date: -1 }).toArray();
-    res.json(matches);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener partidas" });
-  }
-});
-
-app.put("/matches/:id", requireAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { map, winnerTeam, score } = req.body;
-    if (!map || !winnerTeam || !score) return res.status(400).json({ error: "Faltan datos" });
-
-    const result = await matchesCollection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { map, winnerTeam, score } }
-    );
-
-    if (result.matchedCount === 0) return res.status(404).json({ error: "Partida no encontrada" });
-
-    res.json({ message: "Partida actualizada correctamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al actualizar partida" });
-  }
-});
-
 // -------------------
-// --- CRUD Events / Torneos
-// -------------------
-app.post("/events", requireAdmin, async (req, res) => {
-  try {
-    const { name, teamSize, numTeams, rounds = 0 } = req.body;
-    if (!name || !teamSize || !numTeams)
-      return res.status(400).json({ error: "Completa todos los campos" });
-
-    const exists = await eventsCollection.findOne({ name });
-    if (exists) return res.status(400).json({ error: "Evento ya existe" });
-
-    const newEvent = {
-      name,
-      teamSize,
-      numTeams,
-      rounds,
-      matches: [],
-      createdAt: new Date()
-    };
-
-    await eventsCollection.insertOne(newEvent);
-    res.json({ message: "Evento creado correctamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al crear evento" });
-  }
-});
-
-app.get("/events", requireAdmin, async (req, res) => {
-  try {
-    const events = await eventsCollection.find().sort({ createdAt: -1 }).toArray();
-    res.json(events);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener eventos" });
-  }
-});
-
-app.get("/events/:id/matches", requireAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const event = await eventsCollection.findOne({ _id: new ObjectId(id) });
-    if (!event) return res.status(404).json({ error: "Evento no encontrado" });
-    res.json(event.matches || []);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener partidas del evento" });
-  }
-});
-
-// -------------------
-// --- Rutas públicas
+// --- Leaderboard con rangos
 // -------------------
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
-    const withScores = players.map(p => {
-      const matches = p.matchesPlayed || 0;
-      const avgKills = matches ? p.totalKills / matches : 0;
-      const avgDeaths = matches ? p.totalDeaths / matches : 1;
-      const avgACS = matches ? p.totalACS / matches : 0;
-      const avgAssists = matches ? p.totalAssists / matches : 0;
-      const winrate = matches ? (p.wins / matches) * 100 : 0;
-      const hsPercent = p.totalKills ? (p.totalHeadshotKills / p.totalKills) * 100 : 0;
-      const avgKDA = avgDeaths === 0 ? avgKills : avgKills / avgDeaths;
-      const cappedKills = Math.min(avgKills, 30);
-      const impactKillsScore = (p.totalFirstBloods * 1.5) + (cappedKills - p.totalFirstBloods);
-      const scoreRaw = (avgACS * 1.5) + (impactKillsScore * 1.2) + (avgAssists * 0.8) + hsPercent + winrate - avgDeaths;
-      const reliabilityFactor = Math.min(matches / 5, 1);
-      const consistencyBonus = 1 + (Math.min(matches, 20) / 100);
+    players.sort((a, b) => (b.matchPoints || 0) - (a.matchPoints || 0));
+
+    const leaderboard = players.map((p, i) => {
+      let rank = "Diamond";
+      if (i < 3) rank = "Radiant";
+      else if (i < 10) rank = "Immortal";
+      else if (i < 20) rank = "Ascendant";
 
       return {
         name: p.name,
         tag: p.tag,
-        avgACS,
-        avgKDA,
-        hsPercent,
-        fk: matches ? (p.totalFirstBloods / matches) : 0,
-        winrate,
-        score: Math.round(scoreRaw * consistencyBonus * reliabilityFactor),
-        matchesPlayed: matches,
+        matchPoints: p.matchPoints || 0,
+        matchesPlayed: p.matchesPlayed,
+        rank,
         badges: p.badges || [],
         social: p.social || {}
       };
     });
 
-    withScores.sort((a, b) => b.score - a.score);
-    res.json(withScores);
+    res.json(leaderboard);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error al generar leaderboard" });
-  }
-});
-
-app.get("/matches/:name/:tag", async (req, res) => {
-  try {
-    const { name, tag } = req.params;
-    const matches = await matchesCollection.find({ match: { $elemMatch: { name, tag } } }).sort({ date: -1 }).toArray();
-    res.json(matches.map(m => ({
-      match: m.match,
-      winnerTeam: m.winnerTeam,
-      score: m.score,
-      date: m.date
-    })));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener historial" });
-  }
-});
-
-app.get("/matches-count", async (req, res) => {
-  try {
-    const count = await matchesCollection.countDocuments();
-    res.json({ count });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener total de partidas" });
-  }
-});
-
-app.get("/players-count", async (req, res) => {
-  try {
-    const count = await playersCollection.countDocuments();
-    res.json({ count });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener total de jugadores" });
-  }
-});
-
-app.get("/last-match", async (req, res) => {
-  try {
-    const lastMatch = await matchesCollection.find().sort({ date: -1 }).limit(1).toArray();
-    if (lastMatch.length === 0) return res.json({ date: null });
-    res.json({ date: lastMatch[0].date });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener última partida" });
-  }
-});
-
-// Public route for getting events (visible on frontend)
-app.get("/events-public", async (req, res) => {
-  try {
-    const events = await eventsCollection.find().sort({ createdAt: -1 }).toArray();
-    res.json(events.map(e => ({
-      _id: e._id,
-      name: e.name,
-      teamSize: e.teamSize,
-      numTeams: e.numTeams,
-      rounds: e.rounds,
-      matches: e.matches || []
-    })));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener eventos" });
+    res.status(500).json({ error: "Error generando leaderboard" });
   }
 });
 
 // -------------------
-// --- Iniciar servidor
+// --- Servidor
 // -------------------
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
