@@ -71,6 +71,7 @@ if (!process.env.MONGODB_URI) {
 }
 
 let db, playersCollection, matchesCollection, eventsCollection;
+
 async function connectDB() {
   try {
     const client = new MongoClient(process.env.MONGODB_URI);
@@ -81,7 +82,7 @@ async function connectDB() {
     eventsCollection = db.collection("events");
     console.log("✅ Conectado a MongoDB");
 
-    // Recalcular puntos históricos al iniciar
+    // Recalcular score históricos al iniciar
     await recalcAllPlayersScore();
   } catch (err) {
     console.error("❌ Error conectando a MongoDB:", err);
@@ -95,38 +96,31 @@ async function connectDB() {
 function calculateMatchScore(playerStats, matchWinnerTeam, playerTeam) {
   const won = playerTeam === matchWinnerTeam;
 
-  // Factores de stats
-  const killsFactor = playerStats.kills;
-  const deathsFactor = playerStats.deaths;
-  const assistsFactor = playerStats.assists;
-  const acsFactor = playerStats.acs;
-  const fbFactor = playerStats.firstBloods;
-
-  // Score base
   let points = 0;
-  points += killsFactor * 1.2;
-  points += assistsFactor * 0.8;
-  points += acsFactor / 100;
-  points += fbFactor * 2;
-  points -= deathsFactor * 0.8;
+  points += playerStats.kills * 1.2;
+  points += playerStats.assists * 0.8;
+  points += playerStats.acs / 100;
+  points += playerStats.firstBloods * 2;
+  points -= playerStats.deaths * 0.8;
 
   // Ajuste por victoria/derrota
   points += won ? 5 : -5;
 
-  // Limitar entre -20 y 20
+  // Limitar base points a -20 / 20
   points = Math.max(Math.min(points, 20), -20);
 
   // Puntos bonus
   let bonus = 0;
-  if (killsFactor >= 25 || acsFactor >= 250) bonus = 5;
-  else if (killsFactor >= 20 || acsFactor >= 220) bonus = 3;
-  else if (killsFactor >= 15 || acsFactor >= 200) bonus = 1;
+  if (playerStats.kills >= 25 || playerStats.acs >= 250) bonus = 5;
+  else if (playerStats.kills >= 20 || playerStats.acs >= 220) bonus = 3;
+  else if (playerStats.kills >= 15 || playerStats.acs >= 200) bonus = 1;
 
-  return { totalScore: points + bonus, baseScore: points, bonus };
+  const totalScore = Math.round(points + bonus); // redondeamos a entero
+  return { totalScore, basePoints: Math.round(points), bonus };
 }
 
 // -------------------
-// --- Recalcular scores históricos
+// --- Recalcular score de todos los jugadores
 // -------------------
 async function recalcAllPlayersScore() {
   const allPlayers = await playersCollection.find().toArray();
@@ -139,6 +133,8 @@ async function recalcAllPlayersScore() {
       const { totalScore: mp } = calculateMatchScore(pStats, m.winnerTeam, playerTeam);
       totalScore += mp;
     }
+    // No puede bajar de 0
+    totalScore = Math.max(totalScore, 0);
     await playersCollection.updateOne(
       { name: player.name, tag: player.tag },
       { $set: { score: totalScore } }
@@ -192,7 +188,7 @@ app.post("/players", requireAdmin, async (req, res) => {
       wins: 0,
       badges,
       social,
-      score: 0
+      score: 0 // Nuevo campo score
     };
 
     await playersCollection.insertOne(newPlayer);
@@ -214,7 +210,7 @@ app.get("/players", requireAdmin, async (req, res) => {
 });
 
 // -------------------
-// --- CRUD Matches con score
+// --- CRUD Matches con cálculo de score
 // -------------------
 app.post("/matches", requireAdmin, async (req, res) => {
   try {
@@ -228,6 +224,9 @@ app.post("/matches", requireAdmin, async (req, res) => {
       const playerTeam = match.indexOf(p) < 5 ? "A" : "B";
       const { totalScore } = calculateMatchScore(p, winnerTeam, playerTeam);
 
+      const currentPlayer = await playersCollection.findOne({ name: p.name, tag: p.tag });
+      const newTotalScore = Math.max((currentPlayer.score || 0) + totalScore, 0);
+
       await playersCollection.updateOne(
         { name: p.name, tag: p.tag },
         {
@@ -238,9 +237,9 @@ app.post("/matches", requireAdmin, async (req, res) => {
             totalACS: p.acs,
             totalFirstBloods: p.firstBloods,
             matchesPlayed: 1,
-            wins: playerTeam === winnerTeam ? 1 : 0,
-            score: totalScore
+            wins: playerTeam === winnerTeam ? 1 : 0
           },
+          $set: { score: newTotalScore }
         }
       );
     }
