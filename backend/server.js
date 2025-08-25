@@ -387,8 +387,12 @@ async function recalcTotalHeadshots() {
 // -------------------
 // --- Servidor 
 // -------------------
-connectDB().then(() => {async () => {
+async function startServer() {
+  await connectDB();
   await recalcTotalHeadshots();
-  // Iniciamos el servidor
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+}
+
+startServer().catch(err => {
+  console.error("Error iniciando servidor:", err);
 });
