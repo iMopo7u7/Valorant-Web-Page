@@ -82,7 +82,7 @@ async function connectDB() {
     console.log("✅ Conectado a MongoDB");
 
     // Recalcular puntos históricos al iniciar
-    await recalcAllPlayersPoints();
+    await recalcAllPlayersScore();
   } catch (err) {
     console.error("❌ Error conectando a MongoDB:", err);
     process.exit(1);
@@ -90,13 +90,10 @@ async function connectDB() {
 }
 
 // -------------------
-// --- Función de cálculo de puntos
+// --- Función de cálculo de score por partida
 // -------------------
-function calculateMatchPoints(playerStats, matchWinnerTeam, playerTeam) {
-  // Base points por equipo
+function calculateMatchScore(playerStats, matchWinnerTeam, playerTeam) {
   const won = playerTeam === matchWinnerTeam;
-
-  let basePoints = 0;
 
   // Factores de stats
   const killsFactor = playerStats.kills;
@@ -105,19 +102,18 @@ function calculateMatchPoints(playerStats, matchWinnerTeam, playerTeam) {
   const acsFactor = playerStats.acs;
   const fbFactor = playerStats.firstBloods;
 
-  // Score simple inicial
+  // Score base
   let points = 0;
-
-  points += killsFactor * 1.2;          // Kills
-  points += assistsFactor * 0.8;        // Assists
-  points += acsFactor / 100;            // ACS escalado
-  points += fbFactor * 2;               // First Bloods
-  points -= deathsFactor * 0.8;         // Deaths penalizan
+  points += killsFactor * 1.2;
+  points += assistsFactor * 0.8;
+  points += acsFactor / 100;
+  points += fbFactor * 2;
+  points -= deathsFactor * 0.8;
 
   // Ajuste por victoria/derrota
   points += won ? 5 : -5;
 
-  // Limitar a -20 / 20
+  // Limitar entre -20 y 20
   points = Math.max(Math.min(points, 20), -20);
 
   // Puntos bonus
@@ -126,29 +122,29 @@ function calculateMatchPoints(playerStats, matchWinnerTeam, playerTeam) {
   else if (killsFactor >= 20 || acsFactor >= 220) bonus = 3;
   else if (killsFactor >= 15 || acsFactor >= 200) bonus = 1;
 
-  return { totalPoints: points + bonus, basePoints: points, bonus };
+  return { totalScore: points + bonus, baseScore: points, bonus };
 }
 
 // -------------------
-// --- Recalcular puntos históricos
+// --- Recalcular scores históricos
 // -------------------
-async function recalcAllPlayersPoints() {
+async function recalcAllPlayersScore() {
   const allPlayers = await playersCollection.find().toArray();
   for (const player of allPlayers) {
     const matches = await matchesCollection.find({ "match.name": player.name, "match.tag": player.tag }).toArray();
-    let totalPoints = 0;
+    let totalScore = 0;
     for (const m of matches) {
       const playerTeam = m.match.findIndex(p => p.name === player.name && p.tag === player.tag) < 5 ? "A" : "B";
       const pStats = m.match.find(p => p.name === player.name && p.tag === player.tag);
-      const { totalPoints: mp } = calculateMatchPoints(pStats, m.winnerTeam, playerTeam);
-      totalPoints += mp;
+      const { totalScore: mp } = calculateMatchScore(pStats, m.winnerTeam, playerTeam);
+      totalScore += mp;
     }
     await playersCollection.updateOne(
       { name: player.name, tag: player.tag },
-      { $set: { matchPoints: totalPoints } }
+      { $set: { score: totalScore } }
     );
   }
-  console.log("✅ Recalculados puntos de todos los jugadores");
+  console.log("✅ Recalculados scores de todos los jugadores");
 }
 
 // -------------------
@@ -196,7 +192,7 @@ app.post("/players", requireAdmin, async (req, res) => {
       wins: 0,
       badges,
       social,
-      matchPoints: 0 // nuevo campo
+      score: 0
     };
 
     await playersCollection.insertOne(newPlayer);
@@ -218,19 +214,19 @@ app.get("/players", requireAdmin, async (req, res) => {
 });
 
 // -------------------
-// --- CRUD Matches con puntos
+// --- CRUD Matches con score
 // -------------------
 app.post("/matches", requireAdmin, async (req, res) => {
   try {
-    const { match, winnerTeam, score, map } = req.body;
+    const { match, winnerTeam, score: matchScore, map } = req.body;
     if (!Array.isArray(match) || match.length === 0) return res.status(400).json({ error: "Formato inválido" });
 
-    const newMatch = { match, winnerTeam, score, map, date: new Date() };
+    const newMatch = { match, winnerTeam, score: matchScore, map, date: new Date() };
     await matchesCollection.insertOne(newMatch);
 
     for (const p of match) {
       const playerTeam = match.indexOf(p) < 5 ? "A" : "B";
-      const { totalPoints } = calculateMatchPoints(p, winnerTeam, playerTeam);
+      const { totalScore } = calculateMatchScore(p, winnerTeam, playerTeam);
 
       await playersCollection.updateOne(
         { name: p.name, tag: p.tag },
@@ -243,7 +239,7 @@ app.post("/matches", requireAdmin, async (req, res) => {
             totalFirstBloods: p.firstBloods,
             matchesPlayed: 1,
             wins: playerTeam === winnerTeam ? 1 : 0,
-            matchPoints: totalPoints
+            score: totalScore
           },
         }
       );
@@ -262,7 +258,7 @@ app.post("/matches", requireAdmin, async (req, res) => {
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
-    players.sort((a, b) => (b.matchPoints || 0) - (a.matchPoints || 0));
+    players.sort((a, b) => (b.score || 0) - (a.score || 0));
 
     const leaderboard = players.map((p, i) => {
       let rank = "Diamond";
@@ -273,7 +269,7 @@ app.get("/leaderboard", async (req, res) => {
       return {
         name: p.name,
         tag: p.tag,
-        matchPoints: p.matchPoints || 0,
+        score: p.score || 0,
         matchesPlayed: p.matchesPlayed,
         rank,
         badges: p.badges || [],
