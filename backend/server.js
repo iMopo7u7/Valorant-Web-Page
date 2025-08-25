@@ -356,5 +356,6 @@ app.get("/last-match", async (req, res) => {
 // --- Servidor 
 // -------------------
 connectDB().then(() => {
+  // Iniciamos el servidor
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
-}});
+});
