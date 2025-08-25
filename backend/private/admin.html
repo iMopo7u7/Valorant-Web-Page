@@ -1093,498 +1093,393 @@
     </main>
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script>
-    const API_URL = window.location.origin;
-    let allPlayers = [];
-    let allMatches = [];
-    let currentEditPlayer = null;
+<script>
+const API_URL = window.location.origin;
+let allPlayers = [];
+let allMatches = [];
+let currentEditPlayer = null;
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Lucide icons
-        lucide.createIcons();
-        
-        // Navigation functionality
-        initNavigation();
-        
-        // Modal functionality
-        initModals();
-        
-        // Form functionality
-        initForms();
-        
-        // Load initial data
-        loadPlayers();
-        loadMatches();
-        
-        // Responsive sidebar
-        initResponsiveSidebar();
-        
-        // Logout functionality
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+    initNavigation();
+    initModals();
+    initForms();
+    loadPlayers();
+    loadMatches();
+    initResponsiveSidebar();
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        try {
+            await fetch('/logout', { method: 'POST', credentials: 'include' });
+            window.location.href = '/login.html';
+        } catch (err) {
+            console.error('Logout error:', err);
+        }
+    });
+});
+
+// ---------------- Navigation ----------------
+function initNavigation() {
+    const navItems = document.querySelectorAll('.nav-item');
+    const contentSections = document.querySelectorAll('.content-section');
+    const pageTitle = document.querySelector('.page-title');
+    
+    navItems.forEach(item => {
+        if (item.id !== 'logoutBtn') {
+            item.addEventListener('click', function() {
+                const sectionId = this.getAttribute('data-section');
+                navItems.forEach(navItem => navItem.classList.remove('active'));
+                this.classList.add('active');
+                contentSections.forEach(section => section.classList.remove('active'));
+                document.getElementById(sectionId).classList.add('active');
+                pageTitle.textContent = this.querySelector('span').textContent;
+            });
+        }
+    });
+}
+
+// ---------------- Modals ----------------
+function initModals() {
+    const modals = ['add-player', 'edit-player', 'edit-match'];
+    modals.forEach(name => {
+        const modal = document.getElementById(`${name}-modal`);
+        modal.querySelectorAll('.modal-close').forEach(btn => btn.addEventListener('click', () => modal.classList.remove('active')));
+        modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('active'); });
+    });
+
+    document.getElementById('add-player-btn').addEventListener('click', () => document.getElementById('add-player-modal').classList.add('active'));
+    document.getElementById('cancel-add-player').addEventListener('click', () => document.getElementById('add-player-modal').classList.remove('active'));
+    document.getElementById('cancel-edit-player').addEventListener('click', () => document.getElementById('edit-player-modal').classList.remove('active'));
+    document.getElementById('cancel-edit-match').addEventListener('click', () => document.getElementById('edit-match-modal').classList.remove('active'));
+}
+
+// ---------------- Forms ----------------
+function initForms() {
+    // Add Player
+    document.getElementById('addPlayerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const name = document.getElementById('playerName').value.trim();
+        const tag = document.getElementById('playerTag').value.trim();
+        try {
+            const response = await fetch(`${API_URL}/players`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, tag })
+            });
+            if (response.ok) {
+                document.getElementById('add-player-modal').classList.remove('active');
+                this.reset();
+                await loadPlayers();
+                showAlert('playerAlert', 'Jugador agregado con éxito', false);
+            } else {
+                const error = await response.json();
+                showAlert('playerAlert', error.error || 'Error al agregar jugador', true);
+            }
+        } catch (err) {
+            console.error(err);
+            showAlert('playerAlert', 'Error de conexión', true);
+        }
+    });
+
+    // Edit Player
+    document.getElementById('editPlayerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!currentEditPlayer) return;
+        const name = document.getElementById('editPlayerName').value.trim();
+        const tag = document.getElementById('editPlayerTag').value.trim();
+        const twitter = document.getElementById('editPlayerTwitter').value.trim();
+        const twitch = document.getElementById('editPlayerTwitch').value.trim();
+        const tracker = document.getElementById('editPlayerTracker').value.trim();
+
+        try {
+            const response = await fetch(`${API_URL}/players`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    oldName: currentEditPlayer.name,
+                    oldTag: currentEditPlayer.tag,
+                    newName: name,
+                    newTag: tag,
+                    social: { twitter, twitch, tracker }
+                })
+            });
+            if (response.ok) {
+                document.getElementById('edit-player-modal').classList.remove('active');
+                await loadPlayers();
+                showAlert('editPlayerAlert', 'Jugador actualizado con éxito', false);
+            } else {
+                const error = await response.json();
+                showAlert('editPlayerAlert', error.error || 'Error al actualizar jugador', true);
+            }
+        } catch (err) {
+            console.error(err);
+            showAlert('editPlayerAlert', 'Error de conexión', true);
+        }
+    });
+
+    // Delete Player handled in renderPlayers()
+
+    // Add Match
+    document.getElementById('addMatchForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const map = document.getElementById('addMatchMap').value.trim();
+        const score = document.getElementById('addMatchScore').value.trim();
+        const winnerTeam = document.getElementById('addMatchWinner').value.trim();
+
+        // Collect players stats from form (example)
+        const matchPlayers = allPlayers.map(p => ({
+            name: p.name, tag: p.tag, kills: 0, deaths: 0, assists: 0, acs: 0, firstBloods: 0, hsPercent: 0
+        }));
+
+        try {
+            const response = await fetch(`${API_URL}/matches`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ match: matchPlayers, winnerTeam, score, map })
+            });
+            if (response.ok) {
+                document.getElementById('add-match-modal').classList.remove('active');
+                this.reset();
+                await loadMatches();
+                showAlert('matchAlert', 'Partida agregada con éxito', false);
+            } else {
+                const error = await response.json();
+                showAlert('matchAlert', error.error || 'Error al agregar partida', true);
+            }
+        } catch (err) {
+            console.error(err);
+            showAlert('matchAlert', 'Error de conexión', true);
+        }
+    });
+
+    // Edit Match
+    document.getElementById('editMatchForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const matchId = document.getElementById('editMatchId').value;
+        const map = document.getElementById('editMatchMap').value.trim();
+        const score = document.getElementById('editMatchScore').value.trim();
+        const winnerTeam = document.getElementById('editMatchWinner').value.trim();
+
+        try {
+            const response = await fetch(`${API_URL}/matches/${matchId}`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ map, winnerTeam, score })
+            });
+            if (response.ok) {
+                document.getElementById('edit-match-modal').classList.remove('active');
+                await loadMatches();
+                showAlert('editMatchAlert', 'Partida actualizada con éxito', false);
+            } else {
+                const error = await response.json();
+                showAlert('editMatchAlert', error.error || 'Error al actualizar partida', true);
+            }
+        } catch (err) {
+            console.error(err);
+            showAlert('editMatchAlert', 'Error de conexión', true);
+        }
+    });
+
+    // Player Search
+    document.getElementById('playerSearch').addEventListener('input', function() {
+        filterPlayers(this.value.toLowerCase());
+    });
+}
+
+// ---------------- Players ----------------
+async function loadPlayers() {
+    try {
+        const response = await fetch(`${API_URL}/players`, { credentials: 'include' });
+        allPlayers = await response.json();
+        renderPlayers(allPlayers);
+        updatePlayerStats(allPlayers);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function renderPlayers(players) {
+    const playersGrid = document.getElementById('playersGrid');
+    playersGrid.innerHTML = '';
+
+    players.forEach(player => {
+        const playerCard = document.createElement('div');
+        playerCard.className = 'player-card';
+        playerCard.innerHTML = `
+            <div class="player-card-header">
+                <div>
+                    <h3 class="player-name">${player.name}</h3>
+                    <p class="player-tag">${player.tag}</p>
+                </div>
+            </div>
+            <div class="player-social">
+                ${player.social?.twitter ? `<a href="https://twitter.com/${player.social.twitter.replace('@','')}" target="_blank"><i data-lucide="twitter"></i></a>` : ''}
+                ${player.social?.twitch ? `<a href="https://twitch.tv/${player.social.twitch}" target="_blank"><i data-lucide="video"></i></a>` : ''}
+                ${player.social?.tracker ? `<a href="${player.social.tracker}" target="_blank"><i data-lucide="bar-chart-3"></i></a>` : ''}
+            </div>
+            <div class="player-card-actions">
+                <button class="btn btn-outline btn-sm edit-player" data-id="${player._id}"><i data-lucide="edit"></i> Editar</button>
+                <button class="btn btn-danger btn-sm delete-player" data-id="${player._id}"><i data-lucide="trash-2"></i> Eliminar</button>
+            </div>
+        `;
+        playersGrid.appendChild(playerCard);
+    });
+
+    // Edit buttons
+    document.querySelectorAll('.edit-player').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const playerId = btn.getAttribute('data-id');
+            const player = allPlayers.find(p => p._id === playerId);
+            if (!player) return;
+            currentEditPlayer = player;
+            document.getElementById('editPlayerName').value = player.name;
+            document.getElementById('editPlayerTag').value = player.tag;
+            document.getElementById('editPlayerTwitter').value = player.social?.twitter || '';
+            document.getElementById('editPlayerTwitch').value = player.social?.twitch || '';
+            document.getElementById('editPlayerTracker').value = player.social?.tracker || '';
+            document.getElementById('edit-player-modal').classList.add('active');
+        });
+    });
+
+    // Delete buttons
+    document.querySelectorAll('.delete-player').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const playerId = btn.getAttribute('data-id');
+            const player = allPlayers.find(p => p._id === playerId);
+            if (!player || !confirm('¿Estás seguro de eliminar este jugador?')) return;
+
             try {
-                await fetch('/logout', { method: 'POST', credentials: 'include' });
-                window.location.href = '/login.html';
+                const response = await fetch(`${API_URL}/players`, {
+                    method: 'DELETE',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: player.name, tag: player.tag })
+                });
+                if (response.ok) {
+                    await loadPlayers();
+                    alert('Jugador eliminado con éxito');
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Error al eliminar jugador');
+                }
             } catch (err) {
-                console.error('Logout error:', err);
+                console.error(err);
+                alert('Error de conexión');
             }
         });
     });
 
-    // Navigation Management
-    function initNavigation() {
-        const navItems = document.querySelectorAll('.nav-item');
-        const contentSections = document.querySelectorAll('.content-section');
-        const pageTitle = document.querySelector('.page-title');
-        
-        navItems.forEach(item => {
-            if (item.id !== 'logoutBtn') {
-                item.addEventListener('click', function() {
-                    const sectionId = this.getAttribute('data-section');
-                    
-                    // Update active nav item
-                    navItems.forEach(navItem => navItem.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Update active section
-                    contentSections.forEach(section => section.classList.remove('active'));
-                    document.getElementById(sectionId).classList.add('active');
-                    
-                    // Update page title
-                    pageTitle.textContent = this.querySelector('span').textContent;
-                });
-            }
-        });
-    }
+    lucide.createIcons();
+}
 
-    // Modal Management
-    function initModals() {
-        // Add player modal
-        const addPlayerModal = document.getElementById('add-player-modal');
-        const addPlayerBtn = document.getElementById('add-player-btn');
-        const cancelAddPlayerBtn = document.getElementById('cancel-add-player');
-        
-        addPlayerBtn.addEventListener('click', () => addPlayerModal.classList.add('active'));
-        cancelAddPlayerBtn.addEventListener('click', () => addPlayerModal.classList.remove('active'));
-        
-        // Edit player modal
-        const editPlayerModal = document.getElementById('edit-player-modal');
-        const cancelEditPlayerBtn = document.getElementById('cancel-edit-player');
-        
-        cancelEditPlayerBtn.addEventListener('click', () => editPlayerModal.classList.remove('active'));
-        
-        // Edit match modal
-        const editMatchModal = document.getElementById('edit-match-modal');
-        const cancelEditMatchBtn = document.getElementById('cancel-edit-match');
-        
-        cancelEditMatchBtn.addEventListener('click', () => editMatchModal.classList.remove('active'));
-        
-        // Close modals when clicking on X
-        document.querySelectorAll('.modal-close').forEach(btn => {
-            btn.addEventListener('click', function() {
-                this.closest('.modal').classList.remove('active');
-            });
-        });
-        
-        // Close modals when clicking outside
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.remove('active');
-                }
-            });
-        });
-    }
+function filterPlayers(term) {
+    if (!term) return renderPlayers(allPlayers);
+    renderPlayers(allPlayers.filter(p => p.name.toLowerCase().includes(term) || p.tag.toLowerCase().includes(term)));
+}
 
-    // Form Management
-    function initForms() {
-        // Add player form
-        document.getElementById('addPlayerForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const name = document.getElementById('playerName').value;
-            const tag = document.getElementById('playerTag').value;
-            
+// ---------------- Matches ----------------
+async function loadMatches() {
+    try {
+        const response = await fetch(`${API_URL}/matches`, { credentials: 'include' });
+        allMatches = await response.json();
+        renderMatches(allMatches);
+        updateMatchStats(allMatches);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function renderMatches(matches) {
+    const matchesGrid = document.getElementById('matchesGrid');
+    matchesGrid.innerHTML = '';
+
+    matches.forEach(match => {
+        const matchCard = document.createElement('div');
+        matchCard.className = 'match-card';
+        matchCard.innerHTML = `
+            <div class="match-card-header">
+                <h3 class="match-map">${match.map}</h3>
+                <span class="match-date">${new Date(match.date).toLocaleDateString()}</span>
+            </div>
+            <div class="match-score">${match.score}</div>
+            <div class="match-winner">Ganador: Equipo ${match.winnerTeam}</div>
+            <div class="match-card-actions">
+                <button class="btn btn-outline btn-sm edit-match" data-id="${match._id}"><i data-lucide="edit"></i> Editar</button>
+                <button class="btn btn-danger btn-sm delete-match" data-id="${match._id}"><i data-lucide="trash-2"></i> Eliminar</button>
+            </div>
+        `;
+        matchesGrid.appendChild(matchCard);
+    });
+
+    document.querySelectorAll('.edit-match').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const match = allMatches.find(m => m._id === btn.getAttribute('data-id'));
+            if (!match) return;
+            document.getElementById('editMatchId').value = match._id;
+            document.getElementById('editMatchMap').value = match.map;
+            document.getElementById('editMatchScore').value = match.score;
+            document.getElementById('editMatchWinner').value = match.winnerTeam;
+            document.getElementById('edit-match-modal').classList.add('active');
+        });
+    });
+
+    document.querySelectorAll('.delete-match').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const matchId = btn.getAttribute('data-id');
+            if (!confirm('¿Estás seguro de eliminar esta partida?')) return;
             try {
-                const response = await fetch(`${API_URL}/players`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, tag })
-                });
-                
+                const response = await fetch(`${API_URL}/matches/${matchId}`, { method: 'DELETE', credentials: 'include' });
                 if (response.ok) {
-                    document.getElementById('add-player-modal').classList.remove('active');
-                    this.reset();
-                    loadPlayers();
-                    showAlert('playerAlert', 'Jugador agregado con éxito', false);
+                    await loadMatches();
+                    alert('Partida eliminada con éxito');
                 } else {
-                    showAlert('playerAlert', 'Error al agregar jugador', true);
+                    const error = await response.json();
+                    alert(error.error || 'Error al eliminar partida');
                 }
             } catch (err) {
-                console.error('Error adding player:', err);
-                showAlert('playerAlert', 'Error de conexión', true);
+                console.error(err);
+                alert('Error de conexión');
             }
         });
-        
-        // Edit player form
-        document.getElementById('editPlayerForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            if (!currentEditPlayer) return;
-            
-            const name = document.getElementById('editPlayerName').value;
-            const tag = document.getElementById('editPlayerTag').value;
-            const twitter = document.getElementById('editPlayerTwitter').value;
-            const twitch = document.getElementById('editPlayerTwitch').value;
-            const tracker = document.getElementById('editPlayerTracker').value;
-            
-            try {
-                const response = await fetch(`${API_URL}/players/${currentEditPlayer.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, tag, twitter, twitch, tracker })
-                });
-                
-                if (response.ok) {
-                    document.getElementById('edit-player-modal').classList.remove('active');
-                    loadPlayers();
-                    showAlert('editPlayerAlert', 'Jugador actualizado con éxito', false);
-                } else {
-                    showAlert('editPlayerAlert', 'Error al actualizar jugador', true);
-                }
-            } catch (err) {
-                console.error('Error updating player:', err);
-                showAlert('editPlayerAlert', 'Error de conexión', true);
-            }
-        });
-        
-        // Add match form
-        document.getElementById('addMatchForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            // This is a placeholder - you'll need to implement the actual match creation
-            // based on your server.js endpoints
-            showAlert('matchAlert', 'Función de agregar partida en desarrollo', false);
-            
-            // After implementing, you would:
-            // 1. Collect all player selections and stats
-            // 2. Send to the server
-            // 3. Show success/error message
-            // 4. Reset form and reload matches
-        });
-        
-        // Edit match form
-        document.getElementById('editMatchForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            // This is a placeholder - you'll need to implement the actual match editing
-            // based on your server.js endpoints
-            showAlert('editMatchAlert', 'Función de editar partida en desarrollo', false);
-            
-            // After implementing, you would:
-            // 1. Collect the edited match data
-            // 2. Send to the server
-            // 3. Show success/error message
-            // 4. Close modal and reload matches
-        });
-        
-        // Search functionality
-        document.getElementById('playerSearch').addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            filterPlayers(searchTerm);
-        });
-    }
+    });
 
-    // Player Management
-    async function loadPlayers() {
-        try {
-            // This is a placeholder - replace with your actual endpoint
-            // const response = await fetch(`${API_URL}/players`);
-            // allPlayers = await response.json();
-            
-            // For demo purposes, using mock data
-            allPlayers = [
-                { id: 1, name: "TenZ", tag: "#TENZ", twitter: "@TenZ", twitch: "TenZ", tracker: "https://tracker.gg/valorant/profile/..." },
-                { id: 2, name: "Scream", tag: "#SCREAM", twitter: "@Scream", twitch: "Scream", tracker: "https://tracker.gg/valorant/profile/..." },
-                { id: 3, name: "Shroud", tag: "#SHROUD", twitter: "@Shroud", twitch: "Shroud", tracker: "https://tracker.gg/valorant/profile/..." },
-                { id: 4, name: "Hiko", tag: "#HIKO", twitter: "@Hiko", twitch: "Hiko", tracker: "https://tracker.gg/valorant/profile/..." },
-                { id: 5, name: "Wardell", tag: "#WARDELL", twitter: "@Wardell", twitch: "Wardell", tracker: "https://tracker.gg/valorant/profile/..." },
-                { id: 6, name: "Sinatraa", tag: "#SIN", twitter: "@Sinatraa", twitch: "Sinatraa", tracker: "https://tracker.gg/valorant/profile/..." }
-            ];
-            
-            renderPlayers(allPlayers);
-            updatePlayerStats(allPlayers);
-        } catch (err) {
-            console.error('Error loading players:', err);
-        }
-    }
+    lucide.createIcons();
+}
 
-    function renderPlayers(players) {
-        const playersGrid = document.getElementById('playersGrid');
-        playersGrid.innerHTML = '';
-        
-        players.forEach(player => {
-            const playerCard = document.createElement('div');
-            playerCard.className = 'player-card';
-            playerCard.innerHTML = `
-                <div class="player-card-header">
-                    <div>
-                        <h3 class="player-name">${player.name}</h3>
-                        <p class="player-tag">${player.tag}</p>
-                    </div>
-                </div>
-                <div class="player-social">
-                    ${player.twitter ? `<a href="https://twitter.com/${player.twitter.replace('@', '')}" target="_blank" class="social-icon">
-                        <i data-lucide="twitter"></i>
-                    </a>` : ''}
-                    ${player.twitch ? `<a href="https://twitch.tv/${player.twitch}" target="_blank" class="social-icon">
-                        <i data-lucide="video"></i>
-                    </a>` : ''}
-                    ${player.tracker ? `<a href="${player.tracker}" target="_blank" class="social-icon">
-                        <i data-lucide="bar-chart-3"></i>
-                    </a>` : ''}
-                </div>
-                <div class="player-card-actions">
-                    <button class="btn btn-outline btn-sm edit-player" data-id="${player.id}">
-                        <i data-lucide="edit"></i> Editar
-                    </button>
-                    <button class="btn btn-danger btn-sm delete-player" data-id="${player.id}">
-                        <i data-lucide="trash-2"></i> Eliminar
-                    </button>
-                </div>
-            `;
-            playersGrid.appendChild(playerCard);
-        });
-        
-        // Add event listeners to action buttons
-        document.querySelectorAll('.edit-player').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const playerId = parseInt(this.getAttribute('data-id'));
-                openEditPlayerModal(playerId);
-            });
-        });
-        
-        document.querySelectorAll('.delete-player').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const playerId = parseInt(this.getAttribute('data-id'));
-                deletePlayer(playerId);
-            });
-        });
-        
-        // Refresh icons
-        lucide.createIcons();
-    }
+// ---------------- Stats ----------------
+function updatePlayerStats(players) {
+    document.getElementById('totalPlayers').textContent = players.length;
+    document.getElementById('playersChange').textContent = `+${players.length} este mes`;
+}
 
-    function filterPlayers(searchTerm) {
-        if (!searchTerm) {
-            renderPlayers(allPlayers);
-            return;
-        }
-        
-        const filteredPlayers = allPlayers.filter(player => 
-            player.name.toLowerCase().includes(searchTerm) || 
-            player.tag.toLowerCase().includes(searchTerm)
-        );
-        
-        renderPlayers(filteredPlayers);
+function updateMatchStats(matches) {
+    document.getElementById('totalMatches').textContent = matches.length;
+    document.getElementById('matchesChange').textContent = `+${matches.length} esta semana`;
+    if (matches.length > 0) {
+        const lastMatch = matches.reduce((a,b) => new Date(a.date) > new Date(b.date) ? a : b);
+        document.getElementById('lastMatchDate').textContent = new Date(lastMatch.date).toLocaleDateString();
     }
+}
 
-    function openEditPlayerModal(playerId) {
-        const player = allPlayers.find(p => p.id === playerId);
-        if (!player) return;
-        
-        currentEditPlayer = player;
-        
-        document.getElementById('editPlayerName').value = player.name;
-        document.getElementById('editPlayerTag').value = player.tag;
-        document.getElementById('editPlayerTwitter').value = player.twitter || '';
-        document.getElementById('editPlayerTwitch').value = player.twitch || '';
-        document.getElementById('editPlayerTracker').value = player.tracker || '';
-        
-        document.getElementById('edit-player-modal').classList.add('active');
-    }
+// ---------------- Helper ----------------
+function showAlert(id, msg, isError) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    el.style.color = isError ? 'red' : 'green';
+    setTimeout(() => el.classList.add('hidden'), 3000);
+}
 
-    async function deletePlayer(playerId) {
-        if (!confirm('¿Estás seguro de que quieres eliminar este jugador?')) return;
-        
-        try {
-            // This is a placeholder - replace with your actual endpoint
-            // const response = await fetch(`${API_URL}/players/${playerId}`, { method: 'DELETE' });
-            
-            // For demo purposes, just remove from the array
-            allPlayers = allPlayers.filter(p => p.id !== playerId);
-            
-            renderPlayers(allPlayers);
-            updatePlayerStats(allPlayers);
-            alert('Jugador eliminado con éxito');
-        } catch (err) {
-            console.error('Error deleting player:', err);
-            alert('Error al eliminar jugador');
-        }
-    }
-
-    // Match Management
-    async function loadMatches() {
-        try {
-            // This is a placeholder - replace with your actual endpoint
-            // const response = await fetch(`${API_URL}/matches`);
-            // allMatches = await response.json();
-            
-            // For demo purposes, using mock data
-            allMatches = [
-                { id: 1, map: "Ascent", score: "13-8", winner: "A", date: "2023-10-15" },
-                { id: 2, map: "Bind", score: "10-13", winner: "B", date: "2023-10-14" },
-                { id: 3, map: "Haven", score: "13-11", winner: "A", date: "2023-10-12" },
-                { id: 4, map: "Icebox", score: "8-13", winner: "B", date: "2023-10-10" },
-                { id: 5, map: "Breeze", score: "13-5", winner: "A", date: "2023-10-08" }
-            ];
-            
-            renderMatches(allMatches);
-            updateMatchStats(allMatches);
-        } catch (err) {
-            console.error('Error loading matches:', err);
-        }
-    }
-
-    function renderMatches(matches) {
-        const matchesGrid = document.getElementById('matchesGrid');
-        matchesGrid.innerHTML = '';
-        
-        matches.forEach(match => {
-            const matchCard = document.createElement('div');
-            matchCard.className = 'match-card';
-            matchCard.innerHTML = `
-                <div class="match-card-header">
-                    <h3 class="match-map">${match.map}</h3>
-                    <span class="match-date">${match.date}</span>
-                </div>
-                <div class="match-score">${match.score}</div>
-                <div class="match-winner">Ganador: Equipo ${match.winner}</div>
-                <div class="match-card-actions">
-                    <button class="btn btn-outline btn-sm edit-match" data-id="${match.id}">
-                        <i data-lucide="edit"></i> Editar
-                    </button>
-                    <button class="btn btn-danger btn-sm delete-match" data-id="${match.id}">
-                        <i data-lucide="trash-2"></i> Eliminar
-                    </button>
-                </div>
-            `;
-            matchesGrid.appendChild(matchCard);
-        });
-        
-        // Add event listeners to action buttons
-        document.querySelectorAll('.edit-match').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const matchId = parseInt(this.getAttribute('data-id'));
-                openEditMatchModal(matchId);
-            });
-        });
-        
-        document.querySelectorAll('.delete-match').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const matchId = parseInt(this.getAttribute('data-id'));
-                deleteMatch(matchId);
-            });
-        });
-        
-        // Refresh icons
-        lucide.createIcons();
-    }
-
-    function openEditMatchModal(matchId) {
-        const match = allMatches.find(m => m.id === matchId);
-        if (!match) return;
-        
-        document.getElementById('editMatchId').value = match.id;
-        document.getElementById('editMatchMap').value = match.map;
-        document.getElementById('editMatchScore').value = match.score;
-        document.getElementById('editMatchWinner').value = match.winner;
-        
-        document.getElementById('edit-match-modal').classList.add('active');
-    }
-
-    async function deleteMatch(matchId) {
-        if (!confirm('¿Estás seguro de que quieres eliminar esta partida?')) return;
-        
-        try {
-            // This is a placeholder - replace with your actual endpoint
-            // const response = await fetch(`${API_URL}/matches/${matchId}`, { method: 'DELETE' });
-            
-            // For demo purposes, just remove from the array
-            allMatches = allMatches.filter(m => m.id !== matchId);
-            
-            renderMatches(allMatches);
-            updateMatchStats(allMatches);
-            alert('Partida eliminada con éxito');
-        } catch (err) {
-            console.error('Error deleting match:', err);
-            alert('Error al eliminar partida');
-        }
-    }
-
-    // Stats Management
-    function updatePlayerStats(players) {
-        document.getElementById('totalPlayers').textContent = players.length;
-        document.getElementById('playersChange').textContent = `+${players.length} este mes`;
-    }
-
-    function updateMatchStats(matches) {
-        document.getElementById('totalMatches').textContent = matches.length;
-        document.getElementById('matchesChange').textContent = `+${matches.length} esta semana`;
-        
-        if (matches.length > 0) {
-            const lastMatch = matches.reduce((latest, match) => {
-                return new Date(match.date) > new Date(latest.date) ? match : latest;
-            });
-            document.getElementById('lastMatchDate').textContent = lastMatch.date;
-        }
-    }
-
-    // Helper Functions
-    function showAlert(elementId, message, isError) {
-        const alertElement = document.getElementById(elementId);
-        alertElement.textContent = message;
-        alertElement.classList.toggle('error', isError);
-        
-        setTimeout(() => {
-            alertElement.textContent = '';
-        }, 3000);
-    }
-
-    function initResponsiveSidebar() {
-        const sidebar = document.querySelector('.sidebar');
-        const mainContent = document.querySelector('.main-content');
-        
-        // Toggle sidebar on small screens
-        const toggleSidebar = document.createElement('button');
-        toggleSidebar.innerHTML = '<i data-lucide="menu"></i>';
-        toggleSidebar.className = 'btn btn-primary sidebar-toggle';
-        toggleSidebar.style.position = 'fixed';
-        toggleSidebar.style.bottom = '20px';
-        toggleSidebar.style.right = '20px';
-        toggleSidebar.style.zIndex = '99';
-        toggleSidebar.style.display = 'none';
-        
-        document.body.appendChild(toggleSidebar);
-        
-        toggleSidebar.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-        });
-        
-        // Check screen size on load and resize
-        function checkScreenSize() {
-            if (window.innerWidth <= 1024) {
-                sidebar.classList.remove('open');
-                toggleSidebar.style.display = 'block';
-            } else {
-                sidebar.classList.add('open');
-                toggleSidebar.style.display = 'none';
-            }
-        }
-        
-        window.addEventListener('resize', checkScreenSize);
-        checkScreenSize();
-        
-        // Refresh icons
-        lucide.createIcons();
-    }
-    </script>
+// ---------------- Responsive Sidebar ----------------
+function initResponsiveSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('sidebarToggle');
+    toggle.addEventListener('click', () => sidebar.classList.toggle('collapsed'));
+}
+</script>
 </body>
 </html>
