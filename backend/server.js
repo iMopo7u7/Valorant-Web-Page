@@ -353,11 +353,43 @@ app.get("/last-match", async (req, res) => {
   }
 });
 
+async function recalcTotalHeadshots() {
+  try {
+    const players = await playersCollection.find().toArray();
+
+    for (const player of players) {
+      const matches = await matchesCollection.find({
+        "match.name": player.name,
+        "match.tag": player.tag
+      }).toArray();
+
+      let totalHS = 0;
+
+      for (const match of matches) {
+        const p = match.match.find(m => m.name === player.name && m.tag === player.tag);
+        if (!p) continue;
+        totalHS += Math.round((p.hsPercent / 100) * p.kills);
+      }
+
+      await playersCollection.updateOne(
+        { _id: player._id },
+        { $set: { totalHeadshotKills: totalHS } }
+      );
+
+      console.log(`Jugador ${player.name} actualizado: totalHS=${totalHS}`);
+    }
+
+    console.log("✅ Recalculo de totalHeadshotKills completado");
+  } catch (err) {
+    console.error("Error recalculando headshots:", err);
+  }
+}
 // -------------------
 // --- Servidor 
 // -------------------
 connectDB().then(() => {
   // Iniciamos el servidor
+  await recalcTotalHeadshots();
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 });
 
