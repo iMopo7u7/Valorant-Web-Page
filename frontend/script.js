@@ -136,7 +136,7 @@ async function renderTopPlayers(players) {
       <div class="rank-icon">${getRankIcon(index + 1)}</div>
       <div class="player-name">${player.name}</div>
       <div class="player-tag">#${player.tag}</div>
-      <div class="player-score">${player.score}</div>
+      <div class="player-score">${Math.max(Math.round(player.score),0)}</div>
       <div class="player-badges">
         ${createBadges(player.badges?.slice(0, 3) || [])}
       </div>
@@ -148,37 +148,43 @@ async function renderTopPlayers(players) {
 async function renderLeaderboardTable(players) {
   const tbody = document.getElementById('rankings-tbody');
 
-  tbody.innerHTML = players.map((p, index) => `
-    <tr class="${index < 3 ? 'top-3' : ''}">
-      <td class="rank-cell">
-        <div class="rank-badge ${getRankClass(index + 1)}">
-          ${getRankIcon(index + 1)}
-        </div>
-      </td>
-      <td class="player-info">
-        <div class="player-main">
-          <div>
-            <div class="player-name-link">${p.name}</div>
-            <div class="player-tag-text">#${p.tag}</div>
+  tbody.innerHTML = players.map((p, index) => {
+    const avgACS = p.matchesPlayed ? Math.round(p.totalACS / p.matchesPlayed) : 0;
+    const avgKDA = p.totalDeaths ? ((p.totalKills + p.totalAssists) / p.totalDeaths).toFixed(2) : "0.00";
+    const hsPercent = p.totalKills ? ((p.totalHeadshotKills / p.totalKills) * 100).toFixed(1) : "0.0";
+    const fk = p.totalFirstBloods;
+    const winrate = p.matchesPlayed ? ((p.wins / p.matchesPlayed) * 100).toFixed(1) : "0.0";
+
+    return `
+      <tr class="${index < 3 ? 'top-3' : ''}">
+        <td class="rank-cell">
+          <div class="rank-badge ${getRankClass(index + 1)}">
+            ${getRankIcon(index + 1)}
           </div>
-        </div>
-        <div class="player-meta">
-          <div class="badges-container">
-            ${createBadges(p.badges || [])}
+        </td>
+        <td class="player-info">
+          <div class="player-main">
+            <div>
+              <div class="player-name-link">${p.name}</div>
+              <div class="player-tag-text">#${p.tag}</div>
+            </div>
           </div>
-          ${createSocialLinks(p.social || {})}
-        </div>
-      </td>
-      <td class="stat-cell">${Math.round(p.avgACS) || 0}</td>
-      <td class="stat-cell">${p.avgKDA ? p.avgKDA.toFixed(2) : "0.00"}</td>
-      <td class="stat-cell">${p.hsPercent ? p.hsPercent.toFixed(1) : 0}%</td>
-      <td class="stat-cell">${p.fk ? p.fk.toFixed(1) : 0}</td>
-      <td class="stat-cell">${p.winrate ? p.winrate.toFixed(1) : 0}%</td>
-      <td class="score-cell">
-        <div class="score-value">${p.score}</div>
-      </td>
-    </tr>
-  `).join('');
+          <div class="player-meta">
+            <div class="badges-container">
+              ${createBadges(p.badges || [])}
+            </div>
+            ${createSocialLinks(p.social || {})}
+          </div>
+        </td>
+        <td class="stat-cell">${avgACS}</td>
+        <td class="stat-cell">${avgKDA}</td>
+        <td class="stat-cell">${hsPercent}%</td>
+        <td class="stat-cell">${fk}</td>
+        <td class="stat-cell">${winrate}%</td>
+        <td class="score-cell">${Math.max(Math.round(p.score),0)}</td>
+      </tr>
+    `;
+  }).join('');
 }
 
 // ==========================
