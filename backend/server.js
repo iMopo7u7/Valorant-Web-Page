@@ -243,6 +243,8 @@ app.post("/matches", requireAdmin, async (req, res) => {
       const currentPlayer = await playersCollection.findOne({ name: p.name, tag: p.tag });
       const newTotalScore = Math.max((currentPlayer.score || 0) + totalScore, 0);
 
+      const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
+
       await playersCollection.updateOne(
         { name: p.name, tag: p.tag },
         {
@@ -252,6 +254,7 @@ app.post("/matches", requireAdmin, async (req, res) => {
             totalAssists: p.assists,
             totalACS: p.acs,
             totalFirstBloods: p.firstBloods,
+            totalHeadshotKills: headshotsThisMatch,
             matchesPlayed: 1,
             wins: playerTeam === winnerTeam ? 1 : 0
           },
