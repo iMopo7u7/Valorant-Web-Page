@@ -81,7 +81,6 @@ async function connectDB() {
     matchesCollection = db.collection("matches");
     eventsCollection = db.collection("events");
     console.log("✅ Conectado a MongoDB");
-
   } catch (err) {
     console.error("❌ Error conectando a MongoDB:", err);
     process.exit(1);
@@ -101,19 +100,15 @@ function calculateMatchScore(playerStats, matchWinnerTeam, playerTeam) {
   points += playerStats.firstBloods * 2;
   points -= playerStats.deaths * 0.8;
 
-  // Ajuste por victoria/derrota
   points += won ? 5 : -5;
-
-  // Limitar base points a -20 / 20
   points = Math.max(Math.min(points, 20), -20);
 
-  // Puntos bonus
   let bonus = 0;
   if (playerStats.kills >= 25 || playerStats.acs >= 250) bonus = 5;
   else if (playerStats.kills >= 20 || playerStats.acs >= 220) bonus = 3;
   else if (playerStats.kills >= 15 || playerStats.acs >= 200) bonus = 1;
 
-  const totalScore = Math.round(points + bonus); // redondeamos a entero
+  const totalScore = Math.round(points + bonus);
   return { totalScore, basePoints: Math.round(points), bonus };
 }
 
@@ -137,6 +132,19 @@ function requireAdmin(req, res, next) {
   if (req.session.isAdmin) next();
   else res.status(403).json({ error: "Acceso denegado" });
 }
+
+// Login y admin.html
+app.get("/login.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "private/login.html"));
+});
+
+app.get("/check-session", (req, res) => {
+  res.json({ loggedIn: !!req.session.isAdmin });
+});
+
+app.get("/admin.html", requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, "private/admin.html"));
+});
 
 // -------------------
 // --- CRUD Players
@@ -162,7 +170,7 @@ app.post("/players", requireAdmin, async (req, res) => {
       wins: 0,
       badges,
       social,
-      score: 0 // campo score
+      score: 0
     };
 
     await playersCollection.insertOne(newPlayer);
