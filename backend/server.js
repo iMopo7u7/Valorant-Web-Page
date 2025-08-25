@@ -82,8 +82,9 @@ async function connectDB() {
     eventsCollection = db.collection("events");
     console.log("✅ Conectado a MongoDB");
 
-    // Recalcular score históricos al iniciar
-    await recalcAllPlayersScore();
+    // Eliminar matchScore si existe
+    await playersCollection.updateMany({}, { $unset: { matchScore: "" } });
+
   } catch (err) {
     console.error("❌ Error conectando a MongoDB:", err);
     process.exit(1);
@@ -117,30 +118,6 @@ function calculateMatchScore(playerStats, matchWinnerTeam, playerTeam) {
 
   const totalScore = Math.round(points + bonus); // redondeamos a entero
   return { totalScore, basePoints: Math.round(points), bonus };
-}
-
-// -------------------
-// --- Recalcular score de todos los jugadores
-// -------------------
-async function recalcAllPlayersScore() {
-  const allPlayers = await playersCollection.find().toArray();
-  for (const player of allPlayers) {
-    const matches = await matchesCollection.find({ "match.name": player.name, "match.tag": player.tag }).toArray();
-    let totalScore = 0;
-    for (const m of matches) {
-      const playerTeam = m.match.findIndex(p => p.name === player.name && p.tag === player.tag) < 5 ? "A" : "B";
-      const pStats = m.match.find(p => p.name === player.name && p.tag === player.tag);
-      const { totalScore: mp } = calculateMatchScore(pStats, m.winnerTeam, playerTeam);
-      totalScore += mp;
-    }
-    // No puede bajar de 0
-    totalScore = Math.max(totalScore, 0);
-    await playersCollection.updateOne(
-      { name: player.name, tag: player.tag },
-      { $set: { score: totalScore } }
-    );
-  }
-  console.log("✅ Recalculados scores de todos los jugadores");
 }
 
 // -------------------
@@ -188,7 +165,7 @@ app.post("/players", requireAdmin, async (req, res) => {
       wins: 0,
       badges,
       social,
-      score: 0 // Nuevo campo score
+      score: 0 // campo score
     };
 
     await playersCollection.insertOne(newPlayer);
@@ -252,34 +229,50 @@ app.post("/matches", requireAdmin, async (req, res) => {
 });
 
 // -------------------
-// --- Leaderboard con rangos
+// --- Leaderboard
 // -------------------
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
     players.sort((a, b) => (b.score || 0) - (a.score || 0));
-
-    const leaderboard = players.map((p, i) => {
-      let rank = "Diamond";
-      if (i < 3) rank = "Radiant";
-      else if (i < 10) rank = "Immortal";
-      else if (i < 20) rank = "Ascendant";
-
-      return {
-        name: p.name,
-        tag: p.tag,
-        score: p.score || 0,
-        matchesPlayed: p.matchesPlayed,
-        rank,
-        badges: p.badges || [],
-        social: p.social || {}
-      };
-    });
-
-    res.json(leaderboard);
+    res.json(players);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error generando leaderboard" });
+  }
+});
+
+// -------------------
+// --- Endpoints adicionales para frontend
+// -------------------
+app.get("/matches-count", async (req, res) => {
+  try {
+    const count = await matchesCollection.countDocuments();
+    res.json({ count });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener total de partidas" });
+  }
+});
+
+app.get("/players-count", async (req, res) => {
+  try {
+    const count = await playersCollection.countDocuments();
+    res.json({ count });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener total de jugadores" });
+  }
+});
+
+app.get("/last-match", async (req, res) => {
+  try {
+    const lastMatch = await matchesCollection.find().sort({ date: -1 }).limit(1).toArray();
+    if (lastMatch.length === 0) return res.json({ date: null });
+    res.json({ date: lastMatch[0].date });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener última partida" });
   }
 });
 
