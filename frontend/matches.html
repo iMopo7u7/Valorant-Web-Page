@@ -532,6 +532,19 @@
       }
     }
 
+    function calculateMatchScoreFrontend(p, matchWinnerTeam, playerTeam) {
+      const won = playerTeam === matchWinnerTeam;
+      let points = 0;
+      points += p.kills * 1.2;
+      points += p.assists * 0.8;
+      points += p.acs / 100;
+      points += p.firstBloods * 2;
+      points -= p.deaths * 0.8;
+      points += won ? 5 : -2.5;
+      points = Math.max(Math.min(points, 20), -20);
+      return Math.round(points);
+    }
+
     function renderMatches(matches) {
       const list = document.getElementById("matchesList");
       list.innerHTML = "";
@@ -549,9 +562,9 @@
           <div class="details" id="details-${idx}">
             <h3>Estadísticas de jugadores</h3>
             <div class="team-title">Team A</div>
-            ${renderTeam(match.match.slice(0, 5))}
+            ${renderTeam(match.match.slice(0, 5), match.winnerTeam, "A")}
             <div class="team-title">Team B</div>
-            ${renderTeam(match.match.slice(5))}
+            ${renderTeam(match.match.slice(5), match.winnerTeam, "B")}
           </div>
         `;
 
@@ -566,12 +579,13 @@
       });
     }
 
-    function renderTeam(teamPlayers) {
+    function renderTeam(teamPlayers, matchWinnerTeam, teamName) {
       return `
         <table>
           <thead>
             <tr>
               <th>Jugador</th>
+              <th>Score</th>
               <th>Kills</th>
               <th>Deaths</th>
               <th>Assists</th>
@@ -581,17 +595,23 @@
             </tr>
           </thead>
           <tbody>
-            ${teamPlayers.map(p => `
-              <tr>
-                <td>${p.name}#${p.tag}</td>
-                <td>${p.kills}</td>
-                <td>${p.deaths}</td>
-                <td>${p.assists}</td>
-                <td>${p.acs}</td>
-                <td>${p.firstBloods}</td>
-                <td>${p.hsPercent}%</td>
-              </tr>
-            `).join("")}
+            ${teamPlayers.map(p => {
+              const matchScore = calculateMatchScoreFrontend(p, matchWinnerTeam, teamName);
+              return `
+                <tr>
+                  <td>${p.name}#${p.tag}</td>
+                  <td style="color:${matchScore >= 0 ? 'green' : 'red'}">
+                    ${matchScore >= 0 ? '+' : ''}${matchScore}
+                  </td>
+                  <td>${p.kills}</td>
+                  <td>${p.deaths}</td>
+                  <td>${p.assists}</td>
+                  <td>${p.acs}</td>
+                  <td>${p.firstBloods}</td>
+                  <td>${p.hsPercent}%</td>
+                </tr>
+              `;
+            }).join("")}
           </tbody>
         </table>
       `;
@@ -608,5 +628,26 @@
 
     loadMatches();
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9745c06e86409e2d',t:'MTc1NjA2ODkzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+<script>
+(function(){
+  function c(){
+    var b=a.contentDocument||a.contentWindow.document;
+    if(b){
+      var d=b.createElement('script');
+      d.innerHTML="window.__CF$cv$params={r:'9745c06e86409e2d',t:'MTc1NjA2ODkzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+      b.getElementsByTagName('head')[0].appendChild(d)
+    }
+  }
+  if(document.body){
+    var a=document.createElement('iframe');
+    a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';
+    document.body.appendChild(a);
+    if('loading'!==document.readyState)c();
+    else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);
+    else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}
+  }
+})();
+</script>
+</body>
 </html>
