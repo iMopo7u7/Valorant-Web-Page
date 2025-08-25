@@ -4,786 +4,49 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Panel Valorant</title>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <style>
-    /* Estilos existentes (se mantienen igual) */
-    :root {
-        --valorant-red: #ff4655;
-        --valorant-red-glow: #ff4655;
-        --valorant-blue: #389ef0;
-        --valorant-dark: #0f1419;
-        --valorant-darker: #0a0e13;
-        --valorant-gray: #1e2328;
-        --valorant-light-gray: #536471;
-        --valorant-white: #ffffff;
-        
-        --background: var(--valorant-darker);
-        --surface: var(--valorant-dark);
-        --surface-hover: var(--valorant-gray);
-        --primary: var(--valorant-red);
-        --primary-hover: #e63946;
-        --text-primary: var(--valorant-white);
-        --text-secondary: #9ca3af;
-        --text-muted: var(--valorant-light-gray);
-        --border: #2d3748;
-        --border-hover: var(--valorant-red);
-        
-        --shadow-neon: 0 0 20px rgba(255, 70, 85, 0.3);
-        --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.3);
-        --shadow-intense: 0 0 30px rgba(255, 70, 85, 0.5);
-        
-        --transition-fast: 0.2s ease;
-        --transition-smooth: 0.3s ease;
-    }
-
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        font-family: 'Rajdhani', sans-serif;
-        background: var(--background);
-        color: var(--text-primary);
-        display: flex;
-        min-height: 100vh;
-        overflow-x: hidden;
-    }
-
-    /* Sidebar Styles */
-    .sidebar {
-        width: 280px;
-        background: var(--surface);
-        border-right: 1px solid var(--border);
-        padding: 2rem 0;
-        position: fixed;
-        height: 100vh;
-        overflow-y: auto;
-        z-index: 100;
-    }
-
-    .sidebar-header {
-        padding: 0 2rem 2rem;
-        border-bottom: 1px solid var(--border);
-        margin-bottom: 2rem;
-    }
-
-    .sidebar-title {
-        font-family: 'Orbitron', monospace;
-        font-size: 1.5rem;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .valorant-logo {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, var(--primary), #e63946);
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 900;
-        box-shadow: var(--shadow-neon);
-    }
-
-    .sidebar-nav {
-        padding: 0 1rem;
-    }
-
-    .nav-item {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        margin-bottom: 0.5rem;
-        color: var(--text-secondary);
-        text-decoration: none;
-        border-radius: 8px;
-        transition: var(--transition-smooth);
-        position: relative;
-        overflow: hidden;
-        cursor: pointer;
-    }
-
-    .nav-item:hover {
-        background: var(--surface-hover);
-        color: var(--text-primary);
-        transform: translateX(5px);
-    }
-
-    .nav-item.active {
-        background: linear-gradient(90deg, rgba(255, 70, 85, 0.2), transparent);
-        color: var(--primary);
-        border-left: 3px solid var(--primary);
-    }
-
-    .nav-item i {
-        width: 20px;
-        height: 20px;
-    }
-
-    /* Main Content */
-    .main-content {
-        margin-left: 280px;
-        flex: 1;
-        padding: 2rem;
-        background: var(--background);
-    }
-
-    .main-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .page-title {
-        font-family: 'Orbitron', monospace;
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--primary);
-        text-shadow: 0 0 10px rgba(255, 70, 85, 0.3);
-    }
-
-    /* Content Sections */
-    .content-section {
-        display: none;
-    }
-
-    .content-section.active {
-        display: block;
-        animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Stats Grid */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .stat-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        transition: var(--transition-smooth);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .stat-card:hover {
-        border-color: var(--primary);
-        box-shadow: var(--shadow-neon);
-        transform: translateY(-2px);
-    }
-
-    .stat-icon {
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, var(--primary), #e63946);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-    }
-
-    .stat-content h3 {
-        font-size: 0.9rem;
-        color: var(--text-secondary);
-        margin-bottom: 0.5rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .stat-number {
-        font-family: 'Orbitron', monospace;
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--text-primary);
-        display: block;
-        margin-bottom: 0.25rem;
-    }
-
-    .stat-change {
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
-
-    .stat-change.positive { color: #10b981; }
-    .stat-change.negative { color: #ef4444; }
-    .stat-change.neutral { color: var(--text-secondary); }
-
-    /* Section Header */
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-    }
-
-    .section-header h2 {
-        font-family: 'Orbitron', monospace;
-        font-size: 1.5rem;
-        color: var(--primary);
-    }
-
-    /* Buttons */
-    .btn {
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 8px;
-        font-family: 'Rajdhani', sans-serif;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: var(--transition-smooth);
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        text-decoration: none;
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, var(--primary), #e63946);
-        color: white;
-        box-shadow: var(--shadow-neon);
-    }
-
-    .btn-primary:hover {
-        background: linear-gradient(135deg, #e63946, #dc2626);
-        box-shadow: var(--shadow-intense);
-        transform: translateY(-2px);
-    }
-
-    .btn-outline {
-        background: transparent;
-        color: var(--primary);
-        border: 2px solid var(--primary);
-    }
-
-    .btn-outline:hover {
-        background: var(--primary);
-        color: white;
-        box-shadow: var(--shadow-neon);
-    }
-
-    .btn-danger {
-        background: #dc2626;
-        color: white;
-    }
-
-    .btn-danger:hover {
-        background: #b91c1c;
-    }
-
-    .btn-sm {
-        padding: 0.5rem 1rem;
-        font-size: 0.875rem;
-    }
-
-    /* Players Section - NUEVO DISEÑO CON CARDS */
-    .players-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.5rem;
-        margin-top: 1.5rem;
-    }
-
-    .player-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 1.5rem;
-        transition: var(--transition-smooth);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .player-card:hover {
-        border-color: var(--primary);
-        box-shadow: var(--shadow-neon);
-        transform: translateY(-2px);
-    }
-
-    .player-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1rem;
-    }
-
-    .player-name {
-        font-family: 'Orbitron', monospace;
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: var(--primary);
-    }
-
-    .player-tag {
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-        margin-top: 0.25rem;
-    }
-
-    .player-social {
-        display: flex;
-        gap: 0.5rem;
-        margin-top: 1rem;
-    }
-
-    .social-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: var(--background);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--text-secondary);
-        transition: var(--transition-fast);
-    }
-
-    .social-icon:hover {
-        color: var(--primary);
-        background: rgba(255, 70, 85, 0.1);
-    }
-
-    .player-card-actions {
-        display: flex;
-        gap: 0.5rem;
-        margin-top: 1.5rem;
-        justify-content: flex-end;
-    }
-
-    /* Search bar */
-    .search-bar {
-        position: relative;
-        margin-bottom: 2rem;
-        max-width: 400px;
-    }
-
-    .search-input {
-        width: 100%;
-        padding: 1rem 1rem 1rem 3rem;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        color: var(--text-primary);
-        font-family: 'Rajdhani', sans-serif;
-        font-size: 1rem;
-    }
-
-    .search-input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: var(--shadow-neon);
-    }
-
-    .search-bar i {
-        position: absolute;
-        left: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-secondary);
-    }
-
-    /* Forms */
-    .form-group {
-        margin-bottom: 1.5rem;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: 0.75rem;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        color: var(--text-primary);
-        font-family: 'Rajdhani', sans-serif;
-        font-size: 1rem;
-    }
-
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: var(--shadow-neon);
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-    }
-
-    /* Match Form */
-    .match-form {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 2rem;
-    }
-
-    .teams-container {
-        display: grid;
-        grid-template-columns: 1fr auto 1fr;
-        gap: 2rem;
-        margin: 2rem 0;
-    }
-
-    .team-section {
-        background: var(--background);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 1.5rem;
-    }
-
-    .team-section h3 {
-        color: var(--primary);
-        margin-bottom: 1rem;
-        text-align: center;
-    }
-
-    .vs-divider {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: 'Orbitron', monospace;
-        font-weight: 700;
-        font-size: 1.5rem;
-        color: var(--primary);
-        text-shadow: 0 0 10px rgba(255, 70, 85, 0.5);
-    }
-
-    .player-slot {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
-        align-items: center;
-    }
-
-    .player-slot select {
-        flex: 1;
-    }
-
-    .player-stats {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .player-stats input {
-        width: 80px;
-    }
-
-    .form-actions {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        margin-top: 2rem;
-    }
-
-    /* Matches Section - NUEVO DISEÑO CON CARDS */
-    .matches-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 1.5rem;
-        margin-top: 1.5rem;
-    }
-
-    .match-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 1.5rem;
-        transition: var(--transition-smooth);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .match-card:hover {
-        border-color: var(--primary);
-        box-shadow: var(--shadow-neon);
-        transform: translateY(-2px);
-    }
-
-    .match-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .match-map {
-        font-family: 'Orbitron', monospace;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--primary);
-    }
-
-    .match-date {
-        color: var(--text-secondary);
-        font-size: 0.85rem;
-    }
-
-    .match-score {
-        font-family: 'Orbitron', monospace;
-        font-size: 1.5rem;
-        font-weight: 700;
-        text-align: center;
-        margin: 1rem 0;
-        color: var(--text-primary);
-    }
-
-    .match-winner {
-        text-align: center;
-        font-weight: 600;
-        color: var(--valorant-blue);
-        margin-bottom: 1rem;
-    }
-
-    .match-card-actions {
-        display: flex;
-        gap: 0.5rem;
-        margin-top: 1.5rem;
-        justify-content: flex-end;
-    }
-
-    /* Filters */
-    .filters {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .filter-select {
-        padding: 0.5rem 1rem;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        color: var(--text-primary);
-        font-family: 'Rajdhani', sans-serif;
-    }
-
-    /* Modals */
-    .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 1000;
-        backdrop-filter: blur(5px);
-    }
-
-    .modal.active {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .modal-content {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        width: 90%;
-        max-width: 500px;
-        max-height: 90vh;
-        overflow-y: auto;
-        animation: modalSlideIn 0.3s ease;
-    }
-
-    @keyframes modalSlideIn {
-        from { transform: translateY(-20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1.5rem;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .modal-header h3 {
-        font-family: 'Orbitron', monospace;
-        font-size: 1.25rem;
-        color: var(--primary);
-    }
-
-    .modal-close {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        color: var(--text-secondary);
-        cursor: pointer;
-        transition: var(--transition-fast);
-    }
-
-    .modal-close:hover {
-        color: var(--primary);
-    }
-
-    .modal-body {
-        padding: 1.5rem;
-    }
-
-    .modal-footer {
-        display: flex;
-        justify-content: flex-end;
-        gap: 1rem;
-        padding: 1.5rem;
-        border-top: 1px solid var(--border);
-    }
-
-    /* Responsive Design */
-    @media (max-width: 1024px) {
-        .sidebar {
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-        }
-        
-        .sidebar.open {
-            transform: translateX(0);
-        }
-        
-        .main-content {
-            margin-left: 0;
-        }
-        
-        .teams-container {
-            grid-template-columns: 1fr;
-            gap: 1rem;
-        }
-        
-        .vs-divider {
-            order: 2;
-            padding: 1rem 0;
-        }
-
-        .players-grid,
-        .matches-grid {
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        }
-    }
-
-    @media (max-width: 768px) {
-        .main-content {
-            padding: 1rem;
-        }
-        
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .main-header {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: flex-start;
-        }
-        
-        .form-row {
-            grid-template-columns: 1fr;
-        }
-        
-        .player-slot {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        
-        .player-stats {
-            flex-wrap: wrap;
-        }
-
-        .players-grid,
-        .matches-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    /* Scrollbar Styling */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-        background: var(--background);
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, var(--primary), #e63946);
-        border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(180deg, #e63946, #dc2626);
-    }
-
-    /* Alert styles */
-    .alert {
-        color: #10b981;
-        margin-top: 0.5rem;
-        display: block;
-    }
-
-    .alert.error {
-        color: #ef4444;
-    }
-
-    /* Team rows for match creation */
-    .team-row {
-        margin-bottom: 0.5rem;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        align-items: center;
-    }
-
-    .team-row input, .team-row select {
-        margin-right: 0.3rem;
-        margin-bottom: 0.2rem;
-        padding: 0.5rem;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        color: var(--text-primary);
-    }
-
-    .edit-row input {
-        width: 90%;
-    }
-    </style>
+<link href="https://cdn.jsdelivr.net/npm/lucide/dist/lucide.min.css" rel="stylesheet">
+<style>
+/* ------------------- General ------------------- */
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4; display:flex; min-height:100vh; }
+.sidebar { width:250px; background:#1a1a1a; color:white; display:flex; flex-direction:column; }
+.sidebar-header { display:flex; justify-content:space-between; align-items:center; padding:1rem; }
+.sidebar-title { font-size:1.2rem; display:flex; align-items:center; gap:0.5rem; }
+.valorant-logo { font-weight:bold; color:red; }
+.sidebar-nav { display:flex; flex-direction:column; }
+.nav-item { padding:0.8rem 1rem; display:flex; align-items:center; gap:0.5rem; cursor:pointer; color:white; text-decoration:none; }
+.nav-item.active { background:#333; }
+.main-content { flex:1; padding:1rem; overflow-y:auto; }
+.main-header { margin-bottom:1rem; }
+.content-section { display:none; }
+.content-section.active { display:block; }
+.stats-grid { display:flex; gap:1rem; flex-wrap:wrap; }
+.stat-card { background:white; flex:1; min-width:150px; padding:1rem; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+.stat-icon { font-size:1.5rem; margin-bottom:0.5rem; }
+.stat-change.positive { color:green; }
+.stat-change.neutral { color:gray; }
+.players-grid, .matches-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:1rem; }
+.player-card, .match-card { background:white; padding:0.5rem; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); display:flex; flex-direction:column; gap:0.5rem; }
+.player-card-actions { display:flex; gap:0.5rem; }
+.btn { padding:0.3rem 0.5rem; border:none; border-radius:4px; cursor:pointer; }
+.btn-primary { background:#1f8ef1; color:white; }
+.btn-outline { background:white; color:#1f8ef1; border:1px solid #1f8ef1; }
+.btn-danger { background:red; color:white; }
+.btn-sm { font-size:0.8rem; }
+.search-bar { display:flex; gap:0.5rem; margin:0.5rem 0; }
+.search-input { flex:1; padding:0.3rem; border-radius:4px; border:1px solid #ccc; }
+.teams-container { display:flex; gap:1rem; margin:1rem 0; }
+.team-section { flex:1; }
+.vs-divider { display:flex; align-items:center; justify-content:center; font-weight:bold; padding:0 0.5rem; }
+
+/* ------------------- Modal ------------------- */
+.modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000; }
+.modal-content { background:white; padding:1rem; border-radius:8px; width:300px; max-width:90%; }
+.modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; }
+.modal-close { background:none; border:none; font-size:1.2rem; cursor:pointer; }
+.form-group { display:flex; flex-direction:column; margin-bottom:0.5rem; }
+.alert { display:block; margin-top:0.5rem; padding:0.5rem; border-radius:4px; }
+.alert.hidden { display:none; background:none; }
+</style>
 </head>
 <body>
 
@@ -879,9 +142,15 @@
         </div>
     </div>
     <div class="teams-container">
-        <div class="team-section" id="teamAContainer"><h3>Equipo A</h3><div id="teamA"></div></div>
+        <div class="team-section">
+            <h3>Equipo A</h3>
+            <select id="teamA" multiple style="width:100%; height:120px;"></select>
+        </div>
         <div class="vs-divider">VS</div>
-        <div class="team-section" id="teamBContainer"><h3>Equipo B</h3><div id="teamB"></div></div>
+        <div class="team-section">
+            <h3>Equipo B</h3>
+            <select id="teamB" multiple style="width:100%; height:120px;"></select>
+        </div>
     </div>
     <div class="form-actions">
         <button type="button" class="btn btn-outline" id="cancel-match-btn">Cancelar</button>
@@ -914,7 +183,7 @@
 <div class="matches-grid" id="matchesGrid"></div>
 </section>
 
-<!-- Modales (Agregar/Editar Jugador y Partida) -->
+<!-- Modales (Agregar/Editar Jugador) -->
 <div class="modal" id="add-player-modal">
 <div class="modal-content">
     <div class="modal-header">
@@ -930,7 +199,13 @@
                 <label>Tag</label><input type="text" id="playerTag" required>
             </div>
             <div class="form-group">
-                <label>Redes Sociales (JSON)</label><input type="text" id="playerSocial" placeholder='{"twitch":"url","twitter":"url"}'>
+                <label>Twitch</label><input type="text" id="playerSocialTwitch" placeholder="URL opcional">
+            </div>
+            <div class="form-group">
+                <label>Twitter</label><input type="text" id="playerSocialTwitter" placeholder="URL opcional">
+            </div>
+            <div class="form-group">
+                <label>YouTube</label><input type="text" id="playerSocialYoutube" placeholder="URL opcional">
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" id="cancelAddPlayerBtn">Cancelar</button>
@@ -956,7 +231,13 @@
                 <label>Tag</label><input type="text" id="editPlayerTag" required>
             </div>
             <div class="form-group">
-                <label>Redes Sociales (JSON)</label><input type="text" id="editPlayerSocial" placeholder='{"twitch":"url","twitter":"url"}'>
+                <label>Twitch</label><input type="text" id="editPlayerSocialTwitch" placeholder="URL opcional">
+            </div>
+            <div class="form-group">
+                <label>Twitter</label><input type="text" id="editPlayerSocialTwitter" placeholder="URL opcional">
+            </div>
+            <div class="form-group">
+                <label>YouTube</label><input type="text" id="editPlayerSocialYoutube" placeholder="URL opcional">
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" id="cancelEditPlayerBtn">Cancelar</button>
@@ -967,206 +248,193 @@
 </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/lucide/dist/lucide.min.js"></script>
 <script>
+// ----------------------
+// --- Funciones UI básicas
+// ----------------------
+document.querySelectorAll(".nav-item").forEach(item => {
+    item.addEventListener("click", () => {
+        document.querySelectorAll(".nav-item").forEach(i => i.classList.remove("active"));
+        item.classList.add("active");
+        const section = item.getAttribute("data-section");
+        document.querySelectorAll(".content-section").forEach(sec => sec.classList.remove("active"));
+        document.getElementById(section)?.classList.add("active");
+        document.querySelector(".page-title").textContent = item.textContent.trim();
+    });
+});
+
+// Abrir/ cerrar modales
+const addModal = document.getElementById("add-player-modal");
+const editModal = document.getElementById("edit-player-modal");
+document.getElementById("add-player-btn").onclick = () => addModal.style.display="flex";
+document.getElementById("cancel-add-player").onclick = () => addModal.style.display="none";
+document.getElementById("cancelAddPlayerBtn").onclick = () => addModal.style.display="none";
+document.getElementById("cancel-edit-player").onclick = () => editModal.style.display="none";
+document.getElementById("cancelEditPlayerBtn").onclick = () => editModal.style.display="none";
+
+// ----------------------
+// --- Backend Integration
+// ----------------------
 document.addEventListener("DOMContentLoaded", async () => {
-    // --------------------------
-    // --- Constantes
-    // --------------------------
     const playersGrid = document.getElementById("playersGrid");
     const matchesGrid = document.getElementById("matchesGrid");
+
     const playerForm = document.getElementById("formAddPlayer");
-    const matchForm = document.getElementById("addMatchForm");
+    const editPlayerForm = document.getElementById("formEditPlayer");
+
     const playerNameInput = document.getElementById("playerName");
     const playerTagInput = document.getElementById("playerTag");
     const playerSocialInputs = {
-        twitch: document.getElementById("playerSocialTwitch") || document.getElementById("playerSocial"),
-        twitter: document.getElementById("playerSocialTwitter") || document.getElementById("playerSocial"),
-        youtube: document.getElementById("playerSocialYoutube") || document.getElementById("playerSocial")
+        twitch: document.getElementById("playerSocialTwitch"),
+        twitter: document.getElementById("playerSocialTwitter"),
+        youtube: document.getElementById("playerSocialYoutube")
     };
-    const matchPlayersContainer = document.getElementById("teamA"); // Ajusta a tus selects de jugadores si es diferente
-    const matchWinnerSelect = document.getElementById("addMatchWinner");
-    const matchScoreInput = document.getElementById("addMatchScore");
-    const matchMapInput = document.getElementById("addMatchMap");
 
-    // --------------------------
-    // --- Funciones fetch
-    // --------------------------
-    async function fetchPlayers() {
-        try {
-            const res = await fetch("/players", { credentials: "include" });
-            return await res.json();
-        } catch (err) {
-            console.error(err);
-            return [];
-        }
-    }
+    const editPlayerNameInput = document.getElementById("editPlayerName");
+    const editPlayerTagInput = document.getElementById("editPlayerTag");
+    const editPlayerSocialInputs = {
+        twitch: document.getElementById("editPlayerSocialTwitch"),
+        twitter: document.getElementById("editPlayerSocialTwitter"),
+        youtube: document.getElementById("editPlayerSocialYoutube")
+    };
 
-    async function fetchMatches() {
-        try {
-            const res = await fetch("/matches", { credentials: "include" });
-            return await res.json();
-        } catch (err) {
-            console.error(err);
-            return [];
-        }
-    }
+    const teamAContainer = document.getElementById("teamA");
+    const teamBContainer = document.getElementById("teamB");
 
-    // --------------------------
-    // --- Render Players
-    // --------------------------
-    async function renderPlayers() {
-    const players = await fetchPlayers();
-    playersGrid.innerHTML = "";
+    const matchForm = document.getElementById("addMatchForm");
+    const matchAlert = document.getElementById("matchAlert");
 
-    players.forEach(player => {
-        const social = player.social || {}; // <-- Si no hay social, creamos objeto vacío
-
-        const card = document.createElement("div");
-        card.className = "player-card";
-        card.innerHTML = `
-            <div class="player-card-header">
-                <div>
-                    <div class="player-name">${player.name}</div>
-                    <div class="player-tag">${player.tag}</div>
-                </div>
-            </div>
-            <div class="player-social">
-                ${social.twitch ? `<a href="${social.twitch}" target="_blank" class="social-icon">T</a>` : ""}
-                ${social.twitter ? `<a href="${social.twitter}" target="_blank" class="social-icon">Tw</a>` : ""}
-                ${social.youtube ? `<a href="${social.youtube}" target="_blank" class="social-icon">Y</a>` : ""}
-            </div>
-            <div class="player-card-actions">
-                <button class="btn btn-outline btn-sm edit-btn">Editar</button>
-                <button class="btn btn-danger btn-sm delete-btn">Eliminar</button>
-            </div>
-        `;
-
-        // Editar
-        card.querySelector(".edit-btn").addEventListener("click", () => {
-            playerNameInput.value = player.name;
-            playerTagInput.value = player.tag;
-            playerSocialInputs.twitch.value = social.twitch || "";
-            playerSocialInputs.twitter.value = social.twitter || "";
-            playerSocialInputs.youtube.value = social.youtube || "";
-        });
-
-        // Eliminar
-        card.querySelector(".delete-btn").addEventListener("click", async () => {
-            if (!confirm(`Eliminar a ${player.name}#${player.tag}?`)) return;
-            await fetch("/players", {
-                method: "DELETE",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: player.name, tag: player.tag })
-            });
-            renderPlayers();
-            renderMatchPlayers();
-        });
-
-        playersGrid.appendChild(card);
-    });
-}
-
-    // --------------------------
-    // --- Render Matches
-    // --------------------------
-    async function renderMatches() {
-        const matches = await fetchMatches();
-        matchesGrid.innerHTML = "";
-        matches.forEach(match => {
+    // --- Cargar jugadores
+    async function loadPlayers() {
+        const res = await fetch("/players");
+        const players = await res.json();
+        playersGrid.innerHTML = "";
+        teamAContainer.innerHTML = "";
+        teamBContainer.innerHTML = "";
+        players.forEach(p => {
             const card = document.createElement("div");
-            card.className = "match-card";
-            const map = match.map || "Desconocido";
-            const score = match.score || "0-0";
-            const winner = match.winnerTeam || "N/A";
-            card.innerHTML = `
-                <div class="match-card-header">
-                    <div class="match-map">${map}</div>
-                    <div class="match-date">${new Date(match.date).toLocaleDateString()}</div>
+            card.className="player-card";
+            card.innerHTML=`
+                <strong>${p.name}#${p.tag}</strong>
+                <div>
+                    ${p.social?.twitch? `<a href="${p.social.twitch}" target="_blank">Twitch</a>`:""}
+                    ${p.social?.twitter? `<a href="${p.social.twitter}" target="_blank">Twitter</a>`:""}
+                    ${p.social?.youtube? `<a href="${p.social.youtube}" target="_blank">YouTube</a>`:""}
                 </div>
-                <div class="match-score">${score}</div>
-                <div class="match-winner">Ganador: ${winner}</div>
+                <div class="player-card-actions">
+                    <button class="btn btn-sm btn-primary edit-player-btn">Editar</button>
+                    <button class="btn btn-sm btn-danger delete-player-btn">Eliminar</button>
+                </div>
             `;
-            matchesGrid.appendChild(card);
+            // Editar jugador
+            card.querySelector(".edit-player-btn").onclick = () => {
+                editPlayerNameInput.value = p.name;
+                editPlayerTagInput.value = p.tag;
+                editPlayerSocialInputs.twitch.value = p.social?.twitch || "";
+                editPlayerSocialInputs.twitter.value = p.social?.twitter || "";
+                editPlayerSocialInputs.youtube.value = p.social?.youtube || "";
+                editModal.style.display="flex";
+                editPlayerForm.dataset.oldName = p.name;
+                editPlayerForm.dataset.oldTag = p.tag;
+            };
+            // Eliminar jugador
+            card.querySelector(".delete-player-btn").onclick = async () => {
+                if(confirm(`Eliminar jugador ${p.name}#${p.tag}?`)){
+                    await fetch("/players", {
+                        method:"DELETE",
+                        headers:{ "Content-Type":"application/json" },
+                        body: JSON.stringify({ name:p.name, tag:p.tag })
+                    });
+                    loadPlayers();
+                }
+            };
+            playersGrid.appendChild(card);
+
+            // Opciones de select para equipos
+            const optionA = document.createElement("option");
+            optionA.value = `${p.name}#${p.tag}`;
+            optionA.textContent = `${p.name}#${p.tag}`;
+            teamAContainer.appendChild(optionA.cloneNode(true));
+            teamBContainer.appendChild(optionA.cloneNode(true));
         });
     }
 
-    // --------------------------
-    // --- Formulario Jugadores
-    // --------------------------
-    playerForm.addEventListener("submit", async e => {
+    await loadPlayers();
+
+    // --- Agregar jugador
+    playerForm.onsubmit = async e => {
         e.preventDefault();
-        const name = playerNameInput.value.trim();
-        const tag = playerTagInput.value.trim();
-        const social = {
-            twitch: playerSocialInputs.twitch.value.trim(),
-            twitter: playerSocialInputs.twitter.value.trim(),
-            youtube: playerSocialInputs.youtube.value.trim()
+        const body = {
+            name: playerNameInput.value.trim(),
+            tag: playerTagInput.value.trim(),
+            social: {
+                twitch: playerSocialInputs.twitch.value.trim(),
+                twitter: playerSocialInputs.twitter.value.trim(),
+                youtube: playerSocialInputs.youtube.value.trim()
+            }
         };
-        const exists = (await fetchPlayers()).find(p => p.name === name && p.tag === tag);
-        if (exists) {
-            await fetch("/players", {
-                method: "PUT",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ oldName: exists.name, oldTag: exists.tag, newName: name, newTag: tag, social })
-            });
-        } else {
-            await fetch("/players", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, tag, social })
-            });
-        }
+        await fetch("/players", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+        addModal.style.display="none";
         playerForm.reset();
-        renderPlayers();
-        renderMatchPlayers();
-    });
+        loadPlayers();
+    };
 
-    // --------------------------
-    // --- Formulario Partidas
-    // --------------------------
-    function renderMatchPlayers() {
-        fetchPlayers().then(players => {
-            matchPlayersContainer.innerHTML = "";
-            players.forEach(p => {
-                const option = document.createElement("option");
-                option.value = `${p.name}#${p.tag}`;
-                option.textContent = `${p.name}#${p.tag}`;
-                matchPlayersContainer.appendChild(option);
-            });
-        });
-    }
-
-    matchForm.addEventListener("submit", async e => {
+    // --- Editar jugador
+    editPlayerForm.onsubmit = async e => {
         e.preventDefault();
-        const selectedPlayers = Array.from(matchPlayersContainer.selectedOptions || []).map(o => {
-            const [name, tag] = o.value.split("#");
-            return { name, tag, kills: 0, deaths: 0, assists: 0, acs: 0, firstBloods: 0, hsPercent: 0 };
-        });
-        const winnerTeam = matchWinnerSelect.value;
-        const score = matchScoreInput.value.trim();
-        const map = matchMapInput.value.trim();
+        const body = {
+            oldName: editPlayerForm.dataset.oldName,
+            oldTag: editPlayerForm.dataset.oldTag,
+            newName: editPlayerNameInput.value.trim(),
+            newTag: editPlayerTagInput.value.trim(),
+            social:{
+                twitch: editPlayerSocialInputs.twitch.value.trim(),
+                twitter: editPlayerSocialInputs.twitter.value.trim(),
+                youtube: editPlayerSocialInputs.youtube.value.trim()
+            }
+        };
+        await fetch("/players", { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+        editModal.style.display="none";
+        loadPlayers();
+    };
 
-        await fetch("/matches", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ match: selectedPlayers, winnerTeam, score, map })
-        });
+    // --- Agregar partida
+    matchForm.onsubmit = async e => {
+        e.preventDefault();
+        const teamA = Array.from(teamAContainer.selectedOptions).map(opt => ({name:opt.value.split("#")[0], tag:opt.value.split("#")[1], kills:0, deaths:0, assists:0, acs:0, firstBloods:0, hsPercent:0 }));
+        const teamB = Array.from(teamBContainer.selectedOptions).map(opt => ({name:opt.value.split("#")[0], tag:opt.value.split("#")[1], kills:0, deaths:0, assists:0, acs:0, firstBloods:0, hsPercent:0 }));
+        if(teamA.length===0 || teamB.length===0){ matchAlert.textContent="Selecciona jugadores en ambos equipos"; matchAlert.classList.remove("hidden"); return; }
+        const body = {
+            match:[...teamA,...teamB],
+            winnerTeam: document.getElementById("addMatchWinner").value,
+            score: document.getElementById("addMatchScore").value.trim(),
+            map: document.getElementById("addMatchMap").value
+        };
+        await fetch("/matches", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
         matchForm.reset();
-        renderMatches();
-    });
+        matchAlert.classList.add("hidden");
+        alert("Partida añadida exitosamente");
+    };
 
-    // --------------------------
-    // --- Inicializar
-    // --------------------------
-    await renderPlayers();
-    await renderMatches();
-    renderMatchPlayers();
+    // --- Dashboard stats
+    async function loadStats() {
+        const [playersRes, matchesRes, lastMatchRes] = await Promise.all([fetch("/players-count"), fetch("/matches-count"), fetch("/last-match")]);
+        const playersCount = await playersRes.json();
+        const matchesCount = await matchesRes.json();
+        const lastMatch = await lastMatchRes.json();
+        document.getElementById("totalPlayers").textContent = playersCount.count;
+        document.getElementById("totalMatches").textContent = matchesCount.count;
+        document.getElementById("lastMatchDate").textContent = lastMatch.date ? new Date(lastMatch.date).toLocaleString() : "N/A";
+    }
+    loadStats();
+
+    // --- Logout
+    document.getElementById("logoutBtn").onclick = async () => {
+        await fetch("/logout"); // Crear ruta logout si no existe
+        window.location.href="/login.html";
+    };
 });
 </script>
-    
 </body>
 </html>
