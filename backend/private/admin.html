@@ -969,159 +969,204 @@
 </div>
 
 <script>
-const API_URL = window.location.origin;
-let allPlayers = [];
-let allMatches = [];
-let currentEditPlayer = null;
+document.addEventListener("DOMContentLoaded", async () => {
+    // --------------------------
+    // --- Constantes
+    // --------------------------
+    const playersGrid = document.getElementById("players-grid");
+    const matchesGrid = document.getElementById("matches-grid");
+    const playerForm = document.getElementById("player-form");
+    const matchForm = document.getElementById("match-form");
+    const playerNameInput = document.getElementById("player-name");
+    const playerTagInput = document.getElementById("player-tag");
+    const playerSocialInputs = {
+        twitch: document.getElementById("player-twitch"),
+        twitter: document.getElementById("player-twitter"),
+        youtube: document.getElementById("player-youtube")
+    };
+    const matchPlayersContainer = document.getElementById("match-players");
+    const matchWinnerSelect = document.getElementById("match-winner");
+    const matchScoreInput = document.getElementById("match-score");
+    const matchMapInput = document.getElementById("match-map");
 
-document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
-    initNavigation();
-    initModals();
-    initForms();
-    loadPlayers();
-    loadMatches();
-    initSidebar();
-    initFilters();
-});
-
-// ---------------- Navigation ----------------
-function initNavigation(){
-    const navItems=document.querySelectorAll('.nav-item');
-    const sections=document.querySelectorAll('.content-section');
-    const title=document.querySelector('.page-title');
-    navItems.forEach(i=>{
-        if(i.id!=='logoutBtn'){
-            i.addEventListener('click',()=>{ 
-                navItems.forEach(n=>n.classList.remove('active'));
-                i.classList.add('active');
-                sections.forEach(s=>s.classList.remove('active'));
-                document.getElementById(i.dataset.section).classList.add('active');
-                title.textContent=i.querySelector('span').textContent;
-            });
+    // --------------------------
+    // --- Funciones fetch
+    // --------------------------
+    async function fetchPlayers() {
+        try {
+            const res = await fetch("/players", { credentials: "include" });
+            const data = await res.json();
+            return data;
+        } catch (err) {
+            console.error(err);
+            return [];
         }
-    });
-}
+    }
 
-// ---------------- Sidebar Responsive ----------------
-function initSidebar(){
-    const sidebar=document.getElementById('sidebar');
-    document.getElementById('sidebarToggle').addEventListener('click',()=> sidebar.classList.toggle('open'));
-}
+    async function fetchMatches() {
+        try {
+            const res = await fetch("/matches", { credentials: "include" });
+            const data = await res.json();
+            return data;
+        } catch (err) {
+            console.error(err);
+            return [];
+        }
+    }
 
-// ---------------- Modals ----------------
-function initModals(){
-    const modals=['add-player-modal','edit-player-modal'];
-    modals.forEach(id=>{
-        const modal=document.getElementById(id);
-        modal.querySelectorAll('.modal-close').forEach(btn=>btn.addEventListener('click',()=> modal.classList.remove('active')));
-    });
-    document.getElementById('add-player-btn').addEventListener('click',()=> document.getElementById('add-player-modal').classList.add('active'));
-    document.getElementById('cancelAddPlayerBtn').addEventListener('click',()=> document.getElementById('add-player-modal').classList.remove('active'));
-    document.getElementById('cancelEditPlayerBtn').addEventListener('click',()=> document.getElementById('edit-player-modal').classList.remove('active'));
-}
-
-// ---------------- Players ----------------
-function loadPlayers(){
-    fetch(`${API_URL}/players`).then(r=>r.json()).then(data=>{
-        allPlayers=data; renderPlayers();
-    });
-}
-function renderPlayers(){
-    const grid=document.getElementById('playersGrid'); grid.innerHTML='';
-    allPlayers.forEach(p=>{
-        const card=document.createElement('div'); card.className='player-card';
-        card.innerHTML=`
-        <div class="player-card-header">
-            <div>
-                <span class="player-name">${p.name}</span>
-                <span class="player-tag">${p.tag}</span>
-            </div>
-        </div>
-        <div class="player-social"></div>
-        <div class="player-card-actions">
-            <button class="btn btn-sm btn-primary" onclick="editPlayer('${p._id}')">Editar</button>
-            <button class="btn btn-sm btn-danger" onclick="deletePlayer('${p._id}')">Eliminar</button>
-        </div>`;
-        grid.appendChild(card);
-    });
-}
-
-function editPlayer(id){ currentEditPlayer=id; const p=allPlayers.find(pl=>pl._id===id);
-    document.getElementById('editPlayerName').value=p.name;
-    document.getElementById('editPlayerTag').value=p.tag;
-    document.getElementById('editPlayerSocial').value=JSON.stringify(p.social||{});
-    document.getElementById('edit-player-modal').classList.add('active');
-}
-
-function deletePlayer(id){
-    if(!confirm('Eliminar jugador?')) return;
-    fetch(`${API_URL}/players/${id}`,{method:'DELETE'}).then(r=>loadPlayers());
-}
-
-// ---------------- Match Form ----------------
-function loadMatches(){
-    fetch(`${API_URL}/matches`).then(r=>r.json()).then(data=>{
-        allMatches=data;
-        renderMatches(allMatches);
-        renderTeamInputs();
-    });
-}
-function renderMatches(matches){
-    const grid=document.getElementById('matchesGrid'); grid.innerHTML='';
-    matches.forEach(m=>{
-        const card=document.createElement('div'); card.className='match-card';
-        card.innerHTML=`<div class="match-card-header">
-            <span class="match-map">${m.map}</span>
-            <span class="match-date">${new Date(m.date).toLocaleDateString()}</span>
-        </div>
-        <div class="match-score">${m.score}</div>
-        <div class="match-winner">Ganador: ${m.winner}</div>`;
-        grid.appendChild(card);
-    });
-}
-
-function renderTeamInputs(){
-    const teamA=document.getElementById('teamA'), teamB=document.getElementById('teamB'); 
-    teamA.innerHTML=''; teamB.innerHTML='';
-    allPlayers.forEach(p=>{
-        const divA=document.createElement('div'); divA.innerHTML=`<label><input type="checkbox" value="${p._id}"> ${p.name} (${p.tag})</label>`; teamA.appendChild(divA);
-        const divB=document.createElement('div'); divB.innerHTML=`<label><input type="checkbox" value="${p._id}"> ${p.name} (${p.tag})</label>`; teamB.appendChild(divB);
-    });
-}
-
-// ---------------- Filters ----------------
-function initFilters(){
-    document.getElementById('mapFilter').addEventListener('change', applyFilters);
-    document.getElementById('dateFilter').addEventListener('change', applyFilters);
-}
-function applyFilters(){
-    let filtered=allMatches;
-    const map=document.getElementById('mapFilter').value;
-    const date=document.getElementById('dateFilter').value;
-    if(map) filtered=filtered.filter(m=>m.map===map);
-    if(date!=='all'){
-        const now=new Date();
-        filtered=filtered.filter(m=>{
-            const d=new Date(m.date);
-            if(date==='month') return d>=new Date(now.setMonth(now.getMonth()-1));
-            if(date==='week') return d>=new Date(now.setDate(now.getDate()-7));
-            if(date==='today') return d.toDateString()===new Date().toDateString();
+    // --------------------------
+    // --- Render Players
+    // --------------------------
+    async function renderPlayers() {
+        const players = await fetchPlayers();
+        playersGrid.innerHTML = "";
+        players.forEach(player => {
+            const card = document.createElement("div");
+            card.className = "player-card";
+            card.innerHTML = `
+                <div class="player-card-header">
+                    <div>
+                        <div class="player-name">${player.name}</div>
+                        <div class="player-tag">${player.tag}</div>
+                    </div>
+                </div>
+                <div class="player-social">
+                    ${player.social.twitch ? `<a href="${player.social.twitch}" target="_blank" class="social-icon">T</a>` : ""}
+                    ${player.social.twitter ? `<a href="${player.social.twitter}" target="_blank" class="social-icon">Tw</a>` : ""}
+                    ${player.social.youtube ? `<a href="${player.social.youtube}" target="_blank" class="social-icon">Y</a>` : ""}
+                </div>
+                <div class="player-card-actions">
+                    <button class="btn btn-outline btn-sm edit-btn">Editar</button>
+                    <button class="btn btn-danger btn-sm delete-btn">Eliminar</button>
+                </div>
+            `;
+            // Editar
+            card.querySelector(".edit-btn").addEventListener("click", () => {
+                playerNameInput.value = player.name;
+                playerTagInput.value = player.tag;
+                playerSocialInputs.twitch.value = player.social.twitch || "";
+                playerSocialInputs.twitter.value = player.social.twitter || "";
+                playerSocialInputs.youtube.value = player.social.youtube || "";
+            });
+            // Eliminar
+            card.querySelector(".delete-btn").addEventListener("click", async () => {
+                if (!confirm(`Eliminar a ${player.name}#${player.tag}?`)) return;
+                await fetch("/players", {
+                    method: "DELETE",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: player.name, tag: player.tag })
+                });
+                renderPlayers();
+                renderMatchPlayers(); // actualizar select de jugadores
+            });
+            playersGrid.appendChild(card);
         });
     }
-    renderMatches(filtered);
-}
 
-// Cancel Match Form
-document.getElementById('cancel-match-btn').addEventListener('click',()=>{
-    document.getElementById('addMatchForm').reset();
-    renderTeamInputs();
-});
+    // --------------------------
+    // --- Render Matches
+    // --------------------------
+    async function renderMatches() {
+        const matches = await fetchMatches();
+        matchesGrid.innerHTML = "";
+        matches.forEach(match => {
+            const card = document.createElement("div");
+            card.className = "match-card";
+            const map = match.map || "Desconocido";
+            const score = match.score || "0-0";
+            const winner = match.winnerTeam || "N/A";
+            card.innerHTML = `
+                <div class="match-card-header">
+                    <div class="match-map">${map}</div>
+                    <div class="match-date">${new Date(match.date).toLocaleDateString()}</div>
+                </div>
+                <div class="match-score">${score}</div>
+                <div class="match-winner">Ganador: ${winner}</div>
+            `;
+            matchesGrid.appendChild(card);
+        });
+    }
 
-// Logout
-document.getElementById('logoutBtn').addEventListener('click',async()=>{
-    await fetch('/logout',{method:'POST',credentials:'include'}); window.location.href='/login.html';
+    // --------------------------
+    // --- Formulario Jugadores
+    // --------------------------
+    playerForm.addEventListener("submit", async e => {
+        e.preventDefault();
+        const name = playerNameInput.value.trim();
+        const tag = playerTagInput.value.trim();
+        const social = {
+            twitch: playerSocialInputs.twitch.value.trim(),
+            twitter: playerSocialInputs.twitter.value.trim(),
+            youtube: playerSocialInputs.youtube.value.trim()
+        };
+        // Checar si el jugador existe en grid
+        const exists = (await fetchPlayers()).find(p => p.name === name && p.tag === tag);
+        if (exists) {
+            // PUT
+            await fetch("/players", {
+                method: "PUT",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ oldName: exists.name, oldTag: exists.tag, newName: name, newTag: tag, social })
+            });
+        } else {
+            // POST
+            await fetch("/players", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, tag, social })
+            });
+        }
+        playerForm.reset();
+        renderPlayers();
+        renderMatchPlayers();
+    });
+
+    // --------------------------
+    // --- Formulario Partidas
+    // --------------------------
+    function renderMatchPlayers() {
+        fetchPlayers().then(players => {
+            matchPlayersContainer.innerHTML = "";
+            players.forEach(p => {
+                const option = document.createElement("option");
+                option.value = `${p.name}#${p.tag}`;
+                option.textContent = `${p.name}#${p.tag}`;
+                matchPlayersContainer.appendChild(option);
+            });
+        });
+    }
+
+    matchForm.addEventListener("submit", async e => {
+        e.preventDefault();
+        const selectedPlayers = Array.from(matchPlayersContainer.selectedOptions).map(o => {
+            const [name, tag] = o.value.split("#");
+            return { name, tag, kills: 0, deaths: 0, assists: 0, acs: 0, firstBloods: 0, hsPercent: 0 };
+        });
+        const winnerTeam = matchWinnerSelect.value;
+        const score = matchScoreInput.value.trim();
+        const map = matchMapInput.value.trim();
+
+        await fetch("/matches", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ match: selectedPlayers, winnerTeam, score, map })
+        });
+        matchForm.reset();
+        renderMatches();
+    });
+
+    // --------------------------
+    // --- Inicializar
+    // --------------------------
+    await renderPlayers();
+    await renderMatches();
+    renderMatchPlayers();
 });
 </script>
+    
 </body>
 </html>
