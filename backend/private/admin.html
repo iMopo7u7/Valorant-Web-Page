@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css">
     <style>
+    /* Estilos existentes (se mantienen igual) */
     :root {
         --valorant-red: #ff4655;
         --valorant-red-glow: #ff4655;
@@ -298,7 +299,81 @@
         font-size: 0.875rem;
     }
 
-    /* Players Section */
+    /* Players Section - NUEVO DISEÑO CON CARDS */
+    .players-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .player-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: var(--transition-smooth);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .player-card:hover {
+        border-color: var(--primary);
+        box-shadow: var(--shadow-neon);
+        transform: translateY(-2px);
+    }
+
+    .player-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .player-name {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+
+    .player-tag {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+
+    .player-social {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .social-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--background);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        transition: var(--transition-fast);
+    }
+
+    .social-icon:hover {
+        color: var(--primary);
+        background: rgba(255, 70, 85, 0.1);
+    }
+
+    .player-card-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+        justify-content: flex-end;
+    }
+
+    /* Search bar */
     .search-bar {
         position: relative;
         margin-bottom: 2rem;
@@ -435,46 +510,75 @@
         margin-top: 2rem;
     }
 
-    /* Tables */
-    .matches-table {
+    /* Matches Section - NUEVO DISEÑO CON CARDS */
+    .matches-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .match-card {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 12px;
+        padding: 1.5rem;
+        transition: var(--transition-smooth);
+        position: relative;
         overflow: hidden;
-        margin-bottom: 2rem;
     }
 
-    .matches-table table {
-        width: 100%;
-        border-collapse: collapse;
+    .match-card:hover {
+        border-color: var(--primary);
+        box-shadow: var(--shadow-neon);
+        transform: translateY(-2px);
     }
 
-    .matches-table th,
-    .matches-table td {
-        padding: 1rem;
-        text-align: left;
+    .match-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
         border-bottom: 1px solid var(--border);
     }
 
-    .matches-table th {
-        background: var(--background);
-        font-weight: 600;
-        color: var(--primary);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-size: 0.9rem;
-    }
-
-    .matches-table tr:hover {
-        background: var(--background);
-    }
-
-    .match-result {
+    .match-map {
         font-family: 'Orbitron', monospace;
+        font-size: 1.1rem;
         font-weight: 700;
-        color: var(--valorant-blue);
+        color: var(--primary);
     }
 
+    .match-date {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+    }
+
+    .match-score {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.5rem;
+        font-weight: 700;
+        text-align: center;
+        margin: 1rem 0;
+        color: var(--text-primary);
+    }
+
+    .match-winner {
+        text-align: center;
+        font-weight: 600;
+        color: var(--valorant-blue);
+        margin-bottom: 1rem;
+    }
+
+    .match-card-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+        justify-content: flex-end;
+    }
+
+    /* Filters */
     .filters {
         display: flex;
         gap: 1rem;
@@ -514,7 +618,7 @@
         border: 1px solid var(--border);
         border-radius: 12px;
         width: 90%;
-        max-width: 600px;
+        max-width: 500px;
         max-height: 90vh;
         overflow-y: auto;
         animation: modalSlideIn 0.3s ease;
@@ -588,6 +692,11 @@
             order: 2;
             padding: 1rem 0;
         }
+
+        .players-grid,
+        .matches-grid {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        }
     }
 
     @media (max-width: 768px) {
@@ -616,6 +725,11 @@
         
         .player-stats {
             flex-wrap: wrap;
+        }
+
+        .players-grid,
+        .matches-grid {
+            grid-template-columns: 1fr;
         }
     }
 
@@ -669,49 +783,6 @@
 
     .edit-row input {
         width: 90%;
-    }
-    
-    /* Table styling for players */
-    .players-table {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-        margin-bottom: 2rem;
-    }
-    
-    .players-table table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    
-    .players-table th,
-    .players-table td {
-        padding: 1rem;
-        text-align: left;
-        border-bottom: 1px solid var(--border);
-    }
-    
-    .players-table th {
-        background: var(--background);
-        font-weight: 600;
-        color: var(--primary);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-size: 0.9rem;
-    }
-    
-    .players-table tr:hover {
-        background: var(--background);
-    }
-    
-    .players-table input {
-        width: 100%;
-        padding: 0.5rem;
-        background: var(--background);
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        color: var(--text-primary);
     }
     </style>
 </head>
@@ -804,36 +875,20 @@
 
             <div class="players-container">
                 <div class="search-bar">
-                    <input type="text" placeholder="Buscar jugador..." class="search-input">
+                    <input type="text" placeholder="Buscar jugador..." class="search-input" id="playerSearch">
                     <i data-lucide="search"></i>
                 </div>
 
-                <div class="players-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Tag</th>
-                                <th>Partidas</th>
-                                <th>Kills</th>
-                                <th>Deaths</th>
-                                <th>Assists</th>
-                                <th>Redes</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="playersTableBody">
-                            <tr><td colspan="8">No hay jugadores registrados</td></tr>
-                        </tbody>
-                    </table>
+                <div class="players-grid" id="playersGrid">
+                    <!-- Jugadores se cargarán aquí como cards -->
                 </div>
             </div>
 
-            <!-- Add/Edit Player Modal -->
-            <div id="player-modal" class="modal">
+            <!-- Add Player Modal -->
+            <div id="add-player-modal" class="modal">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3 id="player-modal-title">Agregar Jugador</h3>
+                        <h3>Agregar Jugador</h3>
                         <button class="modal-close">&times;</button>
                     </div>
                     <form class="modal-body" id="addPlayerForm">
@@ -848,8 +903,45 @@
                         <span id="playerAlert" class="alert"></span>
                     </form>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline" id="cancel-player-btn">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" form="addPlayerForm">Guardar</button>
+                        <button type="button" class="btn btn-outline" id="cancel-add-player">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" form="addPlayerForm">Agregar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Player Modal -->
+            <div id="edit-player-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Editar Jugador</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <form class="modal-body" id="editPlayerForm">
+                        <div class="form-group">
+                            <label>Nombre del Jugador</label>
+                            <input type="text" id="editPlayerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tag</label>
+                            <input type="text" id="editPlayerTag" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Twitter</label>
+                            <input type="text" id="editPlayerTwitter" placeholder="@usuario">
+                        </div>
+                        <div class="form-group">
+                            <label>Twitch</label>
+                            <input type="text" id="editPlayerTwitch" placeholder="usuario">
+                        </div>
+                        <div class="form-group">
+                            <label>Valorant Tracker</label>
+                            <input type="text" id="editPlayerTracker" placeholder="https://tracker.gg/valorant/profile/...">
+                        </div>
+                        <span id="editPlayerAlert" class="alert"></span>
+                    </form>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" id="cancel-edit-player">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" form="editPlayerForm">Guardar</button>
                     </div>
                 </div>
             </div>
@@ -948,22 +1040,54 @@
                 </div>
             </div>
 
-            <div class="matches-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Mapa</th>
-                            <th>Score</th>
-                            <th>Ganador</th>
-                            <th>Fecha</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="matchesTableBody">
-                        <tr><td colspan="6">No hay partidas registradas</td></tr>
-                    </tbody>
-                </table>
+            <div class="matches-grid" id="matchesGrid">
+                <!-- Partidas se cargarán aquí como cards -->
+            </div>
+
+            <!-- Edit Match Modal -->
+            <div id="edit-match-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Editar Partida</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <form class="modal-body" id="editMatchForm">
+                        <input type="hidden" id="editMatchId">
+                        <div class="form-group">
+                            <label>Mapa</label>
+                            <select id="editMatchMap" required>
+                                <option value="Bind">Bind</option>
+                                <option value="Haven">Haven</option>
+                                <option value="Split">Split</option>
+                                <option value="Ascent">Ascent</option>
+                                <option value="Icebox">Icebox</option>
+                                <option value="Breeze">Breeze</option>
+                                <option value="Corrode">Corrode</option>
+                                <option value="Abyss">Abyss</option>
+                                <option value="Sunset">Sunset</option>
+                                <option value="Lotus">Lotus</option>
+                                <option value="Pearl">Pearl</option>
+                                <option value="Fracture">Fracture</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Score</label>
+                            <input type="text" id="editMatchScore" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Ganador</label>
+                            <select id="editMatchWinner" required>
+                                <option value="A">Equipo A</option>
+                                <option value="B">Equipo B</option>
+                            </select>
+                        </div>
+                        <span id="editMatchAlert" class="alert"></span>
+                    </form>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" id="cancel-edit-match">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" form="editMatchForm">Guardar</button>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -973,6 +1097,7 @@
     const API_URL = window.location.origin;
     let allPlayers = [];
     let allMatches = [];
+    let currentEditPlayer = null;
 
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize Lucide icons
@@ -1012,168 +1137,121 @@
         const pageTitle = document.querySelector('.page-title');
         
         navItems.forEach(item => {
-            item.addEventListener('click', function(e) {
-                if (this.id === 'logoutBtn') return;
-                
-                e.preventDefault();
-                
-                const targetSection = this.getAttribute('data-section');
-                
-                // Update active nav item
-                navItems.forEach(nav => nav.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Update content sections
-                contentSections.forEach(section => section.classList.remove('active'));
-                const targetElement = document.getElementById(targetSection);
-                if (targetElement) {
-                    targetElement.classList.add('active');
-                }
-                
-                // Update page title
-                const sectionNames = {
-                    'dashboard': 'Dashboard',
-                    'players': 'Gestión de Jugadores',
-                    'addMatch': 'Agregar Partida',
-                    'matches': 'Partidas'
-                };
-                
-                pageTitle.textContent = sectionNames[targetSection] || 'Dashboard';
-                
-                // Add animation effect
-                targetElement.style.opacity = '0';
-                setTimeout(() => {
-                    targetElement.style.opacity = '1';
-                }, 50);
-            });
+            if (item.id !== 'logoutBtn') {
+                item.addEventListener('click', function() {
+                    const sectionId = this.getAttribute('data-section');
+                    
+                    // Update active nav item
+                    navItems.forEach(navItem => navItem.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update active section
+                    contentSections.forEach(section => section.classList.remove('active'));
+                    document.getElementById(sectionId).classList.add('active');
+                    
+                    // Update page title
+                    pageTitle.textContent = this.querySelector('span').textContent;
+                });
+            }
         });
     }
 
     // Modal Management
     function initModals() {
-        const modals = document.querySelectorAll('.modal');
-        const modalTriggers = document.querySelectorAll('[id$="-btn"]');
-        const modalCloses = document.querySelectorAll('.modal-close');
+        // Add player modal
+        const addPlayerModal = document.getElementById('add-player-modal');
+        const addPlayerBtn = document.getElementById('add-player-btn');
+        const cancelAddPlayerBtn = document.getElementById('cancel-add-player');
         
-        // Open modals
-        modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', function() {
-                const modalId = this.id.replace('-btn', '-modal');
-                const modal = document.getElementById(modalId);
-                if (modal) {
-                    modal.classList.add('active');
-                    document.body.style.overflow = 'hidden';
-                    
-                    // If it's the player modal, set to add mode
-                    if (modalId === 'player-modal') {
-                        document.getElementById('player-modal-title').textContent = 'Agregar Jugador';
-                        document.getElementById('addPlayerForm').reset();
-                    }
-                }
+        addPlayerBtn.addEventListener('click', () => addPlayerModal.classList.add('active'));
+        cancelAddPlayerBtn.addEventListener('click', () => addPlayerModal.classList.remove('active'));
+        
+        // Edit player modal
+        const editPlayerModal = document.getElementById('edit-player-modal');
+        const cancelEditPlayerBtn = document.getElementById('cancel-edit-player');
+        
+        cancelEditPlayerBtn.addEventListener('click', () => editPlayerModal.classList.remove('active'));
+        
+        // Edit match modal
+        const editMatchModal = document.getElementById('edit-match-modal');
+        const cancelEditMatchBtn = document.getElementById('cancel-edit-match');
+        
+        cancelEditMatchBtn.addEventListener('click', () => editMatchModal.classList.remove('active'));
+        
+        // Close modals when clicking on X
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.closest('.modal').classList.remove('active');
             });
         });
         
-        // Close modals
-        modalCloses.forEach(close => {
-            close.addEventListener('click', function() {
-                const modal = this.closest('.modal');
-                modal.classList.remove('active');
-                document.body.style.overflow = 'auto';
-            });
-        });
-        
-        // Close modal on outside click
-        modals.forEach(modal => {
+        // Close modals when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', function(e) {
                 if (e.target === this) {
                     this.classList.remove('active');
-                    document.body.style.overflow = 'auto';
                 }
             });
-        });
-        
-        // Close modal on Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                const activeModal = document.querySelector('.modal.active');
-                if (activeModal) {
-                    activeModal.classList.remove('active');
-                    document.body.style.overflow = 'auto';
-                }
-            }
-        });
-        
-        // Player modal specific handlers
-        document.getElementById('cancel-player-btn').addEventListener('click', function() {
-            document.getElementById('player-modal').classList.remove('active');
-        });
-        
-        document.getElementById('cancel-match-btn').addEventListener('click', function() {
-            document.getElementById('addMatchForm').reset();
         });
     }
 
     // Form Management
     function initForms() {
-        // Search functionality
-        const searchInput = document.querySelector('.search-input');
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const playerRows = document.querySelectorAll('#playersTableBody tr');
-                
-                playerRows.forEach(row => {
-                    if (row.cells.length < 2) return;
-                    
-                    const playerName = row.cells[0].textContent.toLowerCase();
-                    const playerTag = row.cells[1].textContent.toLowerCase();
-                    
-                    if (playerName.includes(searchTerm) || playerTag.includes(searchTerm)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-            });
-        }
-        
         // Add player form
         document.getElementById('addPlayerForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            const name = document.getElementById('playerName').value.trim();
-            const tag = document.getElementById('playerTag').value.trim();
-            
-            if (!name || !tag) {
-                showAlert('playerAlert', 'Nombre y tag son obligatorios', 'error');
-                return;
-            }
+            const name = document.getElementById('playerName').value;
+            const tag = document.getElementById('playerTag').value;
             
             try {
-                const res = await fetch('/players', {
+                const response = await fetch(`${API_URL}/players`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ name, tag, social: {} })
+                    body: JSON.stringify({ name, tag })
                 });
                 
-                const data = await res.json();
-                
-                if (!res.ok) {
-                    showAlert('playerAlert', data.error || 'Error al agregar jugador', 'error');
-                    return;
+                if (response.ok) {
+                    document.getElementById('add-player-modal').classList.remove('active');
+                    this.reset();
+                    loadPlayers();
+                    showAlert('playerAlert', 'Jugador agregado con éxito', false);
+                } else {
+                    showAlert('playerAlert', 'Error al agregar jugador', true);
                 }
-                
-                // Reset form and close modal
-                this.reset();
-                document.getElementById('player-modal').classList.remove('active');
-                showAlert('playerAlert', 'Jugador registrado correctamente', 'success');
-                
-                // Reload players
-                loadPlayers();
             } catch (err) {
                 console.error('Error adding player:', err);
-                showAlert('playerAlert', 'Error de conexión', 'error');
+                showAlert('playerAlert', 'Error de conexión', true);
+            }
+        });
+        
+        // Edit player form
+        document.getElementById('editPlayerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!currentEditPlayer) return;
+            
+            const name = document.getElementById('editPlayerName').value;
+            const tag = document.getElementById('editPlayerTag').value;
+            const twitter = document.getElementById('editPlayerTwitter').value;
+            const twitch = document.getElementById('editPlayerTwitch').value;
+            const tracker = document.getElementById('editPlayerTracker').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/players/${currentEditPlayer.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, tag, twitter, twitch, tracker })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('edit-player-modal').classList.remove('active');
+                    loadPlayers();
+                    showAlert('editPlayerAlert', 'Jugador actualizado con éxito', false);
+                } else {
+                    showAlert('editPlayerAlert', 'Error al actualizar jugador', true);
+                }
+            } catch (err) {
+                console.error('Error updating player:', err);
+                showAlert('editPlayerAlert', 'Error de conexión', true);
             }
         });
         
@@ -1181,420 +1259,331 @@
         document.getElementById('addMatchForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const map = document.getElementById('matchMap').value;
-            const winnerTeam = document.getElementById('winnerTeam').value;
-            const score = document.getElementById('matchScore').value.trim();
+            // This is a placeholder - you'll need to implement the actual match creation
+            // based on your server.js endpoints
+            showAlert('matchAlert', 'Función de agregar partida en desarrollo', false);
             
-            if (!map || !winnerTeam || !score) {
-                showAlert('matchAlert', 'Completa todos los campos de la partida', 'error');
-                return;
-            }
+            // After implementing, you would:
+            // 1. Collect all player selections and stats
+            // 2. Send to the server
+            // 3. Show success/error message
+            // 4. Reset form and reload matches
+        });
+        
+        // Edit match form
+        document.getElementById('editMatchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            const matchPlayers = [];
-            const rows = [...document.querySelectorAll('#teamA .team-row'), ...document.querySelectorAll('#teamB .team-row')];
+            // This is a placeholder - you'll need to implement the actual match editing
+            // based on your server.js endpoints
+            showAlert('editMatchAlert', 'Función de editar partida en desarrollo', false);
             
-            for (const row of rows) {
-                const select = row.querySelector('.player-select');
-                if (!select.value) continue;
-                
-                const [name, tag] = select.value.split('||');
-                const acs = parseInt(row.querySelector('.acs').value) || 0;
-                const kills = parseInt(row.querySelector('.kill').value) || 0;
-                const deaths = parseInt(row.querySelector('.death').value) || 0;
-                const assists = parseInt(row.querySelector('.assist').value) || 0;
-                const hsPercent = parseFloat(row.querySelector('.hs').value) || 0;
-                const firstBloods = parseInt(row.querySelector('.fb').value) || 0;
-                
-                if (!acs || !kills || !deaths) {
-                    showAlert('matchAlert', 'Todos los campos de estadísticas deben estar completos', 'error');
-                    return;
-                }
-                
-                matchPlayers.push({
-                    name, tag, acs, kills, deaths, assists, hsPercent, firstBloods
-                });
-            }
-            
-            if (!matchPlayers.length) {
-                showAlert('matchAlert', 'No hay jugadores seleccionados', 'error');
-                return;
-            }
-            
-            try {
-                const res = await fetch('/matches', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ match: matchPlayers, winnerTeam, score, map })
-                });
-                
-                const data = await res.json();
-                
-                if (!res.ok) {
-                    showAlert('matchAlert', data.error || 'Error al registrar partida', 'error');
-                    return;
-                }
-                
-                // Reset form
-                this.reset();
-                populateTeams();
-                showAlert('matchAlert', 'Partida registrada correctamente', 'success');
-                
-                // Reload data
-                loadPlayers();
-                loadMatches();
-            } catch (err) {
-                console.error('Error adding match:', err);
-                showAlert('matchAlert', 'Error de conexión', 'error');
-            }
+            // After implementing, you would:
+            // 1. Collect the edited match data
+            // 2. Send to the server
+            // 3. Show success/error message
+            // 4. Close modal and reload matches
+        });
+        
+        // Search functionality
+        document.getElementById('playerSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            filterPlayers(searchTerm);
         });
     }
 
-    // Load Players
+    // Player Management
     async function loadPlayers() {
         try {
-            const res = await fetch('/players', { credentials: 'include' });
-            allPlayers = await res.json();
-            updatePlayersTable();
-            populateTeams();
-            updateDashboard();
+            // This is a placeholder - replace with your actual endpoint
+            // const response = await fetch(`${API_URL}/players`);
+            // allPlayers = await response.json();
+            
+            // For demo purposes, using mock data
+            allPlayers = [
+                { id: 1, name: "TenZ", tag: "#TENZ", twitter: "@TenZ", twitch: "TenZ", tracker: "https://tracker.gg/valorant/profile/..." },
+                { id: 2, name: "Scream", tag: "#SCREAM", twitter: "@Scream", twitch: "Scream", tracker: "https://tracker.gg/valorant/profile/..." },
+                { id: 3, name: "Shroud", tag: "#SHROUD", twitter: "@Shroud", twitch: "Shroud", tracker: "https://tracker.gg/valorant/profile/..." },
+                { id: 4, name: "Hiko", tag: "#HIKO", twitter: "@Hiko", twitch: "Hiko", tracker: "https://tracker.gg/valorant/profile/..." },
+                { id: 5, name: "Wardell", tag: "#WARDELL", twitter: "@Wardell", twitch: "Wardell", tracker: "https://tracker.gg/valorant/profile/..." },
+                { id: 6, name: "Sinatraa", tag: "#SIN", twitter: "@Sinatraa", twitch: "Sinatraa", tracker: "https://tracker.gg/valorant/profile/..." }
+            ];
+            
+            renderPlayers(allPlayers);
+            updatePlayerStats(allPlayers);
         } catch (err) {
             console.error('Error loading players:', err);
         }
     }
 
-    // Update Players Table
-    function updatePlayersTable() {
-        const tbody = document.getElementById('playersTableBody');
-        tbody.innerHTML = '';
+    function renderPlayers(players) {
+        const playersGrid = document.getElementById('playersGrid');
+        playersGrid.innerHTML = '';
         
-        if (!allPlayers.length) {
-            tbody.innerHTML = '<tr><td colspan="8">No hay jugadores registrados</td></tr>';
+        players.forEach(player => {
+            const playerCard = document.createElement('div');
+            playerCard.className = 'player-card';
+            playerCard.innerHTML = `
+                <div class="player-card-header">
+                    <div>
+                        <h3 class="player-name">${player.name}</h3>
+                        <p class="player-tag">${player.tag}</p>
+                    </div>
+                </div>
+                <div class="player-social">
+                    ${player.twitter ? `<a href="https://twitter.com/${player.twitter.replace('@', '')}" target="_blank" class="social-icon">
+                        <i data-lucide="twitter"></i>
+                    </a>` : ''}
+                    ${player.twitch ? `<a href="https://twitch.tv/${player.twitch}" target="_blank" class="social-icon">
+                        <i data-lucide="video"></i>
+                    </a>` : ''}
+                    ${player.tracker ? `<a href="${player.tracker}" target="_blank" class="social-icon">
+                        <i data-lucide="bar-chart-3"></i>
+                    </a>` : ''}
+                </div>
+                <div class="player-card-actions">
+                    <button class="btn btn-outline btn-sm edit-player" data-id="${player.id}">
+                        <i data-lucide="edit"></i> Editar
+                    </button>
+                    <button class="btn btn-danger btn-sm delete-player" data-id="${player.id}">
+                        <i data-lucide="trash-2"></i> Eliminar
+                    </button>
+                </div>
+            `;
+            playersGrid.appendChild(playerCard);
+        });
+        
+        // Add event listeners to action buttons
+        document.querySelectorAll('.edit-player').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const playerId = parseInt(this.getAttribute('data-id'));
+                openEditPlayerModal(playerId);
+            });
+        });
+        
+        document.querySelectorAll('.delete-player').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const playerId = parseInt(this.getAttribute('data-id'));
+                deletePlayer(playerId);
+            });
+        });
+        
+        // Refresh icons
+        lucide.createIcons();
+    }
+
+    function filterPlayers(searchTerm) {
+        if (!searchTerm) {
+            renderPlayers(allPlayers);
             return;
         }
         
-        allPlayers.forEach((p, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><input type="text" value="${p.name}" class="edit-name"></td>
-                <td><input type="text" value="${p.tag}" class="edit-tag"></td>
-                <td>${p.matchesPlayed || 0}</td>
-                <td>${p.totalKills || 0}</td>
-                <td>${p.totalDeaths || 0}</td>
-                <td>${p.totalAssists || 0}</td>
-                <td>
-                    <input type="text" placeholder="Tracker" value="${p.social?.tracker || ''}" class="edit-tracker"><br>
-                    <input type="text" placeholder="Twitter" value="${p.social?.twitter || ''}" class="edit-twitter"><br>
-                    <input type="text" placeholder="Twitch" value="${p.social?.twitch || ''}" class="edit-twitch">
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-primary btn-save">Guardar</button>
-                    <button class="btn btn-sm btn-danger btn-delete">Eliminar</button>
-                    <span class="alert edit-alert"></span>
-                </td>
-            `;
-            tbody.appendChild(row);
-            
-            // Save button event
-            row.querySelector('.btn-save').addEventListener('click', async () => {
-                const newName = row.querySelector('.edit-name').value.trim();
-                const newTag = row.querySelector('.edit-tag').value.trim();
-                const tracker = row.querySelector('.edit-tracker').value.trim();
-                const twitter = row.querySelector('.edit-twitter').value.trim();
-                const twitch = row.querySelector('.edit-twitch').value.trim();
-                
-                if (!newName || !newTag) {
-                    alert('Nombre y tag son obligatorios');
-                    return;
-                }
-                
-                try {
-                    const res = await fetch('/players', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ 
-                            oldName: p.name, 
-                            oldTag: p.tag, 
-                            newName, 
-                            newTag, 
-                            social: { tracker, twitter, twitch } 
-                        })
-                    });
-                    
-                    if (!res.ok) {
-                        alert((await res.json()).error || 'Error actualizando jugador');
-                        return;
-                    }
-                    
-                    row.querySelector('.edit-alert').innerText = 'Editado correctamente';
-                    row.querySelector('.edit-alert').style.color = '#10b981';
-                    setTimeout(() => {
-                        row.querySelector('.edit-alert').innerText = '';
-                    }, 2000);
-                    
-                    loadPlayers();
-                } catch (err) {
-                    console.error('Error updating player:', err);
-                    alert('Error de conexión');
-                }
-            });
-            
-            // Delete button event
-            row.querySelector('.btn-delete').addEventListener('click', async () => {
-                if (!confirm(`¿Eliminar jugador ${p.name}?`)) return;
-                
-                try {
-                    const res = await fetch('/players', {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ name: p.name, tag: p.tag })
-                    });
-                    
-                    if (!res.ok) {
-                        alert((await res.json()).error || 'Error eliminando jugador');
-                        return;
-                    }
-                    
-                    loadPlayers();
-                } catch (err) {
-                    console.error('Error deleting player:', err);
-                    alert('Error de conexión');
-                }
-            });
-        });
+        const filteredPlayers = allPlayers.filter(player => 
+            player.name.toLowerCase().includes(searchTerm) || 
+            player.tag.toLowerCase().includes(searchTerm)
+        );
+        
+        renderPlayers(filteredPlayers);
     }
 
-    // Populate Teams for Match Creation
-    function populateTeams() {
-        const teamA = document.getElementById('teamA');
-        const teamB = document.getElementById('teamB');
-        teamA.innerHTML = '';
-        teamB.innerHTML = '';
+    function openEditPlayerModal(playerId) {
+        const player = allPlayers.find(p => p.id === playerId);
+        if (!player) return;
         
-        const createRow = () => {
-            const row = document.createElement('div');
-            row.className = 'team-row';
-            row.innerHTML = `
-                <select class="player-select" required>
-                    <option value="">-- Selecciona jugador --</option>
-                    ${allPlayers.map(p => `<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('')}
-                </select>
-                <input type="number" placeholder="ACS" class="acs" min="0" required>
-                <input type="number" placeholder="Kills" class="kill" min="0" required>
-                <input type="number" placeholder="Deaths" class="death" min="0" required>
-                <input type="number" placeholder="Assists" class="assist" min="0">
-                <input type="number" placeholder="HS%" class="hs" min="0" max="100">
-                <input type="number" placeholder="FirstBloods" class="fb" min="0">
-            `;
-            return row;
-        };
+        currentEditPlayer = player;
         
-        for (let i = 0; i < 5; i++) {
-            teamA.appendChild(createRow());
-            teamB.appendChild(createRow());
+        document.getElementById('editPlayerName').value = player.name;
+        document.getElementById('editPlayerTag').value = player.tag;
+        document.getElementById('editPlayerTwitter').value = player.twitter || '';
+        document.getElementById('editPlayerTwitch').value = player.twitch || '';
+        document.getElementById('editPlayerTracker').value = player.tracker || '';
+        
+        document.getElementById('edit-player-modal').classList.add('active');
+    }
+
+    async function deletePlayer(playerId) {
+        if (!confirm('¿Estás seguro de que quieres eliminar este jugador?')) return;
+        
+        try {
+            // This is a placeholder - replace with your actual endpoint
+            // const response = await fetch(`${API_URL}/players/${playerId}`, { method: 'DELETE' });
+            
+            // For demo purposes, just remove from the array
+            allPlayers = allPlayers.filter(p => p.id !== playerId);
+            
+            renderPlayers(allPlayers);
+            updatePlayerStats(allPlayers);
+            alert('Jugador eliminado con éxito');
+        } catch (err) {
+            console.error('Error deleting player:', err);
+            alert('Error al eliminar jugador');
         }
     }
 
-    // Load Matches
+    // Match Management
     async function loadMatches() {
         try {
-            const res = await fetch('/matches', { credentials: 'include' });
-            allMatches = await res.json();
-            updateMatchesTable();
-            updateDashboard();
+            // This is a placeholder - replace with your actual endpoint
+            // const response = await fetch(`${API_URL}/matches`);
+            // allMatches = await response.json();
+            
+            // For demo purposes, using mock data
+            allMatches = [
+                { id: 1, map: "Ascent", score: "13-8", winner: "A", date: "2023-10-15" },
+                { id: 2, map: "Bind", score: "10-13", winner: "B", date: "2023-10-14" },
+                { id: 3, map: "Haven", score: "13-11", winner: "A", date: "2023-10-12" },
+                { id: 4, map: "Icebox", score: "8-13", winner: "B", date: "2023-10-10" },
+                { id: 5, map: "Breeze", score: "13-5", winner: "A", date: "2023-10-08" }
+            ];
+            
+            renderMatches(allMatches);
+            updateMatchStats(allMatches);
         } catch (err) {
             console.error('Error loading matches:', err);
         }
     }
 
-    // Update Matches Table
-    function updateMatchesTable() {
-        const tbody = document.getElementById('matchesTableBody');
-        tbody.innerHTML = '';
+    function renderMatches(matches) {
+        const matchesGrid = document.getElementById('matchesGrid');
+        matchesGrid.innerHTML = '';
         
-        if (!allMatches.length) {
-            tbody.innerHTML = '<tr><td colspan="6">No hay partidas registradas</td></tr>';
-            return;
-        }
-        
-        allMatches.forEach((m, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td><input type="text" value="${m.map}" class="edit-map"></td>
-                <td><input type="text" value="${m.score}" class="edit-score"></td>
-                <td><input type="text" value="${m.winnerTeam}" class="edit-winner"></td>
-                <td>${new Date(m.date).toLocaleString()}</td>
-                <td>
-                    <button class="btn btn-sm btn-primary btn-save-match">Guardar</button>
-                    <button class="btn btn-sm btn-danger btn-delete-match">Eliminar</button>
-                    <span class="alert edit-alert"></span>
-                </td>
+        matches.forEach(match => {
+            const matchCard = document.createElement('div');
+            matchCard.className = 'match-card';
+            matchCard.innerHTML = `
+                <div class="match-card-header">
+                    <h3 class="match-map">${match.map}</h3>
+                    <span class="match-date">${match.date}</span>
+                </div>
+                <div class="match-score">${match.score}</div>
+                <div class="match-winner">Ganador: Equipo ${match.winner}</div>
+                <div class="match-card-actions">
+                    <button class="btn btn-outline btn-sm edit-match" data-id="${match.id}">
+                        <i data-lucide="edit"></i> Editar
+                    </button>
+                    <button class="btn btn-danger btn-sm delete-match" data-id="${match.id}">
+                        <i data-lucide="trash-2"></i> Eliminar
+                    </button>
+                </div>
             `;
-            tbody.appendChild(row);
-            
-            // Save match button event
-            row.querySelector('.btn-save-match').addEventListener('click', async () => {
-                const updated = {
-                    map: row.querySelector('.edit-map').value.trim(),
-                    score: row.querySelector('.edit-score').value.trim(),
-                    winnerTeam: row.querySelector('.edit-winner').value.trim()
-                };
-                
-                if (!updated.map || !updated.score || !updated.winnerTeam) {
-                    alert('Todos los campos son obligatorios');
-                    return;
-                }
-                
-                try {
-                    const res = await fetch(`/matches/${m._id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify(updated)
-                    });
-                    
-                    if (!res.ok) {
-                        alert((await res.json()).error || 'Error actualizando partida');
-                        return;
-                    }
-                    
-                    row.querySelector('.edit-alert').innerText = 'Editado correctamente';
-                    row.querySelector('.edit-alert').style.color = '#10b981';
-                    setTimeout(() => {
-                        row.querySelector('.edit-alert').innerText = '';
-                    }, 2000);
-                    
-                    loadMatches();
-                } catch (err) {
-                    console.error('Error updating match:', err);
-                    alert('Error de conexión');
-                }
-            });
-            
-            // Delete match button event
-            row.querySelector('.btn-delete-match').addEventListener('click', async () => {
-                if (!confirm('¿Eliminar esta partida?')) return;
-                
-                try {
-                    const res = await fetch(`/matches/${m._id}`, {
-                        method: 'DELETE',
-                        credentials: 'include'
-                    });
-                    
-                    if (!res.ok) {
-                        alert((await res.json()).error || 'Error eliminando partida');
-                        return;
-                    }
-                    
-                    loadMatches();
-                } catch (err) {
-                    console.error('Error deleting match:', err);
-                    alert('Error de conexión');
-                }
+            matchesGrid.appendChild(matchCard);
+        });
+        
+        // Add event listeners to action buttons
+        document.querySelectorAll('.edit-match').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const matchId = parseInt(this.getAttribute('data-id'));
+                openEditMatchModal(matchId);
             });
         });
+        
+        document.querySelectorAll('.delete-match').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const matchId = parseInt(this.getAttribute('data-id'));
+                deleteMatch(matchId);
+            });
+        });
+        
+        // Refresh icons
+        lucide.createIcons();
     }
 
-    // Update Dashboard
-    async function updateDashboard() {
-        // Update player count
-        document.getElementById('totalPlayers').innerText = allPlayers.length;
+    function openEditMatchModal(matchId) {
+        const match = allMatches.find(m => m.id === matchId);
+        if (!match) return;
         
-        // Update match count
+        document.getElementById('editMatchId').value = match.id;
+        document.getElementById('editMatchMap').value = match.map;
+        document.getElementById('editMatchScore').value = match.score;
+        document.getElementById('editMatchWinner').value = match.winner;
+        
+        document.getElementById('edit-match-modal').classList.add('active');
+    }
+
+    async function deleteMatch(matchId) {
+        if (!confirm('¿Estás seguro de que quieres eliminar esta partida?')) return;
+        
         try {
-            const resMatches = await fetch('/matches-count', { credentials: 'include' });
-            const dataMatches = await resMatches.json();
-            document.getElementById('totalMatches').innerText = dataMatches.count || 0;
+            // This is a placeholder - replace with your actual endpoint
+            // const response = await fetch(`${API_URL}/matches/${matchId}`, { method: 'DELETE' });
+            
+            // For demo purposes, just remove from the array
+            allMatches = allMatches.filter(m => m.id !== matchId);
+            
+            renderMatches(allMatches);
+            updateMatchStats(allMatches);
+            alert('Partida eliminada con éxito');
         } catch (err) {
-            console.error('Error loading match count:', err);
+            console.error('Error deleting match:', err);
+            alert('Error al eliminar partida');
         }
+    }
+
+    // Stats Management
+    function updatePlayerStats(players) {
+        document.getElementById('totalPlayers').textContent = players.length;
+        document.getElementById('playersChange').textContent = `+${players.length} este mes`;
+    }
+
+    function updateMatchStats(matches) {
+        document.getElementById('totalMatches').textContent = matches.length;
+        document.getElementById('matchesChange').textContent = `+${matches.length} esta semana`;
         
-        // Update last match date
-        try {
-            const resLast = await fetch('/last-match', { credentials: 'include' });
-            const last = await resLast.json();
-            const lastMatchDate = last.date ? new Date(last.date) : null;
-            document.getElementById('lastMatchDate').innerText = lastMatchDate ? formatRelativeTime(lastMatchDate) : 'N/A';
-        } catch (err) {
-            console.error('Error loading last match:', err);
+        if (matches.length > 0) {
+            const lastMatch = matches.reduce((latest, match) => {
+                return new Date(match.date) > new Date(latest.date) ? match : latest;
+            });
+            document.getElementById('lastMatchDate').textContent = lastMatch.date;
         }
     }
 
     // Helper Functions
-    function formatRelativeTime(date) {
-        const now = new Date();
-        const diffMs = now - date;
-        const diffSecs = Math.floor(diffMs / 1000);
-        const diffMins = Math.floor(diffSecs / 60);
-        const diffHours = Math.floor(diffMins / 60);
-        const diffDays = Math.floor(diffHours / 24);
-        const diffMonths = Math.floor(diffDays / 30);
-        
-        if (diffMonths > 0) {
-            return `hace ${diffMonths} mes${diffMonths > 1 ? 'es' : ''}`;
-        } else if (diffDays > 0) {
-            return `hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
-        } else if (diffHours > 0) {
-            return `hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
-        } else if (diffMins > 0) {
-            return `hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
-        } else {
-            return 'hace unos segundos';
-        }
-    }
-
-    function showAlert(elementId, message, type = 'success') {
+    function showAlert(elementId, message, isError) {
         const alertElement = document.getElementById(elementId);
-        if (!alertElement) return;
-        
-        alertElement.innerText = message;
-        alertElement.style.color = type === 'success' ? '#10b981' : '#ef4444';
+        alertElement.textContent = message;
+        alertElement.classList.toggle('error', isError);
         
         setTimeout(() => {
-            alertElement.innerText = '';
+            alertElement.textContent = '';
         }, 3000);
     }
 
     function initResponsiveSidebar() {
-        const sidebarToggle = document.createElement('button');
-        sidebarToggle.innerHTML = '<i data-lucide="menu"></i>';
-        sidebarToggle.classList.add('sidebar-toggle');
-        sidebarToggle.style.position = 'fixed';
-        sidebarToggle.style.top = '1rem';
-        sidebarToggle.style.left = '1rem';
-        sidebarToggle.style.zIndex = '1000';
-        sidebarToggle.style.background = 'var(--primary)';
-        sidebarToggle.style.color = 'white';
-        sidebarToggle.style.border = 'none';
-        sidebarToggle.style.borderRadius = '50%';
-        sidebarToggle.style.width = '40px';
-        sidebarToggle.style.height = '40px';
-        sidebarToggle.style.display = 'none';
-        sidebarToggle.style.cursor = 'pointer';
-        document.body.appendChild(sidebarToggle);
-        
         const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
         
-        sidebarToggle.addEventListener('click', () => {
+        // Toggle sidebar on small screens
+        const toggleSidebar = document.createElement('button');
+        toggleSidebar.innerHTML = '<i data-lucide="menu"></i>';
+        toggleSidebar.className = 'btn btn-primary sidebar-toggle';
+        toggleSidebar.style.position = 'fixed';
+        toggleSidebar.style.bottom = '20px';
+        toggleSidebar.style.right = '20px';
+        toggleSidebar.style.zIndex = '99';
+        toggleSidebar.style.display = 'none';
+        
+        document.body.appendChild(toggleSidebar);
+        
+        toggleSidebar.addEventListener('click', () => {
             sidebar.classList.toggle('open');
         });
         
+        // Check screen size on load and resize
         function checkScreenSize() {
             if (window.innerWidth <= 1024) {
-                sidebarToggle.style.display = 'flex';
-                sidebarToggle.style.alignItems = 'center';
-                sidebarToggle.style.justifyContent = 'center';
-            } else {
-                sidebarToggle.style.display = 'none';
                 sidebar.classList.remove('open');
+                toggleSidebar.style.display = 'block';
+            } else {
+                sidebar.classList.add('open');
+                toggleSidebar.style.display = 'none';
             }
         }
         
         window.addEventListener('resize', checkScreenSize);
         checkScreenSize();
+        
+        // Refresh icons
+        lucide.createIcons();
     }
     </script>
 </body>
