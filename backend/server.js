@@ -350,61 +350,10 @@ app.get("/last-match", async (req, res) => {
   }
 });
 
-async function recalculateAllScores() {
-  console.log("⚡ Recalculando todos los scores...");
-
-  const allMatches = await matchesCollection.find().sort({ date: 1 }).toArray();
-
-  // Reiniciamos stats de los jugadores
-  await playersCollection.updateMany({}, {
-    $set: {
-      totalKills: 0,
-      totalDeaths: 0,
-      totalAssists: 0,
-      totalACS: 0,
-      totalFirstBloods: 0,
-      totalHeadshotKills: 0,
-      matchesPlayed: 0,
-      wins: 0,
-      score: 0
-    }
-  });
-
-  for (const match of allMatches) {
-    for (const p of match.match) {
-      const playerTeam = match.match.indexOf(p) < 5 ? "A" : "B";
-      const { totalScore } = calculateMatchScore(p, match.winnerTeam, playerTeam);
-
-      const currentPlayer = await playersCollection.findOne({ name: p.name, tag: p.tag });
-      const newTotalScore = Math.max((currentPlayer.score || 0) + totalScore, 0);
-
-      await playersCollection.updateOne(
-        { name: p.name, tag: p.tag },
-        {
-          $inc: {
-            totalKills: p.kills,
-            totalDeaths: p.deaths,
-            totalAssists: p.assists,
-            totalACS: p.acs,
-            totalFirstBloods: p.firstBloods,
-            matchesPlayed: 1,
-            wins: playerTeam === match.winnerTeam ? 1 : 0
-          },
-          $set: { score: newTotalScore }
-        }
-      );
-    }
-  }
-
-  console.log("✅ Todos los scores recalculados correctamente");
-}
 // -------------------
-// --- Servidor con recalculo
+// --- Servidor 
 // -------------------
-connectDB().then(async () => {
-  // ⚡ Recalculo automático al iniciar, solo para ejecutar una vez
-  await recalculateAllScores();
-
+connectDB().then(
   // Iniciamos el servidor
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 });
