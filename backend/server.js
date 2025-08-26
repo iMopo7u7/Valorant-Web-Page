@@ -298,7 +298,6 @@ app.put("/matches/:id", requireAdmin, async (req, res) => {
 app.delete("/matches/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    // Buscar la partida antes de eliminarla
     const match = await matchesCollection.findOne({ _id: new ObjectId(id) });
     if (!match) return res.status(404).json({ error: "Partida no encontrada" });
 
@@ -306,7 +305,6 @@ app.delete("/matches/:id", requireAdmin, async (req, res) => {
     for (const p of match.match) {
       const playerTeam = match.match.indexOf(p) < 5 ? "A" : "B";
       const { totalScore } = calculateMatchScore(p, match.winnerTeam, playerTeam);
-
       const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
 
       await playersCollection.updateOne(
@@ -326,6 +324,16 @@ app.delete("/matches/:id", requireAdmin, async (req, res) => {
         }
       );
     }
+
+    // Ahora sí, eliminar la partida
+    await matchesCollection.deleteOne({ _id: new ObjectId(id) });
+
+    res.json({ message: "✅ Partida eliminada y stats revertidos correctamente" });
+  } catch (err) {
+    console.error("❌ Error eliminando partida:", err);
+    res.status(500).json({ error: "Error eliminando partida" });
+  }
+});
 
 // -------------------
 // --- Leaderboard
