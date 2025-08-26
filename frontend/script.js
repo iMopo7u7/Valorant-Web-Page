@@ -6,9 +6,20 @@ const API_BASE_URL = "https://valorant-10-mans.onrender.com";
 // ==========================
 // 🔧 UTILS
 // ==========================
-function formatDate(dateString) {
+function formatRelativeDate(dateString) {
+  if (!dateString) return "No disponible";
+  const now = new Date();
   const date = new Date(dateString);
-  return date.toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" });
+  const diffMs = now - date;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffH = Math.floor(diffMin / 60);
+  const diffD = Math.floor(diffH / 24);
+
+  if (diffSec < 60) return "hace unos segundos";
+  if (diffMin < 60) return `hace ${diffMin} ${diffMin === 1 ? "minuto" : "minutos"}`;
+  if (diffH < 24) return `hace ${diffH} ${diffH === 1 ? "hora" : "horas"}`;
+  return `hace ${diffD} ${diffD === 1 ? "día" : "días"}`;
 }
 
 function getRankIcon(position) {
@@ -85,6 +96,13 @@ function createSocialLinks(social) {
 }
 
 // ==========================
+// 🔧 AVATAR HELPERS
+// ==========================
+function getPlayerAvatar(player) {
+  return player.avatarURL || "assets/default-avatar.png";
+}
+
+// ==========================
 // 🔧 API SERVICE
 // ==========================
 class ApiService {
@@ -108,7 +126,7 @@ class ApiService {
     return {
       totalMatches: matchesCount.count || 0,
       totalPlayers: playersCount.count || 0,
-      lastUpdate: lastMatch.date ? formatDate(lastMatch.date) : "No disponible"
+      lastUpdate: lastMatch.date ? formatRelativeDate(lastMatch.date) : "No disponible"
     };
   }
 }
@@ -134,6 +152,7 @@ async function renderTopPlayers(players) {
   topPlayersContainer.innerHTML = topThree.map((player, index) => `
     <div class="top-player-card rank-${index + 1}">
       <div class="rank-icon">${getRankIcon(index + 1)}</div>
+      <img class="player-avatar" src="${getPlayerAvatar(player)}" alt="${player.name}">
       <div class="player-name">${player.name}</div>
       <div class="player-tag">#${player.tag}</div>
       <div class="player-score">${Math.max(Math.round(player.score),0)}</div>
@@ -164,6 +183,7 @@ async function renderLeaderboardTable(players) {
         </td>
         <td class="player-info">
           <div class="player-main">
+            <img class="player-avatar-table" src="${getPlayerAvatar(p)}" alt="${p.name}">
             <div>
               <div class="player-name-link">${p.name}</div>
               <div class="player-tag-text">#${p.tag}</div>
