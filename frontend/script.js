@@ -99,7 +99,7 @@ function createSocialLinks(social) {
 // 🔧 AVATAR HELPERS
 // ==========================
 function getPlayerAvatar(player) {
-  return player.avatarURL || "assets/default-avatar.png";
+  return player.avatarURL || "https://cdn.discordapp.com/embed/avatars/0.png";
 }
 
 // ==========================
