@@ -522,6 +522,42 @@
     const API_BASE_URL = "https://valorant-10-mans.onrender.com";
     let matchesCache = [];
 
+    // Versión frontend de la función de cálculo de puntos
+    function calculateMatchScoreFront(playerStats, matchWinnerTeam, playerTeam, teamStats) {
+      const won = playerTeam === matchWinnerTeam;
+
+      const base = playerStats.kills * 1.0 +
+                   playerStats.assists * 0.7 +
+                   playerStats.firstBloods * 2 +
+                   playerStats.acs * 0.01 +
+                   playerStats.hsPercent * 0.1 -
+                   playerStats.deaths * 0.8;
+
+      const bases = teamStats.map(p =>
+        p.kills * 1.0 +
+        p.assists * 0.7 +
+        p.firstBloods * 2 +
+        p.acs * 0.01 +
+        p.hsPercent * 0.1 -
+        p.deaths * 0.8
+      );
+
+      const minBase = Math.min(...bases);
+      const maxBase = Math.max(...bases);
+
+      const outMin = won ? 10 : -10;
+      const outMax = won ? 20 : 0;
+
+      let mapped;
+      if (maxBase === minBase) {
+        mapped = (outMin + outMax) / 2;
+      } else {
+        mapped = ((base - minBase) * (outMax - outMin)) / (maxBase - minBase) + outMin;
+      }
+
+      return { totalScore: Math.round(mapped) };
+    }
+
     async function loadMatches() {
       try {
         const res = await fetch(`${API_BASE_URL}/matches`);
@@ -539,7 +575,6 @@
       matches.forEach((match, idx) => {
         const li = document.createElement("li");
 
-        // Header con mapa, score y ganador
         li.innerHTML = `
           <div class="match-header">
             <span>Mapa: ${match.map}</span>
@@ -549,9 +584,9 @@
           <div class="details" id="details-${idx}">
             <h3>Estadísticas de jugadores</h3>
             <div class="team-title">Team A</div>
-            ${renderTeam(match.match.slice(0, 5))}
+            ${renderTeam(match.match.slice(0, 5), match.winnerTeam)}
             <div class="team-title">Team B</div>
-            ${renderTeam(match.match.slice(5))}
+            ${renderTeam(match.match.slice(5), match.winnerTeam)}
           </div>
         `;
 
@@ -566,12 +601,13 @@
       });
     }
 
-    function renderTeam(teamPlayers) {
+    function renderTeam(teamPlayers, winnerTeam) {
       return `
         <table>
           <thead>
             <tr>
               <th>Jugador</th>
+              <th>Puntos</th>
               <th>Kills</th>
               <th>Deaths</th>
               <th>Assists</th>
@@ -581,17 +617,23 @@
             </tr>
           </thead>
           <tbody>
-            ${teamPlayers.map(p => `
-              <tr>
-                <td>${p.name}#${p.tag}</td>
-                <td>${p.kills}</td>
-                <td>${p.deaths}</td>
-                <td>${p.assists}</td>
-                <td>${p.acs}</td>
-                <td>${p.firstBloods}</td>
-                <td>${p.hsPercent}%</td>
-              </tr>
-            `).join("")}
+            ${teamPlayers.map((p, idx) => {
+              const playerTeam = idx < 5 ? "A" : "B"; // Ajuste según slice
+              const { totalScore } = calculateMatchScoreFront(p, winnerTeam, playerTeam, teamPlayers);
+
+              return `
+                <tr>
+                  <td>${p.name}#${p.tag}</td>
+                  <td>${totalScore > 0 ? `+${totalScore}` : totalScore}</td>
+                  <td>${p.kills}</td>
+                  <td>${p.deaths}</td>
+                  <td>${p.assists}</td>
+                  <td>${p.acs}</td>
+                  <td>${p.firstBloods}</td>
+                  <td>${p.hsPercent}%</td>
+                </tr>
+              `;
+            }).join("")}
           </tbody>
         </table>
       `;
@@ -608,5 +650,5 @@
 
     loadMatches();
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9745c06e86409e2d',t:'MTc1NjA2ODkzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
