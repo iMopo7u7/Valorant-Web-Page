@@ -298,13 +298,34 @@ app.put("/matches/:id", requireAdmin, async (req, res) => {
 app.delete("/matches/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    await matchesCollection.deleteOne({ _id: new ObjectId(id) });
-    res.json({ message: "Partida eliminada" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error eliminando partida" });
-  }
-});
+    // Buscar la partida antes de eliminarla
+    const match = await matchesCollection.findOne({ _id: new ObjectId(id) });
+    if (!match) return res.status(404).json({ error: "Partida no encontrada" });
+
+    // Revertir stats de cada jugador
+    for (const p of match.match) {
+      const playerTeam = match.match.indexOf(p) < 5 ? "A" : "B";
+      const { totalScore } = calculateMatchScore(p, match.winnerTeam, playerTeam);
+
+      const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
+
+      await playersCollection.updateOne(
+        { name: p.name, tag: p.tag },
+        {
+          $inc: {
+            totalKills: -p.kills,
+            totalDeaths: -p.deaths,
+            totalAssists: -p.assists,
+            totalACS: -p.acs,
+            totalFirstBloods: -p.firstBloods,
+            totalHeadshotKills: -headshotsThisMatch,
+            matchesPlayed: -1,
+            wins: playerTeam === match.winnerTeam ? -1 : 0
+          },
+          $inc: { score: -totalScore }
+        }
+      );
+    }
 
 // -------------------
 // --- Leaderboard
