@@ -90,29 +90,52 @@ async function connectDB() {
 // -------------------
 // --- Función de cálculo de score por partida
 // -------------------
-function calculateMatchScore(playerStats, matchWinnerTeam, playerTeam) {
+function calculateMatchScore(playerStats, matchWinnerTeam, playerTeam, teamStats) {
   const won = playerTeam === matchWinnerTeam;
 
-  let points = 0;
-  points += playerStats.kills * 1.2;
-  points += playerStats.assists * 0.8;
-  points += playerStats.acs / 100;
-  points += playerStats.firstBloods * 2;
-  points -= playerStats.deaths * 0.8;
+  //Calculamos baseScore
+  const base =
+    playerStats.kills * 1.0 +
+    playerStats.assists * 0.7 +
+    playerStats.firstBloods * 2 +
+    playerStats.acs * 0.01 +
+    playerStats.hsPercent * 0.1 -
+    playerStats.deaths * 0.8;
 
-  // Penalización por perder reducida a la mitad
-  points += won ? 5 : -2.5;
+  //Obtenemos los baseScore del equipo para normalizar
+  const bases = teamStats.map(p =>
+    p.kills * 1.0 +
+    p.assists * 0.7 +
+    p.firstBloods * 2 +
+    p.acs * 0.01 +
+    p.hsPercent * 0.1 -
+    p.deaths * 0.8
+  );
 
-  points = Math.max(Math.min(points, 20), -20);
+  const minBase = Math.min(...bases);
+  const maxBase = Math.max(...bases);
 
-  let bonus = 0;
-  if (playerStats.kills >= 25 || playerStats.acs >= 250) bonus = 5;
-  else if (playerStats.kills >= 20 || playerStats.acs >= 220) bonus = 3;
-  else if (playerStats.kills >= 15 || playerStats.acs >= 200) bonus = 1;
+  //Definir rango de salida
+  const outMin = won ? 10 : -10;
+  const outMax = won ? 20 : 0;
 
-  const totalScore = Math.round(points);
+  //Mapear baseScore al rango
+  let mapped;
+  if (maxBase === minBase) {
+    mapped = (outMin + outMax) / 2;
+  } else {
+    mapped =
+      ((base - minBase) * (outMax - outMin)) / (maxBase - minBase) + outMin;
+  }
 
-  return { totalScore, basePoints: Math.round(points), bonus };
+  //Redondear entero
+  const totalScore = Math.round(mapped);
+
+  return {
+    totalScore,
+    basePoints: Math.round(mapped), // mismo valor en este caso
+    bonus: 0 // puedes añadir reglas de bonus si quieres después
+  };
 }
 
 // -------------------
@@ -231,20 +254,33 @@ app.delete("/players", requireAdmin, async (req, res) => {
 app.post("/matches", requireAdmin, async (req, res) => {
   try {
     const { match, winnerTeam, score: matchScore, map } = req.body;
-    if (!Array.isArray(match) || match.length === 0) return res.status(400).json({ error: "Formato inválido" });
 
+    if (!Array.isArray(match) || match.length === 0) 
+      return res.status(400).json({ error: "Formato inválido" });
+
+    // Guardar la partida en la base
     const newMatch = { match, winnerTeam, score: matchScore, map, date: new Date() };
     await matchesCollection.insertOne(newMatch);
 
-    for (const p of match) {
-      const playerTeam = match.indexOf(p) < 5 ? "A" : "B";
-      const { totalScore } = calculateMatchScore(p, winnerTeam, playerTeam);
+    // Separar equipos
+    const teamA = match.slice(0, 5);
+    const teamB = match.slice(5, 10);
 
+    for (let i = 0; i < match.length; i++) {
+      const p = match[i];
+      const playerTeam = i < 5 ? "A" : "B";
+      const teamStats = playerTeam === "A" ? teamA : teamB;
+
+      // Calcular score con la nueva función
+      const { totalScore } = calculateMatchScore(p, winnerTeam, playerTeam, teamStats);
+
+      // Buscar stats actuales del jugador
       const currentPlayer = await playersCollection.findOne({ name: p.name, tag: p.tag });
       const newTotalScore = Math.max((currentPlayer.score || 0) + totalScore, 0);
 
       const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
 
+      // Actualizar stats acumuladas del jugador
       await playersCollection.updateOne(
         { name: p.name, tag: p.tag },
         {
@@ -262,6 +298,13 @@ app.post("/matches", requireAdmin, async (req, res) => {
         }
       );
     }
+
+    res.json({ message: "Partida añadida exitosamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al añadir partida" });
+  }
+});
 
     res.json({ message: "Partida añadida exitosamente" });
   } catch (err) {
