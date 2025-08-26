@@ -373,13 +373,6 @@ app.post("/matches", requireAdmin, async (req, res) => {
   }
 });
 
-    res.json({ message: "Partida añadida exitosamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al añadir partida" });
-  }
-});
-
 app.get("/matches", async (req, res) => {
   try {
     const matches = await matchesCollection.find().sort({ date: -1 }).toArray();
