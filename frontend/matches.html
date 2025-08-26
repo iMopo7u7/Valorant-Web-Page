@@ -522,7 +522,7 @@
     const API_BASE_URL = "https://valorant-10-mans.onrender.com";
     let matchesCache = [];
 
-    // Versión frontend de la función de cálculo de puntos
+    // Función frontend para calcular puntos igual que el backend
     function calculateMatchScoreFront(playerStats, matchWinnerTeam, playerTeam, teamStats) {
       const won = playerTeam === matchWinnerTeam;
 
@@ -584,9 +584,9 @@
           <div class="details" id="details-${idx}">
             <h3>Estadísticas de jugadores</h3>
             <div class="team-title">Team A</div>
-            ${renderTeam(match.match.slice(0, 5), match.winnerTeam)}
+            ${renderTeam(match.match.slice(0, 5), match.winnerTeam, "A")}
             <div class="team-title">Team B</div>
-            ${renderTeam(match.match.slice(5), match.winnerTeam)}
+            ${renderTeam(match.match.slice(5), match.winnerTeam, "B")}
           </div>
         `;
 
@@ -601,7 +601,7 @@
       });
     }
 
-    function renderTeam(teamPlayers, winnerTeam) {
+    function renderTeam(teamPlayers, winnerTeam, teamLabel) {
       return `
         <table>
           <thead>
@@ -618,13 +618,14 @@
           </thead>
           <tbody>
             ${teamPlayers.map((p, idx) => {
-              const playerTeam = idx < 5 ? "A" : "B"; // Ajuste según slice
-              const { totalScore } = calculateMatchScoreFront(p, winnerTeam, playerTeam, teamPlayers);
+              const { totalScore } = calculateMatchScoreFront(p, winnerTeam, teamLabel, teamPlayers);
+              const scoreColor = totalScore >= 0 ? "green" : "red";
+              const scoreSign = totalScore >= 0 ? "+" : "";
 
               return `
                 <tr>
                   <td>${p.name}#${p.tag}</td>
-                  <td>${totalScore > 0 ? `+${totalScore}` : totalScore}</td>
+                  <td style="color:${scoreColor}">${scoreSign}${totalScore}</td>
                   <td>${p.kills}</td>
                   <td>${p.deaths}</td>
                   <td>${p.assists}</td>
