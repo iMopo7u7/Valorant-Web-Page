@@ -179,6 +179,10 @@ async function recalculateAllScores() {
 
         const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
 
+        // Obtener score actual del jugador
+        const currentPlayer = await playersCollection.findOne({ name: p.name, tag: p.tag });
+        const newTotalScore = Math.max((currentPlayer?.score || 0) + totalScore, 0);
+
         // Actualizar stats acumuladas del jugador
         await playersCollection.updateOne(
           { name: p.name, tag: p.tag },
@@ -191,9 +195,9 @@ async function recalculateAllScores() {
               totalFirstBloods: p.firstBloods,
               totalHeadshotKills: headshotsThisMatch,
               matchesPlayed: 1,
-              wins: playerTeam === winnerTeam ? 1 : 0,
-              score: totalScore
-            }
+              wins: playerTeam === winnerTeam ? 1 : 0
+            },
+            $set: { score: newTotalScore }
           }
         );
       }
