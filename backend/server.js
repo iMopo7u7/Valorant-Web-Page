@@ -139,6 +139,73 @@ function calculateMatchScore(playerStats, matchWinnerTeam, playerTeam, teamStats
 }
 
 // -------------------
+// --- Función para recalcular todas las stats
+// -------------------
+async function recalculateAllScores() {
+  try {
+    // 1️⃣ Reiniciar stats de todos los jugadores
+    await playersCollection.updateMany({}, {
+      $set: {
+        totalKills: 0,
+        totalDeaths: 0,
+        totalAssists: 0,
+        totalACS: 0,
+        totalFirstBloods: 0,
+        totalHeadshotKills: 0,
+        matchesPlayed: 0,
+        wins: 0,
+        score: 0
+      }
+    });
+
+    // 2️⃣ Traer todas las partidas ordenadas por fecha
+    const allMatches = await matchesCollection.find().sort({ date: 1 }).toArray();
+
+    // 3️⃣ Iterar sobre todas las partidas
+    for (const matchData of allMatches) {
+      const match = matchData.match;
+      const winnerTeam = matchData.winnerTeam;
+
+      const teamA = match.slice(0, 5);
+      const teamB = match.slice(5, 10);
+
+      for (let i = 0; i < match.length; i++) {
+        const p = match[i];
+        const playerTeam = i < 5 ? "A" : "B";
+        const teamStats = playerTeam === "A" ? teamA : teamB;
+
+        // Recalcular score
+        const { totalScore } = calculateMatchScore(p, winnerTeam, playerTeam, teamStats);
+
+        const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
+
+        // Actualizar stats acumuladas del jugador
+        await playersCollection.updateOne(
+          { name: p.name, tag: p.tag },
+          {
+            $inc: {
+              totalKills: p.kills,
+              totalDeaths: p.deaths,
+              totalAssists: p.assists,
+              totalACS: p.acs,
+              totalFirstBloods: p.firstBloods,
+              totalHeadshotKills: headshotsThisMatch,
+              matchesPlayed: 1,
+              wins: playerTeam === winnerTeam ? 1 : 0,
+              score: totalScore
+            }
+          }
+        );
+      }
+    }
+
+    console.log("✅ Todos los scores recalculados correctamente.");
+  } catch (err) {
+    console.error("❌ Error recalculando scores:", err);
+  }
+}
+
+// -------------------
 // --- Login / Admin
 // -------------------
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
