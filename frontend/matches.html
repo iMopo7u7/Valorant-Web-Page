@@ -679,11 +679,11 @@ td:nth-child(8) { color: #fd971f; } /* HS% */
       </div>
       <div class="nav-links">
         <a href="/index.html" class="nav-link">
-          <span class="nav-icon">🏆</span>
+          <span class="nav-icon"></span>
           <span>Leaderboard</span>
         </a>
         <a href="#" class="nav-link active">
-          <span class="nav-icon">⚔️</span>
+          <span class="nav-icon"></span>
           <span>Matches</span>
         </a>
       </div>
@@ -704,31 +704,59 @@ td:nth-child(8) { color: #fd971f; } /* HS% */
     const API_BASE_URL = "https://valorant-10-mans.onrender.com";
     let matchesCache = [];
 
-    // Función frontend para calcular puntos igual que el backend
-    function calculateMatchScoreFront(playerStats, matchWinnerTeam, playerTeam, teamStats) {
-      const won = playerTeam === matchWinnerTeam;
+    // -------------------
+    // --- Score Frontend (igual al backend)
+    // -------------------
+    function calculateMatchScoreFront(playerStats, playerTeam, allPlayers, didWin) {
+      const duelistas = ["Jett","Reyna","Phoenix","Raze","Yoru","Neon","Iso","Waylay"];
+      const iniciadores = ["Sova","Skye","KAY/O","Fade","Breach","Gekko","Tejo"];
+      const controladores = ["Omen","Viper","Brimstone","Astra","Clove","Harbor"];
+      const centinelas = ["Sage","Killjoy","Cypher","Chamber","Deadlock","Vyse"];
 
-      const base = playerStats.kills * 1.0 +
-                   playerStats.assists * 0.7 +
-                   playerStats.firstBloods * 2 +
-                   playerStats.acs * 0.01 +
-                   playerStats.hsPercent * 0.1 -
-                   playerStats.deaths * 0.8;
+      let roleWeight = {
+        kills: 1.0, deaths: -0.8, assists: 0.7, ACS: 0.05,
+        ADR: 0.05, DDDelta: 0.08, hsPercent: 0.1, KAST: 0.08,
+        FK: 2.0, FD: -1.0, MK: 1.2
+      };
 
-      const bases = teamStats.map(p =>
-        p.kills * 1.0 +
-        p.assists * 0.7 +
-        p.firstBloods * 2 +
-        p.acs * 0.01 +
-        p.hsPercent * 0.1 -
-        p.deaths * 0.8
+      const char = playerStats.character;
+      if (duelistas.includes(char)) { roleWeight.kills = 1.5; roleWeight.FK = 2.5; roleWeight.MK = 1.5; }
+      else if (iniciadores.includes(char)) { roleWeight.KAST = 0.12; roleWeight.ADR = 0.07; }
+      else if (controladores.includes(char)) { roleWeight.KAST = 0.12; roleWeight.assists = 0.9; }
+      else if (centinelas.includes(char)) { roleWeight.KAST = 0.1; roleWeight.assists = 0.85; }
+
+      const base =
+        playerStats.kills * roleWeight.kills +
+        playerStats.deaths * roleWeight.deaths +
+        playerStats.assists * roleWeight.assists +
+        playerStats.ACS * roleWeight.ACS +
+        playerStats.ADR * roleWeight.ADR +
+        playerStats.DDDelta * roleWeight.DDDelta +
+        playerStats.hsPercent * roleWeight.hsPercent +
+        playerStats.KAST * roleWeight.KAST +
+        playerStats.FK * roleWeight.FK +
+        playerStats.FD * roleWeight.FD +
+        playerStats.MK * roleWeight.MK;
+
+      const teamBases = allPlayers.map(p =>
+        p.kills * roleWeight.kills +
+        p.deaths * roleWeight.deaths +
+        p.assists * roleWeight.assists +
+        p.ACS * roleWeight.ACS +
+        p.ADR * roleWeight.ADR +
+        p.DDDelta * roleWeight.DDDelta +
+        p.hsPercent * roleWeight.hsPercent +
+        p.KAST * roleWeight.KAST +
+        p.FK * roleWeight.FK +
+        p.FD * roleWeight.FD +
+        p.MK * roleWeight.MK
       );
 
-      const minBase = Math.min(...bases);
-      const maxBase = Math.max(...bases);
+      const minBase = Math.min(...teamBases);
+      const maxBase = Math.max(...teamBases);
 
-      const outMin = won ? 10 : -10;
-      const outMax = won ? 20 : 0;
+      const outMin = 5;
+      const outMax = 20;
 
       let mapped;
       if (maxBase === minBase) {
@@ -737,9 +765,15 @@ td:nth-child(8) { color: #fd971f; } /* HS% */
         mapped = ((base - minBase) * (outMax - outMin)) / (maxBase - minBase) + outMin;
       }
 
-      return { totalScore: Math.round(mapped) };
+      let totalScore = Math.round(mapped);
+      if (!didWin) totalScore = Math.max(0, totalScore - 5);
+
+      return { totalScore };
     }
 
+    // -------------------
+    // --- Cargar partidas
+    // -------------------
     async function loadMatches() {
       try {
         const res = await fetch(`${API_BASE_URL}/matches`);
@@ -750,6 +784,9 @@ td:nth-child(8) { color: #fd971f; } /* HS% */
       }
     }
 
+    // -------------------
+    // --- Render Matches
+    // -------------------
     function renderMatches(matches) {
       const list = document.getElementById("matchesList");
       list.innerHTML = "";
@@ -761,18 +798,19 @@ td:nth-child(8) { color: #fd971f; } /* HS% */
           <div class="match-header">
             <span>Mapa: ${match.map}</span>
             <span>Score: ${match.score}</span>
-            <span>Ganador: ${match.winnerTeam}</span>
+            <span>Ganador: Team ${match.winnerTeam}</span>
+            <span>${new Date(match.date).toLocaleString()}</span>
           </div>
-          <div class="details" id="details-${idx}">
+          <div class="details" id="details-${idx}" style="display:none">
             <h3>Estadísticas de jugadores</h3>
             <div class="team-title">Team A</div>
-            ${renderTeam(match.match.slice(0, 5), match.winnerTeam, "A")}
+            ${renderTeam(match.match.slice(0, 5), match.winnerTeam, "A", match.match)}
             <div class="team-title">Team B</div>
-            ${renderTeam(match.match.slice(5), match.winnerTeam, "B")}
+            ${renderTeam(match.match.slice(5, 10), match.winnerTeam, "B", match.match)}
           </div>
         `;
 
-        // Toggle con "solo uno abierto"
+        // Toggle (solo uno abierto a la vez)
         li.addEventListener("click", () => {
           document.querySelectorAll(".details").forEach(d => d.style.display = "none");
           const details = document.getElementById(`details-${idx}`);
@@ -783,37 +821,50 @@ td:nth-child(8) { color: #fd971f; } /* HS% */
       });
     }
 
-    function renderTeam(teamPlayers, winnerTeam, teamLabel) {
+    // -------------------
+    // --- Render Team
+    // -------------------
+    function renderTeam(teamPlayers, winnerTeam, teamLabel, allPlayers) {
       return `
         <table>
           <thead>
             <tr>
               <th>Jugador</th>
+              <th>Agente</th>
               <th>Puntos</th>
-              <th>Kills</th>
-              <th>Deaths</th>
-              <th>Assists</th>
+              <th>K</th>
+              <th>D</th>
+              <th>A</th>
               <th>ACS</th>
-              <th>First Bloods</th>
+              <th>ADR</th>
+              <th>DDΔ</th>
               <th>HS%</th>
+              <th>KAST%</th>
+              <th>FK</th>
+              <th>FD</th>
+              <th>MK</th>
             </tr>
           </thead>
           <tbody>
             ${teamPlayers.map((p, idx) => {
-              const { totalScore } = calculateMatchScoreFront(p, winnerTeam, teamLabel, teamPlayers);
-              const scoreColor = totalScore >= 0 ? "green" : "red";
-              const scoreSign = totalScore >= 0 ? "+" : "";
-
+              const { totalScore } = calculateMatchScoreFront(p, teamLabel, allPlayers, winnerTeam === teamLabel);
+              const scoreColor = totalScore >= 15 ? "lime" : totalScore >= 10 ? "orange" : "red";
               return `
                 <tr>
                   <td>${p.name}#${p.tag}</td>
-                  <td style="color:${scoreColor}">${scoreSign}${totalScore}</td>
+                  <td>${p.character}</td>
+                  <td style="color:${scoreColor};font-weight:bold">${totalScore}</td>
                   <td>${p.kills}</td>
                   <td>${p.deaths}</td>
                   <td>${p.assists}</td>
-                  <td>${p.acs}</td>
-                  <td>${p.firstBloods}</td>
+                  <td>${p.ACS}</td>
+                  <td>${p.ADR}</td>
+                  <td>${p.DDDelta}</td>
                   <td>${p.hsPercent}%</td>
+                  <td>${p.KAST}%</td>
+                  <td>${p.FK}</td>
+                  <td>${p.FD}</td>
+                  <td>${p.MK}</td>
                 </tr>
               `;
             }).join("")}
@@ -822,7 +873,9 @@ td:nth-child(8) { color: #fd971f; } /* HS% */
       `;
     }
 
-    // Filtro por jugador
+    // -------------------
+    // --- Search filter
+    // -------------------
     document.getElementById("search").addEventListener("input", (e) => {
       const query = e.target.value.toLowerCase();
       const filtered = matchesCache.filter(m =>
