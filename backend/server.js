@@ -258,7 +258,17 @@ app.post("/players", requireAdmin, async (req, res) => {
 app.get("/players", requireAdmin, async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
-    res.json(players);
+
+    const playersWithPercentages = players.map(p => {
+      const matches = p.matchesPlayed || 1; // evitar división entre 0
+      return {
+        ...p,
+        hsPercent: matches ? Math.round((p.totalHeadshotKills / p.totalKills) * 100) : 0,
+        KASTPercent: matches ? Math.round(p.totalKAST / matches) : 0
+      };
+    });
+
+    res.json(playersWithPercentages);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al obtener jugadores" });
