@@ -403,7 +403,7 @@ app.get("/leaderboard", async (req, res) => {
     const formattedPlayers = players.map(p => ({
       ...p,
       hsPercent: p.totalKills ? Math.round((p.totalHeadshotKills / p.totalKills) * 100) : 0,
-      kastPercent: p.matchesPlayed ? Math.round((p.totalKAST / p.matchesPlayed * 100)) : 0
+      kastPercent: p.matchesPlayed ? (p.totalKAST / p.matchesPlayed) : 0
     }));
 
     // Ordenar por score descendente
