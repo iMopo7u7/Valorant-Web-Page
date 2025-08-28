@@ -12,62 +12,28 @@
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
 
 /* ============================================================
-   CSS VARIABLES - VALORANT DESIGN SYSTEM
+   CSS VARIABLES - VALORANT DESIGN SYSTEM (MATCHING MAIN PAGE)
    ============================================================ */
 :root {
-  /* Core Colors (HSL format for better manipulation) */
-  --valorant-red: 350 85% 55%;
-  --valorant-red-glow: 350 85% 65%;
-  --valorant-blue: 195 85% 55%;
-  --valorant-cyan: 180 100% 50%;
-  --valorant-green: 120 100% 50%;
-  
-  /* Dark Theme Base */
-  --background: 215 25% 8%;
-  --background-darker: 215 30% 6%;
-  --card-bg: 215 25% 10%;
-  --card-bg-hover: 215 25% 12%;
-  
-  /* Text Colors */
-  --foreground: 0 0% 95%;
-  --foreground-muted: 0 0% 70%;
-  --foreground-subtle: 0 0% 60%;
-  
-  /* Borders */
-  --border: 215 25% 18%;
-  --border-glow: 350 85% 55%;
-  
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, hsl(var(--valorant-red)) 0%, hsl(var(--valorant-red-glow)) 100%);
-  --gradient-secondary: linear-gradient(135deg, hsl(var(--valorant-blue)) 0%, hsl(var(--valorant-cyan)) 100%);
-  --gradient-card: linear-gradient(145deg, hsl(var(--card-bg)) 0%, hsl(var(--background)) 100%);
-  --gradient-dark: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--background-darker)) 100%);
-  --gradient-glow: radial-gradient(circle at center, hsl(var(--valorant-red) / 0.15) 0%, transparent 70%);
-  
-  /* Shadows & Effects */
-  --shadow-neon: 0 0 20px hsl(var(--valorant-red) / 0.3);
-  --shadow-neon-intense: 0 0 40px hsl(var(--valorant-red) / 0.5);
-  --shadow-card: 0 8px 32px hsl(var(--background-darker) / 0.6);
-  --shadow-table: 0 4px 16px hsl(var(--background-darker) / 0.4);
-  
-  /* Transitions */
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-fast: all 0.2s ease;
-  --transition-glow: box-shadow 0.3s ease, transform 0.2s ease;
-  
-  /* Spacing */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  --spacing-2xl: 3rem;
-  
-  /* Border Radius */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+    /* Colors */
+    --bg-primary: hsl(220, 13%, 9%);
+    --bg-secondary: hsl(220, 13%, 12%);
+    --bg-card: hsl(220, 13%, 15%);
+    --valorant-red: hsl(351, 100%, 61%);
+    --valorant-blue: hsl(208, 100%, 70%);
+    --text-primary: hsl(0, 0%, 95%);
+    --text-secondary: hsl(0, 0%, 70%);
+    --text-muted: hsl(0, 0%, 50%);
+    --border-color: hsl(0, 0%, 20%);
+    --accent: hsl(351, 100%, 61%);
+    
+    /* Fonts */
+    --font-orbitron: 'Orbitron', monospace;
+    --font-rajdhani: 'Rajdhani', sans-serif;
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.2s ease-out;
 }
 
 /* ============================================================
@@ -80,17 +46,12 @@
 }
 
 body {
-  font-family: 'Rajdhani', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: hsl(var(--background-darker));
-  background-image: 
-    radial-gradient(circle at 20% 80%, hsl(var(--valorant-red) / 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, hsl(var(--valorant-blue) / 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, hsl(var(--foreground) / 0.02) 0%, transparent 50%);
-  color: hsl(var(--foreground));
-  min-height: 100vh;
-  line-height: 1.6;
-  position: relative;
-  overflow-x: hidden;
+    font-family: var(--font-rajdhani);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
 }
 
 body::before {
@@ -112,109 +73,72 @@ body::before {
 }
 
 /* ============================================================
-   NAVIGATION BAR
+   HEADER (MATCHING MAIN PAGE)
    ============================================================ */
-.navbar {
-  background: hsl(var(--card-bg) / 0.95);
-  backdrop-filter: blur(20px);
-  border-bottom: 2px solid hsl(var(--valorant-red) / 0.3);
-  padding: var(--spacing-md) 0;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  box-shadow: var(--shadow-card);
+.header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(8px);
 }
 
-.nav-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 var(--spacing-lg);
+.header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.nav-brand {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+.logo {
+    font-family: var(--font-orbitron);
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--text-primary);
 }
 
-.brand-main {
-  font-family: 'Orbitron', monospace;
-  font-size: 1.75rem;
-  font-weight: 700;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: var(--shadow-neon);
-  letter-spacing: 2px;
-  animation: glow-pulse 2s ease-in-out infinite alternate;
+.logo .accent {
+    color: var(--valorant-red);
+    text-shadow: 0 0 10px var(--valorant-red);
 }
 
-.brand-sub {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: hsl(var(--valorant-cyan));
-  text-shadow: 0 0 10px hsl(var(--valorant-cyan) / 0.5);
-  letter-spacing: 3px;
-  margin-top: -var(--spacing-xs);
+/* Navigation */
+.nav-tabs {
+    display: flex;
+    gap: 0.5rem;
 }
 
-.nav-links {
-  display: flex;
-  gap: var(--spacing-xl);
+.nav-tab {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-family: var(--font-rajdhani);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
 }
 
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--spacing-lg);
-  text-decoration: none;
-  color: hsl(var(--foreground) / 0.7);
-  font-weight: 600;
-  font-size: 1rem;
-  border-radius: var(--radius-xl);
-  border: 2px solid transparent;
-  transition: var(--transition-smooth);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  position: relative;
-  overflow: hidden;
+.nav-tab:hover {
+    color: var(--valorant-red);
+    border-color: var(--valorant-red);
+    box-shadow: 0 0 20px rgba(255, 70, 85, 0.3);
+    transform: translateY(-2px);
 }
 
-.nav-link::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--gradient-primary);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: -1;
-}
-
-.nav-link:hover {
-  color: hsl(var(--foreground));
-  border-color: hsl(var(--valorant-red) / 0.5);
-  box-shadow: var(--shadow-neon);
-  transform: translateY(-2px);
-}
-
-.nav-link:hover::before {
-  opacity: 0.1;
-}
-
-.nav-link.active {
-  color: hsl(var(--valorant-red));
-  border-color: hsl(var(--valorant-red));
-  background: hsl(var(--valorant-red) / 0.15);
-  box-shadow: var(--shadow-neon);
-}
-
-.nav-icon {
-  font-size: 1.125rem;
+.nav-tab.active {
+    background: linear-gradient(135deg, rgba(255, 70, 85, 0.1), rgba(255, 70, 85, 0.05));
+    border-color: var(--valorant-red);
+    color: var(--valorant-red);
+    box-shadow: 0 0 20px rgba(255, 70, 85, 0.3);
 }
 
 /* ============================================================
@@ -228,19 +152,12 @@ body::before {
 }
 
 .page-header h1 {
-  font-family: 'Orbitron', monospace;
+  font-family: var(--font-orbitron);
   font-size: 3rem;
   font-weight: 700;
-  margin-bottom: var(--spacing-md);
-  background: linear-gradient(45deg, 
-    hsl(var(--valorant-red)), 
-    hsl(var(--valorant-cyan)), 
-    hsl(var(--foreground))
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: var(--shadow-neon);
+  margin-bottom: 1rem;
+  color: var(--valorant-red);
+  text-shadow: 0 0 10px var(--valorant-red);
   letter-spacing: 2px;
   text-transform: uppercase;
   position: relative;
@@ -261,7 +178,7 @@ body::before {
 
 .page-subtitle {
   font-size: 1.125rem;
-  color: hsl(var(--foreground) / 0.7);
+  color: var(--text-secondary);
   font-weight: 400;
   letter-spacing: 1px;
   margin: 0;
@@ -270,8 +187,14 @@ body::before {
 /* ============================================================
    MAIN CONTENT
    ============================================================ */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
 .main-content {
-  padding: 0 var(--spacing-lg) var(--spacing-2xl);
+  padding: 2rem 0;
 }
 
 /* ============================================================
@@ -280,31 +203,28 @@ body::before {
 #search {
   width: 100%;
   max-width: 500px;
-  margin: 0 auto var(--spacing-2xl);
+  margin: 0 auto 2rem;
   display: block;
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: 1rem 1.5rem;
   font-size: 1rem;
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--font-rajdhani);
   font-weight: 500;
-  background: hsl(var(--card-bg) / 0.8);
-  backdrop-filter: blur(10px);
-  border: 2px solid hsl(var(--valorant-red) / 0.3);
-  border-radius: var(--radius-xl);
-  color: hsl(var(--foreground));
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  color: var(--text-primary);
   transition: var(--transition-smooth);
   outline: none;
 }
 
 #search:focus {
-  border-color: hsl(var(--valorant-red));
-  box-shadow: 
-    var(--shadow-neon),
-    inset 0 0 20px hsl(var(--valorant-red) / 0.1);
+  border-color: var(--valorant-red);
+  box-shadow: 0 0 20px rgba(255, 70, 85, 0.3);
   transform: translateY(-2px);
 }
 
 #search::placeholder {
-  color: hsl(var(--foreground) / 0.6);
+  color: var(--text-muted);
 }
 
 /* ============================================================
@@ -317,16 +237,14 @@ body::before {
 }
 
 #matchesList li {
-  background: var(--gradient-card);
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius-lg);
-  margin-bottom: var(--spacing-lg);
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
   cursor: pointer;
   transition: var(--transition-smooth);
-  backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-card);
 }
 
 #matchesList li::before {
@@ -349,10 +267,8 @@ body::before {
 }
 
 #matchesList li:hover {
-  border-color: hsl(var(--valorant-red));
-  box-shadow: 
-    var(--shadow-card),
-    var(--shadow-neon);
+  border-color: var(--valorant-red);
+  box-shadow: 0 10px 30px rgba(255, 70, 85, 0.2);
   transform: translateY(-5px);
 }
 
@@ -360,7 +276,7 @@ body::before {
    MATCH HEADER
    ============================================================ */
 .match-header {
-  padding: var(--spacing-lg);
+  padding: 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -371,11 +287,10 @@ body::before {
 }
 
 .match-header span {
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: hsl(var(--card-bg) / 0.8);
-  border-radius: var(--radius-lg);
-  border: 1px solid hsl(var(--border));
-  backdrop-filter: blur(5px);
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color);
   transition: var(--transition-smooth);
   position: relative;
   overflow: hidden;
@@ -391,8 +306,8 @@ body::before {
 }
 
 .match-header span:hover {
-  border-color: hsl(var(--valorant-red) / 0.5);
-  box-shadow: 0 0 15px hsl(var(--valorant-red) / 0.2);
+  border-color: var(--valorant-red);
+  box-shadow: 0 0 15px rgba(255, 70, 85, 0.3);
 }
 
 .match-header span:hover::before {
@@ -400,15 +315,15 @@ body::before {
 }
 
 .match-header span:nth-child(2) {
-  border-color: hsl(var(--valorant-cyan) / 0.3);
-  color: hsl(var(--valorant-cyan));
-  text-shadow: 0 0 10px hsl(var(--valorant-cyan) / 0.5);
+  border-color: var(--valorant-blue);
+  color: var(--valorant-blue);
+  text-shadow: 0 0 10px var(--valorant-blue);
 }
 
 .match-header span:nth-child(3) {
-  border-color: hsl(var(--valorant-green) / 0.3);
-  color: hsl(var(--valorant-green));
-  text-shadow: 0 0 10px hsl(var(--valorant-green) / 0.5);
+  border-color: var(--valorant-red);
+  color: var(--valorant-red);
+  text-shadow: 0 0 10px var(--valorant-red);
 }
 
 /* ============================================================
@@ -416,7 +331,7 @@ body::before {
    ============================================================ */
 .details {
   display: none;
-  padding: 0 var(--spacing-lg) var(--spacing-lg);
+  padding: 0 1.5rem 1.5rem;
   animation: slideDown 0.3s ease;
 }
 
@@ -432,12 +347,12 @@ body::before {
 }
 
 .details h3 {
-  color: hsl(var(--valorant-red));
-  font-family: 'Orbitron', monospace;
+  color: var(--valorant-red);
+  font-family: var(--font-orbitron);
   font-size: 1.5rem;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: 1.5rem;
   text-align: center;
-  text-shadow: var(--shadow-neon);
+  text-shadow: 0 0 10px var(--valorant-red);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -445,17 +360,17 @@ body::before {
 .team-title {
   font-size: 1.25rem;
   font-weight: 600;
-  margin: var(--spacing-lg) 0 var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-lg);
+  margin: 1.5rem 0 1rem;
+  padding: 1rem 1.5rem;
   background: linear-gradient(45deg, 
-    hsl(var(--valorant-red) / 0.2), 
-    hsl(var(--valorant-cyan) / 0.2)
+    rgba(255, 70, 85, 0.1), 
+    rgba(74, 158, 255, 0.1)
   );
-  border-radius: var(--radius-md);
-  border-left: 4px solid hsl(var(--valorant-red));
+  border-radius: 0.5rem;
+  border-left: 4px solid var(--valorant-red);
   text-transform: uppercase;
   letter-spacing: 1px;
-  text-shadow: 0 0 10px hsl(var(--foreground) / 0.3);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -485,37 +400,33 @@ body::before {
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: var(--spacing-lg);
-  background: hsl(var(--card-bg));
-  border-radius: var(--radius-md);
+  margin-bottom: 1.5rem;
+  background: var(--bg-secondary);
+  border-radius: 0.5rem;
   overflow: hidden;
-  box-shadow: var(--shadow-table);
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border-color);
 }
 
 thead {
-  background: linear-gradient(45deg, 
-    hsl(var(--valorant-red) / 0.3), 
-    hsl(var(--valorant-cyan) / 0.3)
-  );
+  background: var(--bg-primary);
 }
 
 th {
-  padding: var(--spacing-md);
+  padding: 1rem;
   text-align: center;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 1px;
-  border-bottom: 2px solid hsl(var(--valorant-red) / 0.5);
-  text-shadow: 0 0 10px hsl(var(--foreground) / 0.3);
-  color: hsl(var(--foreground));
+  border-bottom: 2px solid var(--valorant-red);
+  color: var(--valorant-red);
+  font-family: var(--font-orbitron);
 }
 
 td {
-  padding: var(--spacing-md) var(--spacing-sm);
+  padding: 1rem;
   text-align: center;
-  border-bottom: 1px solid hsl(var(--border) / 0.3);
+  border-bottom: 1px solid var(--border-color);
   font-weight: 500;
   transition: var(--transition-fast);
   position: relative;
@@ -526,45 +437,26 @@ tbody tr {
   position: relative;
 }
 
-tbody tr::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 3px;
-  background: hsl(var(--valorant-red));
-  transform: scaleY(0);
-  transition: transform 0.3s ease;
-}
-
 tbody tr:hover {
-  background: hsl(var(--valorant-red) / 0.1);
-  box-shadow: inset 0 0 20px hsl(var(--valorant-red) / 0.2);
-}
-
-tbody tr:hover::before {
-  transform: scaleY(1);
+  background: rgba(255, 70, 85, 0.1);
+  transform: scale(1.01);
 }
 
 tbody tr:hover td {
-  color: hsl(var(--foreground));
-  text-shadow: 0 0 5px hsl(var(--foreground) / 0.5);
+  color: var(--text-primary);
 }
 
 /* Player name styling */
 td:first-child {
   font-weight: 600;
-  color: hsl(var(--valorant-cyan));
-  text-shadow: 0 0 10px hsl(var(--valorant-cyan) / 0.5);
+  color: var(--valorant-blue);
   text-align: left;
-  padding-left: var(--spacing-lg);
 }
 
 /* Score column styling */
 td:nth-child(2) {
   font-weight: 700;
-  font-family: 'Orbitron', monospace;
+  font-family: var(--font-orbitron);
 }
 
 /* Individual stat color coding */
@@ -738,7 +630,7 @@ td:nth-child(8) { color: #fd971f; } /* HS% */
    LOADING & EMPTY STATES
    ============================================================ */
 #matchesList:empty::before {
-  content: '⚡ Cargando partidas...';
+  content: '⚡ Cargando partidas épicas...';
   display: block;
   text-align: center;
   color: hsl(var(--foreground-muted));
