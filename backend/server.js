@@ -90,123 +90,90 @@ async function connectDB() {
 // -------------------
 // --- Función de cálculo de score por partida
 // -------------------
-function calculateMatchScore(playerStats, matchWinnerTeam, playerTeam, teamStats) {
-  const won = playerTeam === matchWinnerTeam;
+// -------------------
+// --- Función de cálculo de score por partida ajustada por rol
+// -------------------
+function calculateMatchScore(playerStats, playerTeam, teamStats) {
+  // --- Roles según personaje
+  const duelistas = ["Jett", "Reyna", "Phoenix", "Raze"];
+  const iniciadores = ["Sova", "Skye", "KAY/O", "Fade"];
+  const controladores = ["Omen", "Viper", "Brimstone", "Astra"];
+  const centinelas = ["Sage", "Killjoy", "Cypher"];
 
-  //Calculamos baseScore
+  let roleWeight = {
+    kills: 1.0,
+    deaths: -0.8,
+    assists: 0.7,
+    adr: 0.05,
+    hsPercent: 0.1,
+    KAST: 0.08,
+    FK: 2.0,
+    FD: -1.0,
+    MK: 1.2
+  };
+
+  // Ajuste de pesos según rol
+  const char = playerStats.character;
+  if (duelistas.includes(char)) {
+    roleWeight.kills = 1.5;
+    roleWeight.FK = 2.5;
+    roleWeight.MK = 1.5;
+  } else if (iniciadores.includes(char)) {
+    roleWeight.KAST = 0.12;
+    roleWeight.adr = 0.07;
+  } else if (controladores.includes(char)) {
+    roleWeight.KAST = 0.12;
+    roleWeight.assists = 0.9;
+  } else if (centinelas.includes(char)) {
+    roleWeight.KAST = 0.1;
+    roleWeight.assists = 0.85;
+  }
+
+  // --- Cálculo base del score
   const base =
-    playerStats.kills * 1.0 +
-    playerStats.assists * 0.7 +
-    playerStats.firstBloods * 2 +
-    playerStats.acs * 0.01 +
-    playerStats.hsPercent * 0.1 -
-    playerStats.deaths * 0.8;
+    playerStats.kills * roleWeight.kills +
+    playerStats.deaths * roleWeight.deaths +
+    playerStats.assists * roleWeight.assists +
+    playerStats.adr * roleWeight.adr +
+    playerStats.hsPercent * roleWeight.hsPercent +
+    playerStats.KAST * roleWeight.KAST +
+    playerStats.FK * roleWeight.FK +
+    playerStats.FD * roleWeight.FD +
+    playerStats.MK * roleWeight.MK;
 
-  //Obtenemos los baseScore del equipo para normalizar
-  const bases = teamStats.map(p =>
-    p.kills * 1.0 +
-    p.assists * 0.7 +
-    p.firstBloods * 2 +
-    p.acs * 0.01 +
-    p.hsPercent * 0.1 -
-    p.deaths * 0.8
+  // --- Normalización respecto al equipo
+  const teamBases = teamStats.map(p =>
+    p.kills * roleWeight.kills +
+    p.deaths * roleWeight.deaths +
+    p.assists * roleWeight.assists +
+    p.adr * roleWeight.adr +
+    p.hsPercent * roleWeight.hsPercent +
+    p.KAST * roleWeight.KAST +
+    p.FK * roleWeight.FK +
+    p.FD * roleWeight.FD +
+    p.MK * roleWeight.MK
   );
 
-  const minBase = Math.min(...bases);
-  const maxBase = Math.max(...bases);
+  const minBase = Math.min(...teamBases);
+  const maxBase = Math.max(...teamBases);
 
-  //Definir rango de salida
-  const outMin = won ? 10 : -10;
-  const outMax = won ? 20 : 0;
+  // Definir rango de salida para que siempre se den puntos positivos
+  const outMin = 5;  // mínimo garantizado
+  const outMax = 20; // máximo posible
 
-  //Mapear baseScore al rango
   let mapped;
   if (maxBase === minBase) {
     mapped = (outMin + outMax) / 2;
   } else {
-    mapped =
-      ((base - minBase) * (outMax - outMin)) / (maxBase - minBase) + outMin;
+    mapped = ((base - minBase) * (outMax - outMin)) / (maxBase - minBase) + outMin;
   }
 
-  //Redondear entero
   const totalScore = Math.round(mapped);
 
   return {
     totalScore,
-    basePoints: Math.round(mapped), // mismo valor en este caso
-    bonus: 0 // puedes añadir reglas de bonus si quieres después
+    basePoints: Math.round(mapped)
   };
-}
-
-// -------------------
-// --- Función para recalcular todas las stats
-// -------------------
-async function recalculateAllScores() {
-  try {
-    // 1️⃣ Reiniciar stats de todos los jugadores
-    await playersCollection.updateMany({}, {
-      $set: {
-        totalKills: 0,
-        totalDeaths: 0,
-        totalAssists: 0,
-        totalACS: 0,
-        totalFirstBloods: 0,
-        totalHeadshotKills: 0,
-        matchesPlayed: 0,
-        wins: 0,
-        score: 0
-      }
-    });
-
-    // 2️⃣ Traer todas las partidas ordenadas por fecha
-    const allMatches = await matchesCollection.find().sort({ date: 1 }).toArray();
-
-    // 3️⃣ Iterar sobre todas las partidas
-    for (const matchData of allMatches) {
-      const match = matchData.match;
-      const winnerTeam = matchData.winnerTeam;
-
-      const teamA = match.slice(0, 5);
-      const teamB = match.slice(5, 10);
-
-      for (let i = 0; i < match.length; i++) {
-        const p = match[i];
-        const playerTeam = i < 5 ? "A" : "B";
-        const teamStats = playerTeam === "A" ? teamA : teamB;
-
-        // Recalcular score
-        const { totalScore } = calculateMatchScore(p, winnerTeam, playerTeam, teamStats);
-
-        const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
-
-        // Obtener score actual del jugador
-        const currentPlayer = await playersCollection.findOne({ name: p.name, tag: p.tag });
-        const newTotalScore = Math.max((currentPlayer?.score || 0) + totalScore, 0);
-
-        // Actualizar stats acumuladas del jugador
-        await playersCollection.updateOne(
-          { name: p.name, tag: p.tag },
-          {
-            $inc: {
-              totalKills: p.kills,
-              totalDeaths: p.deaths,
-              totalAssists: p.assists,
-              totalACS: p.acs,
-              totalFirstBloods: p.firstBloods,
-              totalHeadshotKills: headshotsThisMatch,
-              matchesPlayed: 1,
-              wins: playerTeam === winnerTeam ? 1 : 0
-            },
-            $set: { score: newTotalScore }
-          }
-        );
-      }
-    }
-
-    console.log("✅ Todos los scores recalculados correctamente.");
-  } catch (err) {
-    console.error("❌ Error recalculando scores:", err);
-  }
 }
 
 // -------------------
