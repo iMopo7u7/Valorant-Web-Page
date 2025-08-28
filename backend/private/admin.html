@@ -301,21 +301,40 @@ function populateTeams(){
       <select class="player-select"><option value="">-- Selecciona jugador --</option>${allPlayers.map(p=>`<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('')}</select>
       <select class="character-select">
         <option value="">-- Personaje --</option>
+        <!-- Duelistas -->
         <option value="Jett">Jett</option>
         <option value="Reyna">Reyna</option>
         <option value="Phoenix">Phoenix</option>
         <option value="Raze">Raze</option>
+        <option value="Yoru">Yoru</option>
+        <option value="Neon">Neon</option>
+        <option value="Iso">Iso</option>
+        <option value="Waylay">Waylay</option>
+        
+        <!-- Iniciadores -->
         <option value="Sova">Sova</option>
         <option value="Skye">Skye</option>
         <option value="KAY/O">KAY/O</option>
         <option value="Fade">Fade</option>
+        <option value="Breach">Breach</option>
+        <option value="Gekko">Gekko</option>
+        <option value="Tejo">Tejo</option>
+        
+        <!-- Controladores -->
         <option value="Omen">Omen</option>
         <option value="Viper">Viper</option>
         <option value="Brimstone">Brimstone</option>
         <option value="Astra">Astra</option>
+        <option value="Clove">Clove</option>
+        <option value="Harbor">Harbor</option>
+        
+        <!-- Centinelas -->
         <option value="Sage">Sage</option>
         <option value="Killjoy">Killjoy</option>
         <option value="Cypher">Cypher</option>
+        <option value="Chamber">Chamber</option>
+        <option value="Deadlock">Deadlock</option>
+        <option value="Vyse">Vyse</option>
       </select>
       <input type="number" placeholder="ACS" class="acs" min="0">
       <input type="number" placeholder="Kills" class="kill" min="0">
