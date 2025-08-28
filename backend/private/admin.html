@@ -87,8 +87,6 @@ section.active { display:block; }
   <section id="addMatch">
     <h2>Agregar Partida</h2>
     <div id="addMatchForm" style="margin-bottom:1rem;">
-
-      <!-- NUEVO TEXTAREA PARA PEGAR STATS -->
       <h3>Pegar stats de Valorant Tracker</h3>
       <textarea id="trackerStats" placeholder="Pega aquí los stats..." rows="10" style="width:100%;"></textarea>
       <button id="processStatsBtn">Procesar Stats</button>
@@ -154,7 +152,6 @@ let allPlayers = [];
 let allMatches = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-
   const navLinks = document.querySelectorAll('nav a');
   const sections = document.querySelectorAll('section');
   navLinks.forEach(link => {
@@ -201,115 +198,64 @@ document.addEventListener('DOMContentLoaded', () => {
   loadMatches();
 });
 
-// --- FUNCIÓN CORREGIDA PARA PROCESAR STATS DE TRACKER ---
+// --- PARSER REFACTORIZADO ---
 document.getElementById('processStatsBtn').addEventListener('click', () => {
   const text = document.getElementById('trackerStats').value;
   if (!text) return alert('Pega los stats primero');
 
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
-  let currentTeam = '';
-  let teamAPlayers = [];
-  let teamBPlayers = [];
-  
-  // Extraer información del mapa y marcador
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes('Normal') && lines[i+1] && lines[i+1].includes('Normal')) {
-      document.getElementById('matchMap').value = lines[i+2] || '';
-      break;
-    }
-  }
-  
-  // Buscar marcador
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes('Team A') && lines[i+1] && lines[i+1].includes('Team B')) {
-      const scoreA = lines[i].replace('Team A', '').trim();
-      const scoreB = lines[i+1].replace('Team B', '').trim();
-      document.getElementById('matchScore').value = `${scoreA}-${scoreB}`;
-      document.getElementById('winnerTeam').value = parseInt(scoreA) > parseInt(scoreB) ? 'A' : 'B';
-      break;
-    }
-  }
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
 
-  // Procesar jugadores
-  let processingTeam = '';
-  
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    
-    // Detectar inicio de equipo
-    if (line === 'Team A') {
-      processingTeam = 'A';
-      i++; // Saltar línea de separación
-      continue;
-    }
-    
-    if (line === 'Team B') {
-      processingTeam = 'B';
-      i++; // Saltar línea de separación
-      continue;
-    }
-    
-    // Detectar fin de equipo
-    if (line.includes('Avg. Rank:')) {
-      processingTeam = '';
-      continue;
-    }
-    
-    // Procesar jugadores
-    if (processingTeam && line && !line.includes('Current Rank') && !line.includes('ACS') && 
-        !line.includes('K') && !line.includes('D') && !line.includes('A') && 
-        !line.includes('+/-') && !line.includes('K/D') && !line.includes('DDΔ') && 
-        !line.includes('ADR') && !line.includes('HS%') && !line.includes('KAST') && 
-        !line.includes('FK') && !line.includes('FD') && !line.includes('MK')) {
-      
-      // Verificar que tenemos suficientes líneas para procesar
-      if (i + 12 >= lines.length) continue;
-      
-      const playerData = {
-        name: line,
-        agent: lines[i-1] || '', // El agente está en la línea anterior
-        ACS: parseInt(lines[i+1]) || 0,
-        kills: parseInt(lines[i+2]) || 0,
-        deaths: parseInt(lines[i+3]) || 0,
-        assists: parseInt(lines[i+4]) || 0,
-        plusMinus: parseInt(lines[i+5]) || 0,
-        KDRatio: parseFloat(lines[i+6]) || 0,
-        DDDelta: parseInt(lines[i+7]) || 0,
-        ADR: parseFloat(lines[i+8]) || 0,
-        hsPercent: parseFloat(lines[i+9]) || 0,
-        KAST: parseFloat(lines[i+10]) || 0,
-        FK: parseInt(lines[i+11]) || 0,
-        FD: parseInt(lines[i+12]) || 0,
-        MK: parseInt(lines[i+13]) || 0
+  // MAPA y SCORE
+  const map = lines[2] || '';
+  document.getElementById('matchMap').value = map;
+
+  const scoreA = parseInt(lines[4]) || 0;
+  const scoreB = parseInt(lines[6]) || 0;
+  document.getElementById('matchScore').value = `${scoreA}-${scoreB}`;
+  document.getElementById('winnerTeam').value = scoreA>scoreB?'A':'B';
+
+  // Extraer jugadores: cada uno son 16 líneas
+  const extractPlayers = (startIdx) => {
+    const players = [];
+    for(let i=startIdx; i<lines.length; i++){
+      if(lines[i].startsWith('Team') || lines[i].includes('Avg. Rank:')) break;
+      if(i+15>=lines.length) break;
+      const p = {
+        name: lines[i],
+        ACS: parseInt(lines[i+1])||0,
+        tag: lines[i+2]||'',
+        rank: lines[i+3]||'',
+        kills: parseInt(lines[i+4])||0,
+        deaths: parseInt(lines[i+5])||0,
+        assists: parseInt(lines[i+6])||0,
+        plusMinus: parseInt(lines[i+7])||0,
+        KDRatio: parseFloat(lines[i+8])||0,
+        DDDelta: parseInt(lines[i+9])||0,
+        ADR: parseFloat(lines[i+10])||0,
+        hsPercent: parseFloat(lines[i+11])||0,
+        KAST: parseFloat(lines[i+12])||0,
+        FK: parseInt(lines[i+13])||0,
+        FD: parseInt(lines[i+14])||0,
+        MK: parseInt(lines[i+15])||0
       };
-      
-      if (processingTeam === 'A') {
-        teamAPlayers.push(playerData);
-      } else if (processingTeam === 'B') {
-        teamBPlayers.push(playerData);
-      }
-      
-      i += 13; // Saltar las líneas de estadísticas procesadas
+      players.push(p);
+      i+=15;
     }
-  }
+    return players;
+  };
 
-  // Función para llenar los datos del equipo
+  let teamAStart = lines.findIndex(l=>l==='Team A' && lines.includes('Avg. Rank:')) + 2;
+  let teamBStart = lines.findIndex(l=>l==='Team B' && lines.includes('Avg. Rank:')) + 2;
+
+  const teamAPlayers = extractPlayers(teamAStart);
+  const teamBPlayers = extractPlayers(teamBStart);
+
   const fillTeam = (teamDiv, players) => {
     const rows = [...teamDiv.querySelectorAll('.team-row')];
-    players.forEach((p, idx) => {
-      if (!rows[idx]) return;
-      
-      // Buscar jugador por nombre
-      const playerExists = allPlayers.find(ap => 
-        p.name.toLowerCase().includes(ap.name.toLowerCase()) || 
-        ap.name.toLowerCase().includes(p.name.toLowerCase())
-      );
-      
-      if (playerExists) {
-        rows[idx].querySelector('.player-select').value = `${playerExists.name}||${playerExists.tag}`;
-      }
-      
-      // Llenar estadísticas
+    players.forEach((p, idx)=>{
+      if(!rows[idx]) return;
+      const playerExists = allPlayers.find(ap=>p.name.toLowerCase().includes(ap.name.toLowerCase())||ap.name.toLowerCase().includes(p.name.toLowerCase()));
+      if(playerExists) rows[idx].querySelector('.player-select').value = `${playerExists.name}||${playerExists.tag}`;
       rows[idx].querySelector('.acs').value = p.ACS;
       rows[idx].querySelector('.kill').value = p.kills;
       rows[idx].querySelector('.death').value = p.deaths;
@@ -450,10 +396,7 @@ function populateTeams() {
       <input type="number" placeholder="DDΔ" class="dddelta">
     `;
     teamADiv.appendChild(rowA);
-
-    const rowB = document.createElement('div');
-    rowB.classList.add('team-row');
-    rowB.innerHTML = rowA.innerHTML;
+    const rowB = rowA.cloneNode(true);
     teamBDiv.appendChild(rowB);
   }
 }
@@ -464,71 +407,63 @@ async function loadMatches() {
   const tbody = document.getElementById('matchesTableBody');
   tbody.innerHTML='';
   if(!allMatches.length){ tbody.innerHTML='<tr><td colspan="5">No hay partidas registradas</td></tr>'; return; }
-
   allMatches.forEach(m=>{
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${m.map}</td><td>${m.score}</td><td>${m.winner}</td><td>${new Date(m.date).toLocaleString()}</td>
       <td><button class="btn-delete-match">Eliminar</button></td>`;
     tbody.appendChild(tr);
-    tr.querySelector('.btn-delete-match').addEventListener('click', async ()=>{
-      if(!confirm('Eliminar esta partida?')) return;
-      const res = await fetch('/matches',{
-        method:'DELETE',
-        headers:{'Content-Type':'application/json'},
-        credentials:'include',
-        body: JSON.stringify({ id:m.id })
-      });
+    tr.querySelector('.btn-delete-match').addEventListener('click', async () => {
+      if(!confirm('Eliminar partida?')) return;
+      const res = await fetch('/matches',{ method:'DELETE', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({id:m._id}) });
       if(!res.ok) return alert((await res.json()).error||'Error eliminando partida');
       loadMatches();
     });
   });
-
-  updateDashboard();
 }
 
-document.getElementById('submitMatchBtn').addEventListener('click', async ()=>{
+document.getElementById('submitMatchBtn').addEventListener('click', async () => {
   const map = document.getElementById('matchMap').value;
   const winner = document.getElementById('winnerTeam').value;
   const score = document.getElementById('matchScore').value;
   if(!map||!winner||!score) return alert('Mapa, ganador y marcador son obligatorios');
 
-  const gatherTeam = (teamDiv) => {
-    const rows = [...teamDiv.querySelectorAll('.team-row')];
-    return rows.map(r=>{
-      const sel = r.querySelector('.player-select').value.split('||');
+  const collectTeamData = (teamDiv) => {
+    return [...teamDiv.querySelectorAll('.team-row')].map(r=>{
+      const val = r.querySelector('.player-select').value;
+      if(!val) return null;
+      const [name, tag] = val.split('||');
       return {
-        name: sel[0]||'',
-        tag: sel[1]||'',
+        name, tag,
         ACS: parseInt(r.querySelector('.acs').value)||0,
         kills: parseInt(r.querySelector('.kill').value)||0,
         deaths: parseInt(r.querySelector('.death').value)||0,
         assists: parseInt(r.querySelector('.assist').value)||0,
-        hs: parseFloat(r.querySelector('.hs').value)||0,
+        hsPercent: parseFloat(r.querySelector('.hs').value)||0,
         FK: parseInt(r.querySelector('.fb').value)||0,
         FD: parseInt(r.querySelector('.fd').value)||0,
         MK: parseInt(r.querySelector('.mk').value)||0,
         KAST: parseFloat(r.querySelector('.kast').value)||0,
         ADR: parseFloat(r.querySelector('.adr').value)||0,
         DDDelta: parseInt(r.querySelector('.dddelta').value)||0
-      }
-    });
-  }
+      };
+    }).filter(p=>p);
+  };
 
-  const teamA = gatherTeam(document.getElementById('teamA'));
-  const teamB = gatherTeam(document.getElementById('teamB'));
+  const teamAData = collectTeamData(document.getElementById('teamA'));
+  const teamBData = collectTeamData(document.getElementById('teamB'));
 
-  try{
-    const res = await fetch('/matches',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      credentials:'include',
-      body: JSON.stringify({ map, winner, score, teamA, teamB })
-    });
-    if(!res.ok) return alert((await res.json()).error||'Error agregando partida');
-    document.getElementById('matchAlert').innerText='Partida registrada correctamente';
-    setTimeout(()=>document.getElementById('matchAlert').innerText='',2000);
-    loadMatches();
-  }catch(err){ console.error(err); alert('Error de conexión'); }
+  const payload = { map, winner, score, teamA:teamAData, teamB:teamBData };
+
+  const res = await fetch('/matches',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    credentials:'include',
+    body: JSON.stringify(payload)
+  });
+  if(!res.ok) return alert((await res.json()).error||'Error registrando partida');
+  document.getElementById('matchAlert').innerText='Partida registrada correctamente';
+  setTimeout(()=>document.getElementById('matchAlert').innerText='',2000);
+  loadMatches();
 });
 </script>
 
