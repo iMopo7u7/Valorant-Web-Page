@@ -293,6 +293,9 @@ app.delete("/players", requireAdmin, async (req, res) => {
 // -------------------
 // --- CRUD Matches
 // -------------------
+// -------------------
+// --- CRUD Matches
+// -------------------
 app.post("/matches", requireAdmin, async (req, res) => {
   try {
     const { match, winnerTeam, score: matchScore, map } = req.body;
@@ -313,13 +316,14 @@ app.post("/matches", requireAdmin, async (req, res) => {
       const playerTeam = i < 5 ? "A" : "B";
       const teamStats = playerTeam === "A" ? teamA : teamB;
 
-      // Calcular score con la nueva función
-      const { totalScore } = calculateMatchScore(p, winnerTeam, playerTeam, teamStats);
+      // Calcular score con la función existente
+      const { totalScore } = calculateMatchScore(p, playerTeam, teamStats);
 
       // Buscar stats actuales del jugador
       const currentPlayer = await playersCollection.findOne({ name: p.name, tag: p.tag });
       const newTotalScore = Math.max((currentPlayer.score || 0) + totalScore, 0);
 
+      // Headshots reales
       const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
 
       // Actualizar stats acumuladas del jugador
@@ -330,9 +334,14 @@ app.post("/matches", requireAdmin, async (req, res) => {
             totalKills: p.kills,
             totalDeaths: p.deaths,
             totalAssists: p.assists,
-            totalACS: p.acs,
-            totalFirstBloods: p.firstBloods,
+            totalACS: p.ACS,
+            totalDDDelta: p.DDDelta,
+            totalADR: p.ADR,
             totalHeadshotKills: headshotsThisMatch,
+            totalKAST: p.KAST,
+            totalFK: p.FK,
+            totalFD: p.FD,
+            totalMK: p.MK,
             matchesPlayed: 1,
             wins: playerTeam === winnerTeam ? 1 : 0
           },
@@ -376,17 +385,12 @@ app.put("/matches/:id", requireAdmin, async (req, res) => {
 app.delete("/matches/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    // Buscar la partida
     const match = await matchesCollection.findOne({ _id: new ObjectId(id) });
     if (!match) return res.status(404).json({ error: "Partida no encontrada" });
 
-    // Eliminar la partida
     await matchesCollection.deleteOne({ _id: new ObjectId(id) });
 
-    // Recalcular todos los scores usando tu función
-    await recalculateAllScores();
-
-    res.json({ message: "✅ Partida eliminada y todos los scores recalculados correctamente" });
+    res.json({ message: "✅ Partida eliminada correctamente" });
   } catch (err) {
     console.error("❌ Error eliminando partida:", err);
     res.status(500).json({ error: "Error eliminando partida" });
