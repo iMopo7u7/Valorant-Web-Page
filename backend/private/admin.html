@@ -13,14 +13,14 @@ nav li { margin:0; }
 nav a { display:block; padding:1rem; color:white; text-decoration:none; }
 nav a.active { background:#555; }
 main { padding:1rem; }
-form input, form select { margin-right:0.5rem; margin-bottom:0.3rem; padding:0.3rem; }
+form input, form select, textarea { margin-right:0.5rem; margin-bottom:0.3rem; padding:0.3rem; }
 table { width:100%; border-collapse:collapse; margin-top:1rem; background:white; }
 table th, table td { border:1px solid #ccc; padding:0.5rem; text-align:center; }
 button { padding:0.3rem 0.5rem; margin-left:0.2rem; cursor:pointer; }
 section { display:none; }
 section.active { display:block; }
 .edit-row input { width: 90%; }
-.team-row input, .team-row select { margin-right:0.3rem; margin-bottom:0.2rem; width: 80px; }
+.team-row input, .team-row select { margin-right:0.3rem; margin-bottom:0.2rem; width: 80px; text-align:center; }
 .alert { color: green; margin-top: 0.5rem; display:block; }
 .player-row input, .team-row input, .team-row select { text-align:center; }
 </style>
@@ -86,14 +86,13 @@ section.active { display:block; }
   <!-- AGREGAR PARTIDA -->
   <section id="addMatch">
     <h2>Agregar Partida</h2>
-
-    <!-- Textarea para pegar los datos del tracker -->
-    <label>Pegar datos Valorant Tracker:</label><br>
-    <textarea id="jsonInput" rows="10" style="width:100%" placeholder="Pega aquí el texto del scoreboard"></textarea><br>
-    <button id="processJsonBtn">Importar Datos Automáticamente</button>
-    <span id="jsonAlert" class="alert"></span>
-
     <div id="addMatchForm" style="margin-bottom:1rem;">
+
+      <!-- NUEVO TEXTAREA PARA PEGAR STATS -->
+      <h3>Pegar stats de Valorant Tracker</h3>
+      <textarea id="trackerStats" placeholder="Pega aquí los stats..." rows="10" style="width:100%;"></textarea>
+      <button id="processStatsBtn">Procesar Stats</button>
+
       <label>Mapa:</label>
       <select id="matchMap">
         <option value="">Selecciona mapa</option>
@@ -200,95 +199,87 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadPlayers();
   loadMatches();
-
-  // NUEVO: Importación automática del scoreboard con verificación de jugadores
-  document.getElementById('processJsonBtn').addEventListener('click', () => {
-    const raw = document.getElementById('jsonInput').value;
-    if(!raw) return alert('Pega primero los datos del tracker');
-    const lines = raw.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
-
-    const mapLine = lines.find(l=>["Bind","Haven","Split","Ascent","Icebox","Breeze","Corrode","Abyss","Sunset","Lotus","Pearl","Fracture"].includes(l));
-    if(mapLine) document.getElementById('matchMap').value = mapLine;
-
-    const idxTeamA = lines.findIndex(l=>"Team A"===l);
-    const idxTeamB = lines.findIndex(l=>"Team B"===l);
-    if(idxTeamA!==-1 && idxTeamB!==-1){
-        const scoreA = parseInt(lines[idxTeamA+1]);
-        const scoreB = parseInt(lines[idxTeamB+1]);
-        document.getElementById('matchScore').value = `${scoreA}-${scoreB}`;
-        document.getElementById('winnerTeam').value = scoreA>scoreB?'A':'B';
-    }
-
-    const parsePlayers=(startIdx,teamId)=>{
-        const teamRows = document.querySelectorAll(`#${teamId} .team-row`);
-        let idx=startIdx;
-        let rowCounter=0;
-        while(idx<lines.length && rowCounter<5){
-            const row = teamRows[rowCounter];
-            if(!row) break;
-
-            const char = lines[idx] || '';
-            const name = lines[idx+1] || '';
-            const tag = lines[idx+2] || '';
-            const ACS = parseInt(lines[idx+4]||0);
-            const K = parseInt(lines[idx+5]||0);
-            const D = parseInt(lines[idx+6]||0);
-            const A = parseInt(lines[idx+7]||0);
-            const DDDelta = parseInt(lines[idx+9]||0);
-            const ADR = parseFloat(lines[idx+10]||0);
-            const HS = parseFloat(lines[idx+11]||0);
-            const KAST = parseFloat(lines[idx+12]||0);
-            const FK = parseInt(lines[idx+13]||0);
-            const FD = parseInt(lines[idx+14]||0);
-            const MK = parseInt(lines[idx+15]||0);
-
-            let existingPlayer = allPlayers.find(p => p.name.toLowerCase() === name.toLowerCase() && p.tag.toLowerCase() === tag.toLowerCase());
-            if(!existingPlayer){
-                const add = confirm(`El jugador ${name} (${tag}) no existe.\n¿Quieres agregarlo manualmente? Presiona Cancelar para ignorar.`);
-                if(add){
-                    row.querySelector('.player-select').innerHTML += `<option value="${name}||${tag}" selected>${name} (${tag})</option>`;
-                    row.querySelector('.player-select').value = `${name}||${tag}`;
-                } else {
-                    rowCounter++;
-                    idx += 16;
-                    continue; 
-                }
-            } else {
-                const sel = row.querySelector('.player-select');
-                for(let i=0;i<sel.options.length;i++){ 
-                    if(sel.options[i].text.includes(name)){ sel.selectedIndex=i; break; } 
-                }
-            }
-
-            const charSel = row.querySelector('.character-select');
-            for(let i=0;i<charSel.options.length;i++){ 
-                if(charSel.options[i].value.toLowerCase()===char.toLowerCase()){ charSel.selectedIndex=i; break; } 
-            }
-
-            row.querySelector('.acs').value = ACS;
-            row.querySelector('.kill').value = K;
-            row.querySelector('.death').value = D;
-            row.querySelector('.assist').value = A;
-            row.querySelector('.dddelta').value = DDDelta;
-            row.querySelector('.adr').value = ADR;
-            row.querySelector('.hs').value = HS;
-            row.querySelector('.kast').value = KAST;
-            row.querySelector('.fb').value = FK;
-            row.querySelector('.fd').value = FD;
-            row.querySelector('.mk').value = MK;
-
-            idx += 16;
-            rowCounter++;
-        }
-    };
-
-    parsePlayers(idxTeamA+2,'teamA');
-    parsePlayers(idxTeamB+2,'teamB');
-    document.getElementById('jsonAlert').innerText='Datos importados automáticamente';
-    setTimeout(()=>document.getElementById('jsonAlert').innerText='',2000);
-  });
 });
 
+// --- FUNCIÓN PARA PROCESAR STATS DE TRACKER ---
+document.getElementById('processStatsBtn').addEventListener('click', () => {
+  const text = document.getElementById('trackerStats').value;
+  if(!text) return alert('Pega los stats primero');
+
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+  let currentTeam = '';
+  let teamAPlayers = [];
+  let teamBPlayers = [];
+
+  let i = 0;
+  while(i < lines.length){
+    const line = lines[i];
+    if(line.startsWith('Team A')){ currentTeam = 'A'; i++; continue; }
+    if(line.startsWith('Team B')){ currentTeam = 'B'; i++; continue; }
+
+    if(i + 15 >= lines.length){ i++; continue; }
+
+    const nameLine = line;
+    const tagLine = lines[i+1] || '';
+    const ACS = parseInt(lines[i+3]) || 0;
+    const K = parseInt(lines[i+4]) || 0;
+    const D = parseInt(lines[i+5]) || 0;
+    const A = parseInt(lines[i+6]) || 0;
+    const plusMinus = lines[i+7] ? parseInt(lines[i+7].replace('+','')) : 0;
+    const DDDelta = parseInt(lines[i+9]) || 0;
+    const ADR = parseFloat(lines[i+10]) || 0;
+    const HS = parseFloat(lines[i+11]) || 0;
+    const KAST = parseFloat(lines[i+12]) || 0;
+    const FK = parseInt(lines[i+13]) || 0;
+    const FD = parseInt(lines[i+14]) || 0;
+    const MK = parseInt(lines[i+15]) || 0;
+
+    const playerObj = {
+      name: nameLine,
+      tag: tagLine,
+      ACS, kills: K, deaths: D, assists: A,
+      plusMinus, DDDelta, ADR, hsPercent: HS,
+      KAST, FK, FD, MK
+    };
+
+    if(currentTeam === 'A') teamAPlayers.push(playerObj);
+    else if(currentTeam === 'B') teamBPlayers.push(playerObj);
+
+    i += 16;
+  }
+
+  const fillTeam = (teamDiv, players) => {
+    const rows = [...teamDiv.querySelectorAll('.team-row')];
+    players.forEach((p, idx)=>{
+      if(!rows[idx]) return;
+      const sel = rows[idx].querySelector('.player-select');
+      const playerExists = allPlayers.find(ap=>ap.name === p.name);
+      if(playerExists){
+        sel.value = `${playerExists.name}||${playerExists.tag}`;
+      } else {
+        if(confirm(`El jugador ${p.name} no está registrado. Ignorar o agregar manualmente?`)) sel.value = '';
+      }
+      rows[idx].querySelector('.acs').value = p.ACS;
+      rows[idx].querySelector('.kill').value = p.kills;
+      rows[idx].querySelector('.death').value = p.deaths;
+      rows[idx].querySelector('.assist').value = p.assists;
+      rows[idx].querySelector('.hs').value = p.hsPercent;
+      rows[idx].querySelector('.fb').value = p.FK;
+      rows[idx].querySelector('.fd').value = p.FD;
+      rows[idx].querySelector('.mk').value = p.MK;
+      rows[idx].querySelector('.kast').value = p.KAST;
+      rows[idx].querySelector('.adr').value = p.ADR;
+      rows[idx].querySelector('.dddelta').value = p.DDDelta;
+    });
+  };
+
+  fillTeam(document.getElementById('teamA'), teamAPlayers);
+  fillTeam(document.getElementById('teamB'), teamBPlayers);
+
+  alert('Stats procesados y formulario llenado automáticamente.');
+});
+
+// --- FUNCIONES ORIGINALES ---
 async function loadPlayers() {
   const res = await fetch('/players', { credentials:'include' });
   allPlayers = await res.json();
@@ -379,74 +370,117 @@ function updatePlayersTable() {
 
 async function updateDashboard(){
   document.getElementById('totalPlayers').innerText=allPlayers.length;
-  const resMatches=await fetch('/matches-count',{credentials:'include'});
-  const dataMatches=await resMatches.json();
-  document.getElementById('totalMatches').innerText=dataMatches.count||0;
-  const resLast=await fetch('/last-match',{credentials:'include'});
-  const last=await resLast.json();
-  document.getElementById('lastMatchDate').innerText=last.date?new Date(last.date).toLocaleString():'N/A';
+  document.getElementById('totalMatches').innerText=allMatches.length;
+  if(allMatches.length) document.getElementById('lastMatchDate').innerText=new Date(allMatches[allMatches.length-1].date).toLocaleString();
 }
 
-function populateTeams(){
-  const teamA=document.getElementById('teamA'); const teamB=document.getElementById('teamB');
-  teamA.innerHTML=''; teamB.innerHTML='';
-  const createRow=()=>{ const row=document.createElement('div'); row.className='team-row';
-    row.innerHTML=`
-      <select class="player-select"><option value="">-- Selecciona jugador --</option>${allPlayers.map(p=>`<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('')}</select>
-      <select class="character-select">
-        <option value="">--Personaje--</option>
-        <option value="Jett">Jett</option>
-        <option value="Sage">Sage</option>
-        <option value="Phoenix">Phoenix</option>
-        <option value="Viper">Viper</option>
-        <option value="Raze">Raze</option>
-        <option value="Sova">Sova</option>
-        <option value="Killjoy">Killjoy</option>
-        <option value="Breach">Breach</option>
-        <option value="Omen">Omen</option>
-        <option value="Reyna">Reyna</option>
-        <option value="KAY/O">KAY/O</option>
-        <option value="Yoru">Yoru</option>
-        <option value="Chamber">Chamber</option>
-        <option value="Neon">Neon</option>
-        <option value="Fade">Fade</option>
-        <option value="Harbor">Harbor</option>
+function populateTeams() {
+  const teamADiv = document.getElementById('teamA');
+  const teamBDiv = document.getElementById('teamB');
+  teamADiv.innerHTML=''; teamBDiv.innerHTML='';
+  for(let i=0;i<5;i++){
+    const rowA = document.createElement('div');
+    rowA.classList.add('team-row');
+    rowA.innerHTML = `
+      <select class="player-select">
+        <option value="">Seleccionar jugador</option>
+        ${allPlayers.map(p=>`<option value="${p.name}||${p.tag}">${p.name} [${p.tag}]</option>`).join('')}
       </select>
-      <input type="number" class="acs" placeholder="ACS">
-      <input type="number" class="kill" placeholder="K">
-      <input type="number" class="death" placeholder="D">
-      <input type="number" class="assist" placeholder="A">
-      <input type="number" class="dddelta" placeholder="DDDelta">
-      <input type="number" class="adr" placeholder="ADR">
-      <input type="number" class="hs" placeholder="HS%">
-      <input type="number" class="kast" placeholder="KAST%">
-      <input type="number" class="fb" placeholder="FK">
-      <input type="number" class="fd" placeholder="FD">
-      <input type="number" class="mk" placeholder="MK">
-    `; return row;
-  };
-  for(let i=0;i<5;i++){ teamA.appendChild(createRow()); teamB.appendChild(createRow()); }
+      <input type="number" placeholder="ACS" class="acs">
+      <input type="number" placeholder="Kill" class="kill">
+      <input type="number" placeholder="Death" class="death">
+      <input type="number" placeholder="Assist" class="assist">
+      <input type="number" placeholder="HS%" class="hs">
+      <input type="number" placeholder="FB" class="fb">
+      <input type="number" placeholder="FD" class="fd">
+      <input type="number" placeholder="MK" class="mk">
+      <input type="number" placeholder="KAST" class="kast">
+      <input type="number" placeholder="ADR" class="adr">
+      <input type="number" placeholder="DDΔ" class="dddelta">
+    `;
+    teamADiv.appendChild(rowA);
+
+    const rowB = document.createElement('div');
+    rowB.classList.add('team-row');
+    rowB.innerHTML = rowA.innerHTML;
+    teamBDiv.appendChild(rowB);
+  }
 }
 
-async function loadMatches(){
-  const res = await fetch('/matches',{credentials:'include'});
+async function loadMatches() {
+  const res = await fetch('/matches', { credentials:'include' });
   allMatches = await res.json();
-  const tbody=document.getElementById('matchesTableBody');
+  const tbody = document.getElementById('matchesTableBody');
   tbody.innerHTML='';
   if(!allMatches.length){ tbody.innerHTML='<tr><td colspan="5">No hay partidas registradas</td></tr>'; return; }
+
   allMatches.forEach(m=>{
-    const row=document.createElement('tr');
-    row.innerHTML=`<td>${m.map}</td><td>${m.score}</td><td>${m.winner}</td><td>${new Date(m.date).toLocaleString()}</td><td><button class="btn-del-match">Eliminar</button></td>`;
-    tbody.appendChild(row);
-    row.querySelector('.btn-del-match').addEventListener('click',async()=>{
-      if(!confirm('Eliminar partida?')) return;
-      const res=await fetch('/matches',{method:'DELETE',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({id:m._id})});
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${m.map}</td><td>${m.score}</td><td>${m.winner}</td><td>${new Date(m.date).toLocaleString()}</td>
+      <td><button class="btn-delete-match">Eliminar</button></td>`;
+    tbody.appendChild(tr);
+    tr.querySelector('.btn-delete-match').addEventListener('click', async ()=>{
+      if(!confirm('Eliminar esta partida?')) return;
+      const res = await fetch('/matches',{
+        method:'DELETE',
+        headers:{'Content-Type':'application/json'},
+        credentials:'include',
+        body: JSON.stringify({ id:m.id })
+      });
       if(!res.ok) return alert((await res.json()).error||'Error eliminando partida');
       loadMatches();
     });
   });
+
+  updateDashboard();
 }
+
+document.getElementById('submitMatchBtn').addEventListener('click', async ()=>{
+  const map = document.getElementById('matchMap').value;
+  const winner = document.getElementById('winnerTeam').value;
+  const score = document.getElementById('matchScore').value;
+  if(!map||!winner||!score) return alert('Mapa, ganador y marcador son obligatorios');
+
+  const gatherTeam = (teamDiv) => {
+    const rows = [...teamDiv.querySelectorAll('.team-row')];
+    return rows.map(r=>{
+      const sel = r.querySelector('.player-select').value.split('||');
+      return {
+        name: sel[0]||'',
+        tag: sel[1]||'',
+        ACS: parseInt(r.querySelector('.acs').value)||0,
+        kills: parseInt(r.querySelector('.kill').value)||0,
+        deaths: parseInt(r.querySelector('.death').value)||0,
+        assists: parseInt(r.querySelector('.assist').value)||0,
+        hs: parseFloat(r.querySelector('.hs').value)||0,
+        FK: parseInt(r.querySelector('.fb').value)||0,
+        FD: parseInt(r.querySelector('.fd').value)||0,
+        MK: parseInt(r.querySelector('.mk').value)||0,
+        KAST: parseFloat(r.querySelector('.kast').value)||0,
+        ADR: parseFloat(r.querySelector('.adr').value)||0,
+        DDDelta: parseInt(r.querySelector('.dddelta').value)||0
+      }
+    });
+  }
+
+  const teamA = gatherTeam(document.getElementById('teamA'));
+  const teamB = gatherTeam(document.getElementById('teamB'));
+
+  try{
+    const res = await fetch('/matches',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body: JSON.stringify({ map, winner, score, teamA, teamB })
+    });
+    if(!res.ok) return alert((await res.json()).error||'Error agregando partida');
+    document.getElementById('matchAlert').innerText='Partida registrada correctamente';
+    setTimeout(()=>document.getElementById('matchAlert').innerText='',2000);
+    loadMatches();
+  }catch(err){ console.error(err); alert('Error de conexión'); }
+});
 </script>
 
 </body>
 </html>
+
