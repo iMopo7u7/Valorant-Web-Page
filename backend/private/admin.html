@@ -201,75 +201,85 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPlayers();
   loadMatches();
 
-  // NUEVO: Importación automática del scoreboard
+  // NUEVO: Importación automática del scoreboard con verificación de jugadores
   document.getElementById('processJsonBtn').addEventListener('click', () => {
     const raw = document.getElementById('jsonInput').value;
     if(!raw) return alert('Pega primero los datos del tracker');
     const lines = raw.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
 
-    // Detectar mapa
     const mapLine = lines.find(l=>["Bind","Haven","Split","Ascent","Icebox","Breeze","Corrode","Abyss","Sunset","Lotus","Pearl","Fracture"].includes(l));
     if(mapLine) document.getElementById('matchMap').value = mapLine;
 
-    // Detectar marcador y ganador
     const idxTeamA = lines.findIndex(l=>"Team A"===l);
     const idxTeamB = lines.findIndex(l=>"Team B"===l);
     if(idxTeamA!==-1 && idxTeamB!==-1){
-      const scoreA = parseInt(lines[idxTeamA+1]);
-      const scoreB = parseInt(lines[idxTeamB+1]);
-      document.getElementById('matchScore').value = `${scoreA}-${scoreB}`;
-      document.getElementById('winnerTeam').value = scoreA>scoreB?'A':'B';
+        const scoreA = parseInt(lines[idxTeamA+1]);
+        const scoreB = parseInt(lines[idxTeamB+1]);
+        document.getElementById('matchScore').value = `${scoreA}-${scoreB}`;
+        document.getElementById('winnerTeam').value = scoreA>scoreB?'A':'B';
     }
 
     const parsePlayers=(startIdx,teamId)=>{
-      const teamRows = document.querySelectorAll(`#${teamId} .team-row`);
-      let idx=startIdx;
-      let rowCounter=0;
-      while(idx<lines.length && rowCounter<5){
-        const row = teamRows[rowCounter];
-        if(!row) break;
+        const teamRows = document.querySelectorAll(`#${teamId} .team-row`);
+        let idx=startIdx;
+        let rowCounter=0;
+        while(idx<lines.length && rowCounter<5){
+            const row = teamRows[rowCounter];
+            if(!row) break;
 
-        const name = lines[idx+1] || '';
-        const tag = lines[idx+2] || '';
-        const char = lines[idx] || '';
-        const ACS = parseInt(lines[idx+4]||0);
-        const K = parseInt(lines[idx+5]||0);
-        const D = parseInt(lines[idx+6]||0);
-        const A = parseInt(lines[idx+7]||0);
-        const DDDelta = parseInt(lines[idx+9]||0);
-        const ADR = parseFloat(lines[idx+10]||0);
-        const HS = parseFloat(lines[idx+11]||0);
-        const KAST = parseFloat(lines[idx+12]||0);
-        const FK = parseInt(lines[idx+13]||0);
-        const FD = parseInt(lines[idx+14]||0);
-        const MK = parseInt(lines[idx+15]||0);
+            const char = lines[idx] || '';
+            const name = lines[idx+1] || '';
+            const tag = lines[idx+2] || '';
+            const ACS = parseInt(lines[idx+4]||0);
+            const K = parseInt(lines[idx+5]||0);
+            const D = parseInt(lines[idx+6]||0);
+            const A = parseInt(lines[idx+7]||0);
+            const DDDelta = parseInt(lines[idx+9]||0);
+            const ADR = parseFloat(lines[idx+10]||0);
+            const HS = parseFloat(lines[idx+11]||0);
+            const KAST = parseFloat(lines[idx+12]||0);
+            const FK = parseInt(lines[idx+13]||0);
+            const FD = parseInt(lines[idx+14]||0);
+            const MK = parseInt(lines[idx+15]||0);
 
-        // Seleccionar jugador
-        const sel = row.querySelector('.player-select');
-        for(let i=0;i<sel.options.length;i++){ 
-          if(sel.options[i].text.includes(name)){ sel.selectedIndex=i; break; } 
+            let existingPlayer = allPlayers.find(p => p.name.toLowerCase() === name.toLowerCase() && p.tag.toLowerCase() === tag.toLowerCase());
+            if(!existingPlayer){
+                const add = confirm(`El jugador ${name} (${tag}) no existe.\n¿Quieres agregarlo manualmente? Presiona Cancelar para ignorar.`);
+                if(add){
+                    row.querySelector('.player-select').innerHTML += `<option value="${name}||${tag}" selected>${name} (${tag})</option>`;
+                    row.querySelector('.player-select').value = `${name}||${tag}`;
+                } else {
+                    rowCounter++;
+                    idx += 16;
+                    continue; 
+                }
+            } else {
+                const sel = row.querySelector('.player-select');
+                for(let i=0;i<sel.options.length;i++){ 
+                    if(sel.options[i].text.includes(name)){ sel.selectedIndex=i; break; } 
+                }
+            }
+
+            const charSel = row.querySelector('.character-select');
+            for(let i=0;i<charSel.options.length;i++){ 
+                if(charSel.options[i].value.toLowerCase()===char.toLowerCase()){ charSel.selectedIndex=i; break; } 
+            }
+
+            row.querySelector('.acs').value = ACS;
+            row.querySelector('.kill').value = K;
+            row.querySelector('.death').value = D;
+            row.querySelector('.assist').value = A;
+            row.querySelector('.dddelta').value = DDDelta;
+            row.querySelector('.adr').value = ADR;
+            row.querySelector('.hs').value = HS;
+            row.querySelector('.kast').value = KAST;
+            row.querySelector('.fb').value = FK;
+            row.querySelector('.fd').value = FD;
+            row.querySelector('.mk').value = MK;
+
+            idx += 16;
+            rowCounter++;
         }
-
-        // Seleccionar personaje
-        const charSel = row.querySelector('.character-select');
-        for(let i=0;i<charSel.options.length;i++){ 
-          if(charSel.options[i].value.toLowerCase()===char.toLowerCase()){ charSel.selectedIndex=i; break; } 
-        }
-
-        row.querySelector('.acs').value = ACS;
-        row.querySelector('.kill').value = K;
-        row.querySelector('.death').value = D;
-        row.querySelector('.assist').value = A;
-        row.querySelector('.dddelta').value = DDDelta;
-        row.querySelector('.adr').value = ADR;
-        row.querySelector('.hs').value = HS;
-        row.querySelector('.kast').value = KAST;
-        row.querySelector('.fb').value = FK;
-        row.querySelector('.fd').value = FD;
-        row.querySelector('.mk').value = MK;
-
-        idx+=16; rowCounter++;
-      }
     };
 
     parsePlayers(idxTeamA+2,'teamA');
@@ -384,104 +394,39 @@ function populateTeams(){
     row.innerHTML=`
       <select class="player-select"><option value="">-- Selecciona jugador --</option>${allPlayers.map(p=>`<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('')}</select>
       <select class="character-select">
-        <option value="">-- Personaje --</option>
-        <!-- Duelistas -->
+        <option value="">--Personaje--</option>
         <option value="Jett">Jett</option>
-        <option value="Reyna">Reyna</option>
-        <option value="Phoenix">Phoenix</option>
-        <option value="Raze">Raze</option>
-        <option value="Yoru">Yoru</option>
-        <option value="Neon">Neon</option>
-        <option value="Iso">Iso</option>
-        <option value="Waylay">Waylay</option>
-        
-        <!-- Iniciadores -->
-        <option value="Sova">Sova</option>
-        <option value="Skye">Skye</option>
-        <option value="KAY/O">KAY/O</option>
-        <option value="Fade">Fade</option>
-        <option value="Breach">Breach</option>
-        <option value="Gekko">Gekko</option>
-        <option value="Tejo">Tejo</option>
-        
-        <!-- Controladores -->
-        <option value="Omen">Omen</option>
-        <option value="Viper">Viper</option>
-        <option value="Brimstone">Brimstone</option>
-        <option value="Astra">Astra</option>
-        <option value="Clove">Clove</option>
-        <option value="Harbor">Harbor</option>
-        
-        <!-- Centinelas -->
         <option value="Sage">Sage</option>
+        <option value="Phoenix">Phoenix</option>
+        <option value="Viper">Viper</option>
+        <option value="Raze">Raze</option>
+        <option value="Sova">Sova</option>
         <option value="Killjoy">Killjoy</option>
-        <option value="Cypher">Cypher</option>
+        <option value="Breach">Breach</option>
+        <option value="Omen">Omen</option>
+        <option value="Reyna">Reyna</option>
+        <option value="KAY/O">KAY/O</option>
+        <option value="Yoru">Yoru</option>
         <option value="Chamber">Chamber</option>
-        <option value="Deadlock">Deadlock</option>
-        <option value="Vyse">Vyse</option>
+        <option value="Neon">Neon</option>
+        <option value="Fade">Fade</option>
+        <option value="Harbor">Harbor</option>
       </select>
-      <input type="number" placeholder="ACS" class="acs" min="0">
-      <input type="number" placeholder="Kills" class="kill" min="0">
-      <input type="number" placeholder="Deaths" class="death" min="0">
-      <input type="number" placeholder="Assists" class="assist" min="0">
-      <input type="number" placeholder="HS%" class="hs" min="0" max="100">
-      <input type="number" placeholder="FK" class="fb" min="0">
-      <input type="number" placeholder="FD" class="fd" min="0">
-      <input type="number" placeholder="MK" class="mk" min="0">
-      <input type="number" placeholder="KAST" class="kast" min="0" max="100">
-      <input type="number" placeholder="ADR" class="adr" min="0">
-      <input type="number" placeholder="DDDelta" class="dddelta" min="0">
-    `;
-    return row;
+      <input type="number" class="acs" placeholder="ACS">
+      <input type="number" class="kill" placeholder="K">
+      <input type="number" class="death" placeholder="D">
+      <input type="number" class="assist" placeholder="A">
+      <input type="number" class="dddelta" placeholder="DDDelta">
+      <input type="number" class="adr" placeholder="ADR">
+      <input type="number" class="hs" placeholder="HS%">
+      <input type="number" class="kast" placeholder="KAST%">
+      <input type="number" class="fb" placeholder="FK">
+      <input type="number" class="fd" placeholder="FD">
+      <input type="number" class="mk" placeholder="MK">
+    `; return row;
   };
   for(let i=0;i<5;i++){ teamA.appendChild(createRow()); teamB.appendChild(createRow()); }
 }
-
-// Registrar partida
-document.getElementById('submitMatchBtn').addEventListener('click', async () => {
-  const map=document.getElementById('matchMap').value;
-  const winnerTeam=document.getElementById('winnerTeam').value;
-  const score=document.getElementById('matchScore').value.trim();
-  if(!map||!winnerTeam||!score){ alert('Completa todos los campos'); return; }
-
-  const matchPlayers=[];
-  [...document.querySelectorAll('#teamA .team-row'), ...document.querySelectorAll('#teamB .team-row')].forEach(row=>{
-    const sel=row.querySelector('.player-select'); if(!sel.value) return;
-    const [name,tag]=sel.value.split('||');
-    const character=row.querySelector('.character-select').value || '';
-    matchPlayers.push({
-      name, tag, character,
-      ACS: parseInt(row.querySelector('.acs').value)||0,
-      kills: parseInt(row.querySelector('.kill').value)||0,
-      deaths: parseInt(row.querySelector('.death').value)||0,
-      assists: parseInt(row.querySelector('.assist').value)||0,
-      hsPercent: parseFloat(row.querySelector('.hs').value)||0,
-      FK: parseInt(row.querySelector('.fb').value)||0,
-      FD: parseInt(row.querySelector('.fd').value)||0,
-      MK: parseInt(row.querySelector('.mk').value)||0,
-      KAST: parseFloat(row.querySelector('.kast').value)||0,
-      ADR: parseFloat(row.querySelector('.adr').value)||0,
-      DDDelta: parseFloat(row.querySelector('.dddelta').value)||0
-    });
-  });
-
-  if(matchPlayers.length!==10){ alert('Selecciona 5 jugadores por equipo'); return; }
-
-  try{
-    const res=await fetch('/matches',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      credentials:'include',
-      body: JSON.stringify({ match:matchPlayers, winnerTeam, score, map })
-    });
-    const data=await res.json();
-    if(!res.ok) return alert(data.error||'Error agregando partida');
-    document.getElementById('matchAlert').innerText='Partida registrada correctamente';
-    setTimeout(()=>document.getElementById('matchAlert').innerText='',2000);
-    loadPlayers();
-    loadMatches();
-  }catch(err){ console.error(err); alert('Error de conexión'); }
-});
 
 async function loadMatches(){
   const res = await fetch('/matches',{credentials:'include'});
@@ -489,22 +434,14 @@ async function loadMatches(){
   const tbody=document.getElementById('matchesTableBody');
   tbody.innerHTML='';
   if(!allMatches.length){ tbody.innerHTML='<tr><td colspan="5">No hay partidas registradas</td></tr>'; return; }
-
   allMatches.forEach(m=>{
     const row=document.createElement('tr');
-    row.innerHTML=`
-      <td>${m.map}</td>
-      <td>${m.score}</td>
-      <td>${m.winnerTeam}</td>
-      <td>${new Date(m.date).toLocaleString()}</td>
-      <td><button class="btn-delete">Eliminar</button></td>
-    `;
+    row.innerHTML=`<td>${m.map}</td><td>${m.score}</td><td>${m.winner}</td><td>${new Date(m.date).toLocaleString()}</td><td><button class="btn-del-match">Eliminar</button></td>`;
     tbody.appendChild(row);
-    row.querySelector('.btn-delete').addEventListener('click', async () => {
+    row.querySelector('.btn-del-match').addEventListener('click',async()=>{
       if(!confirm('Eliminar partida?')) return;
-      const res = await fetch('/matches/'+m._id, { method:'DELETE', credentials:'include' });
+      const res=await fetch('/matches',{method:'DELETE',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({id:m._id})});
       if(!res.ok) return alert((await res.json()).error||'Error eliminando partida');
-      loadPlayers();
       loadMatches();
     });
   });
