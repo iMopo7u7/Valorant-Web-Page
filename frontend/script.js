@@ -170,9 +170,11 @@ async function renderLeaderboardTable(players) {
   tbody.innerHTML = players.map((p, index) => {
     const avgACS = p.matchesPlayed ? Math.round(p.totalACS / p.matchesPlayed) : 0;
     const avgKDA = p.totalDeaths ? ((p.totalKills + p.totalAssists) / p.totalDeaths).toFixed(2) : "0.00";
-    const hsPercent = p.totalKills ? ((p.totalHeadshotKills / p.totalKills) * 100).toFixed(1) : "0.0";
-    const fk = p.totalFirstBloods;
-    const winrate = p.matchesPlayed ? ((p.wins / p.matchesPlayed) * 100).toFixed(1) : "0.0";
+    const hsPercent = p.totalKills && p.totalHeadshotKills ? ((p.totalHeadshotKills / p.totalKills) * 100).toFixed(1) : "0.0";
+    const kastPercent = p.kastPercent?.toFixed(1) || "0.0";
+    const fk = p.FK || 0;
+    const matches = p.matchesPlayed || 0;
+    const score = Math.max(Math.round(p.score),0);
 
     return `
       <tr class="${index < 3 ? 'top-3' : ''}">
@@ -196,12 +198,13 @@ async function renderLeaderboardTable(players) {
             ${createSocialLinks(p.social || {})}
           </div>
         </td>
+        <td class="stat-cell">${matches}</td>
         <td class="stat-cell">${avgACS}</td>
         <td class="stat-cell">${avgKDA}</td>
         <td class="stat-cell">${hsPercent}%</td>
         <td class="stat-cell">${fk}</td>
-        <td class="stat-cell">${winrate}%</td>
-        <td class="score-cell">${Math.max(Math.round(p.score),0)}</td>
+        <td class="stat-cell">${kastPercent}%</td>
+        <td class="score-cell">${score}</td>
       </tr>
     `;
   }).join('');
