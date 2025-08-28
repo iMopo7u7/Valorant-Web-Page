@@ -399,12 +399,20 @@ app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
 
-    // Agregamos solo los porcentajes derivados necesarios
-    const formattedPlayers = players.map(p => ({
-      ...p,
-      hsPercent: p.totalKills ? Math.round((p.totalHeadshotKills / p.totalKills) * 100) : 0,
-      kastPercent: p.matchesPlayed ? (p.totalKAST / p.matchesPlayed) : 0
-    }));
+    const formattedPlayers = players.map(p => {
+      const matches = p.matchesPlayed || 1; // evitar división por 0
+
+      return {
+        ...p,
+        // Promedios por partida
+        avgACS: matches ? (p.totalACS / matches) : 0,
+        avgFK: matches ? (p.totalFK / matches) : 0,
+        avgADR: matches ? (p.totalADR / matches) : 0,
+        avgDDDelta: matches ? (p.totalDDDelta / matches) : 0,
+        avgKAST: matches ? (p.totalKAST / matches) : 0, // si quieres mantenerlo
+        hsPercent: p.totalKills ? (p.totalHeadshotKills / p.totalKills * 100) : 0
+      };
+    });
 
     // Ordenar por score descendente
     formattedPlayers.sort((a, b) => (b.score || 0) - (a.score || 0));
