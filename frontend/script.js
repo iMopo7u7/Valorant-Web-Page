@@ -61,9 +61,6 @@ function createBadges(badges) {
   ).join('');
 }
 
-// ==========================
-// 🔧 SOCIAL LINKS
-// ==========================
 function createSocialLinks(social) {
   let html = '<div class="social-links">';
   
@@ -95,9 +92,6 @@ function createSocialLinks(social) {
   return html;
 }
 
-// ==========================
-// 🔧 AVATAR HELPERS
-// ==========================
 function getPlayerAvatar(player) {
   return player.avatarURL || "https://cdn.discordapp.com/embed/avatars/0.png";
 }
@@ -168,12 +162,17 @@ async function renderLeaderboardTable(players) {
   const tbody = document.getElementById('rankings-tbody');
 
   tbody.innerHTML = players.map((p, index) => {
-    const avgACS = p.matchesPlayed ? Math.round(p.totalACS / p.matchesPlayed) : 0;
-    const avgKDA = p.totalDeaths ? ((p.totalKills + p.totalAssists) / p.totalDeaths).toFixed(2) : "0.00";
-    const hsPercent = p.totalKills && p.totalHeadshotKills ? ((p.totalHeadshotKills / p.totalKills) * 100).toFixed(1) : "0.0";
+    const matches = p.matchesPlayed || 0;
+    const avgACS = matches ? Math.round(p.totalACS / matches) : 0;
+    const kills = p.totalKills || 0;
+    const deaths = p.totalDeaths || 0;
+    const assists = p.totalAssists || 0;
+    const kdaDisplay = `${kills}/${deaths}/${assists}`;
+    const hsPercent = kills ? ((p.totalHeadshotKills / kills) * 100).toFixed(1) : "0.0";
     const kastPercent = p.kastPercent?.toFixed(1) || "0.0";
     const fk = p.FK || 0;
-    const matches = p.matchesPlayed || 0;
+    const adr = p.adr?.toFixed(1) || 0;
+    const ddDelta = p.ddDelta?.toFixed(1) || 0;
     const score = Math.max(Math.round(p.score),0);
 
     return `
@@ -200,10 +199,12 @@ async function renderLeaderboardTable(players) {
         </td>
         <td class="stat-cell">${matches}</td>
         <td class="stat-cell">${avgACS}</td>
-        <td class="stat-cell">${avgKDA}</td>
+        <td class="stat-cell">${kdaDisplay}</td>
         <td class="stat-cell">${hsPercent}%</td>
         <td class="stat-cell">${fk}</td>
         <td class="stat-cell">${kastPercent}%</td>
+        <td class="stat-cell">${adr}</td>
+        <td class="stat-cell">${ddDelta}</td>
         <td class="score-cell">${score}</td>
       </tr>
     `;
@@ -218,7 +219,6 @@ async function initializeApp() {
     await renderSystemStats();
     const players = await ApiService.getLeaderboard();
 
-    // Ordenar por score antes de renderizar
     players.sort((a, b) => b.score - a.score);
 
     await renderTopPlayers(players);
