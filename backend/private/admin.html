@@ -40,6 +40,7 @@ section.active { display:block; }
 </nav>
 
 <main>
+  <!-- DASHBOARD -->
   <section id="dashboard" class="active">
     <h2>Dashboard / Resumen</h2>
     <p>Total Jugadores: <span id="totalPlayers">0</span></p>
@@ -47,6 +48,7 @@ section.active { display:block; }
     <p>Última partida agregada: <span id="lastMatchDate">N/A</span></p>
   </section>
 
+  <!-- GESTIONAR JUGADORES -->
   <section id="players">
     <h2>Gestionar Jugadores</h2>
     <form id="addPlayerForm">
@@ -81,12 +83,13 @@ section.active { display:block; }
     </table>
   </section>
 
+  <!-- AGREGAR PARTIDA -->
   <section id="addMatch">
     <h2>Agregar Partida</h2>
     <div id="addMatchForm" style="margin-bottom:1rem;">
       <h3>Pegar stats de Valorant Tracker</h3>
       <textarea id="trackerStats" placeholder="Pega aquí los stats..." rows="10" style="width:100%;"></textarea>
-      <button id="processStatsBtn" type="button">Procesar Stats</button>
+      <button id="processStatsBtn">Procesar Stats</button>
 
       <label>Mapa:</label>
       <select id="matchMap">
@@ -118,11 +121,12 @@ section.active { display:block; }
       <h4>Equipo B</h4>
       <div id="teamB"></div>
 
-      <button id="submitMatchBtn" type="button">Registrar Partida</button>
+      <button id="submitMatchBtn">Registrar Partida</button>
       <span id="matchAlert" class="alert"></span>
     </div>
   </section>
 
+  <!-- PARTIDAS -->
   <section id="matches">
     <h2>Partidas</h2>
     <table>
@@ -148,6 +152,7 @@ let allPlayers = [];
 let allMatches = [];
 
 document.addEventListener('DOMContentLoaded', () => {
+
   const navLinks = document.querySelectorAll('nav a');
   const sections = document.querySelectorAll('section');
   navLinks.forEach(link => {
@@ -194,65 +199,52 @@ document.addEventListener('DOMContentLoaded', () => {
   loadMatches();
 });
 
-// ---------------- PARSER ESPECÍFICO ----------------
-function parseValorantStats(text) {
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
-  const teamData = { A: [], B: [] };
-  let currentTeam = null;
-  let i = 0;
-
-  while (i < lines.length) {
-    const line = lines[i];
-    if(line.startsWith('Team A')) { currentTeam='A'; i+=3; continue; }
-    if(line.startsWith('Team B')) { currentTeam='B'; i+=3; continue; }
-    if(!currentTeam) { i++; continue; }
-
-    const player = {};
-    player.name = lines[i++] || '';
-    player.ACS = parseInt(lines[i++] || 0);
-    player.tag = lines[i++] || '';
-    player.rank = lines[i++] || '';
-    player.kills = parseInt(lines[i++] || 0);
-    player.deaths = parseInt(lines[i++] || 0);
-    player.assists = parseInt(lines[i++] || 0);
-    player.plusMinus = parseInt(lines[i++] || 0);
-    player.KDRatio = parseFloat(lines[i++] || 0);
-    player.DDDelta = parseInt(lines[i++] || 0);
-    player.ADR = parseFloat(lines[i++] || 0);
-    player.HSPercent = parseFloat(lines[i++] || 0);
-    player.KAST = parseFloat(lines[i++] || 0);
-    player.FK = parseInt(lines[i++] || 0);
-    player.FD = parseInt(lines[i++] || 0);
-    player.MK = parseInt(lines[i++] || 0);
-
-    teamData[currentTeam].push(player);
-
-    while(i < lines.length && (lines[i]==='•' || lines[i]==='')) i++;
-  }
-
-  return teamData;
-}
-
-// ---------------- PROCESAR STATS BOTÓN ----------------
+// --- PARSER ESPECÍFICO POR POSICIÓN ---
 document.getElementById('processStatsBtn').addEventListener('click', () => {
   const text = document.getElementById('trackerStats').value;
   if(!text) return alert('Pega los stats primero');
-  const data = parseValorantStats(text);
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+
+  const idxA = lines.findIndex(l=>l==='Team A');
+  const idxB = lines.findIndex(l=>l==='Team B');
+
+  const parseTeam = (start) => {
+    const players = [];
+    for(let i=start+15; i<start+95; i+=16){ // 5 jugadores, 16 líneas por jugador
+      players.push({
+        name: lines[i],
+        ACS: parseInt(lines[i+1])||0,
+        tag: lines[i+2],
+        rank: lines[i+3],
+        kills: parseInt(lines[i+4])||0,
+        deaths: parseInt(lines[i+5])||0,
+        assists: parseInt(lines[i+6])||0,
+        plusMinus: parseInt(lines[i+7])||0,
+        KDRatio: parseFloat(lines[i+8])||0,
+        DDDelta: parseInt(lines[i+9])||0,
+        ADR: parseFloat(lines[i+10])||0,
+        hsPercent: parseFloat(lines[i+11])||0,
+        KAST: parseFloat(lines[i+12])||0,
+        FK: parseInt(lines[i+13])||0,
+        FD: parseInt(lines[i+14])||0,
+        MK: parseInt(lines[i+15])||0
+      });
+    }
+    return players;
+  }
+
+  const teamAPlayers = parseTeam(idxA);
+  const teamBPlayers = parseTeam(idxB);
 
   const fillTeam = (teamDiv, players) => {
     const rows = [...teamDiv.querySelectorAll('.team-row')];
-    players.forEach((p, idx) => {
+    players.forEach((p, idx)=>{
       if(!rows[idx]) return;
-      const playerExists = allPlayers.find(ap => 
-        p.name.toLowerCase().includes(ap.name.toLowerCase()) || 
-        ap.name.toLowerCase().includes(p.name.toLowerCase())
-      );
-      if(playerExists) rows[idx].querySelector('.player-select').value = `${playerExists.name}||${playerExists.tag}`;
       rows[idx].querySelector('.acs').value = p.ACS;
       rows[idx].querySelector('.kill').value = p.kills;
       rows[idx].querySelector('.death').value = p.deaths;
       rows[idx].querySelector('.assist').value = p.assists;
-      rows[idx].querySelector('.hs').value = p.HSPercent;
+      rows[idx].querySelector('.hs').value = p.hsPercent;
       rows[idx].querySelector('.fb').value = p.FK;
       rows[idx].querySelector('.fd').value = p.FD;
       rows[idx].querySelector('.mk').value = p.MK;
@@ -260,81 +252,52 @@ document.getElementById('processStatsBtn').addEventListener('click', () => {
       rows[idx].querySelector('.adr').value = p.ADR;
       rows[idx].querySelector('.dddelta').value = p.DDDelta;
     });
-  };
+  }
 
-  fillTeam(document.getElementById('teamA'), data.A);
-  fillTeam(document.getElementById('teamB'), data.B);
+  fillTeam(document.getElementById('teamA'), teamAPlayers);
+  fillTeam(document.getElementById('teamB'), teamBPlayers);
 
   alert('Stats procesados y formulario llenado automáticamente.');
 });
 
-// ---------------- FUNCIONES ORIGINALES ----------------
-async function loadPlayers() {
-  const res = await fetch('/players', { credentials:'include' });
-  allPlayers = await res.json();
-  updatePlayersTable();
-  populateTeams();
-  updateDashboard();
+// --- FUNCIONES DE CARGA DE TABLAS ---
+async function loadPlayers(){
+  try{
+    const res = await fetch('/players', {credentials:'include'});
+    const data = await res.json();
+    const tbody = document.getElementById('playersTableBody');
+    tbody.innerHTML='';
+    if(data.length===0){ tbody.innerHTML='<tr><td colspan="15">No hay jugadores registrados</td></tr>'; return; }
+    data.forEach(p=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${p.name}</td><td>${p.tag}</td><td>${p.matches||0}</td><td>${p.kills||0}</td><td>${p.deaths||0}</td>
+      <td>${p.assists||0}</td><td>${p.ACS||0}</td><td>${p.DDDelta||0}</td><td>${p.ADR||0}</td><td>${p.KAST||0}</td>
+      <td>${p.FK||0}</td><td>${p.FD||0}</td><td>${p.MK||0}</td><td>${JSON.stringify(p.social||{})}</td>
+      <td><button onclick="editPlayer('${p._id}')">Editar</button> <button onclick="deletePlayer('${p._id}')">Eliminar</button></td>`;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('totalPlayers').innerText=data.length;
+  }catch(err){ console.error(err); }
 }
 
-function updatePlayersTable() {
-  const tbody = document.getElementById('playersTableBody');
-  tbody.innerHTML = '';
-  if(!allPlayers.length){ tbody.innerHTML='<tr><td colspan="15">No hay jugadores registrados</td></tr>'; return; }
-
-  allPlayers.forEach(p => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${p.name}</td><td>${p.tag}</td><td>${p.matches||0}</td><td>${p.kills||0}</td><td>${p.deaths||0}</td><td>${p.assists||0}</td><td>${p.ACS||0}</td><td>${p.DDDelta||0}</td><td>${p.ADR||0}</td><td>${p.KAST||0}</td><td>${p.FK||0}</td><td>${p.FD||0}</td><td>${p.MK||0}</td><td>${p.social||''}</td><td><button onclick="editPlayer('${p._id}')">Editar</button></td>`;
-    tbody.appendChild(tr);
-  });
+async function loadMatches(){
+  try{
+    const res = await fetch('/matches', {credentials:'include'});
+    const data = await res.json();
+    const tbody = document.getElementById('matchesTableBody');
+    tbody.innerHTML='';
+    if(data.length===0){ tbody.innerHTML='<tr><td colspan="5">No hay partidas registradas</td></tr>'; return; }
+    data.forEach(m=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${m.map}</td><td>${m.score}</td><td>${m.winner}</td><td>${new Date(m.date).toLocaleString()}</td>
+      <td><button onclick="deleteMatch('${m._id}')">Eliminar</button></td>`;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('totalMatches').innerText=data.length;
+    document.getElementById('lastMatchDate').innerText = data.length ? new Date(data[data.length-1].date).toLocaleString() : 'N/A';
+  }catch(err){ console.error(err); }
 }
 
-function populateTeams() {
-  const createTeamInputs = (teamDiv) => {
-    teamDiv.innerHTML = '';
-    for(let i=0;i<5;i++){
-      const div = document.createElement('div'); div.classList.add('team-row');
-      div.innerHTML = `<select class="player-select">
-        <option value="">Selecciona jugador</option>
-        ${allPlayers.map(p=>`<option value="${p.name}||${p.tag}">${p.name}</option>`).join('')}
-      </select>
-      <input type="number" class="acs" placeholder="ACS">
-      <input type="number" class="kill" placeholder="K">
-      <input type="number" class="death" placeholder="D">
-      <input type="number" class="assist" placeholder="A">
-      <input type="number" class="hs" placeholder="HS%">
-      <input type="number" class="fb" placeholder="FK">
-      <input type="number" class="fd" placeholder="FD">
-      <input type="number" class="mk" placeholder="MK">
-      <input type="number" class="kast" placeholder="KAST">
-      <input type="number" class="adr" placeholder="ADR">
-      <input type="number" class="dddelta" placeholder="DDΔ">`;
-      teamDiv.appendChild(div);
-    }
-  };
-  createTeamInputs(document.getElementById('teamA'));
-  createTeamInputs(document.getElementById('teamB'));
-}
-
-async function loadMatches() {
-  const res = await fetch('/matches', { credentials:'include' });
-  allMatches = await res.json();
-  const tbody = document.getElementById('matchesTableBody');
-  tbody.innerHTML='';
-  if(!allMatches.length){ tbody.innerHTML='<tr><td colspan="5">No hay partidas registradas</td></tr>'; return; }
-  allMatches.forEach(m=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${m.map}</td><td>${m.score}</td><td>${m.winner}</td><td>${new Date(m.date).toLocaleString()}</td><td><button onclick="viewMatch('${m._id}')">Ver</button></td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-function updateDashboard() {
-  document.getElementById('totalPlayers').innerText = allPlayers.length;
-  document.getElementById('totalMatches').innerText = allMatches.length;
-  if(allMatches.length) document.getElementById('lastMatchDate').innerText = new Date(allMatches[allMatches.length-1].date).toLocaleString();
-}
 </script>
-
 </body>
 </html>
