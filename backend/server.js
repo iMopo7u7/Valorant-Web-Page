@@ -238,9 +238,19 @@ app.post("/players", requireAdmin, async (req, res) => {
     const newPlayer = {
       name: name.trim(),
       tag: tag.trim(),
-      totalKills: 0, totalDeaths: 0, totalAssists: 0,
-      totalACS: 0, totalFirstBloods: 0, totalHeadshotKills: 0,
-      matchesPlayed: 0, wins: 0,
+      totalKills: 0,
+      totalDeaths: 0,
+      totalAssists: 0,
+      totalACS: 0,
+      totalDDDelta: 0,
+      totalADR: 0,
+      totalHeadshotKills: 0,
+      totalKAST: 0,
+      totalFK: 0,
+      totalFD: 0,
+      totalMK: 0,
+      matchesPlayed: 0,
+      wins: 0,
       badges,
       social,
       avatarURL: avatarURL || null,
@@ -263,7 +273,7 @@ app.get("/players", requireAdmin, async (req, res) => {
       const matches = p.matchesPlayed || 1; // evitar división entre 0
       return {
         ...p,
-        hsPercent: p.totalKills ? Math.round((p.totalHeadshotKills / p.totalKills) * 100) : 0
+        hsPercent: p.totalKills ? Math.round((p.totalHeadshotKills / p.totalKills) * 100) : 0,
         KASTPercent: matches ? Math.round(p.totalKAST / matches) : 0
       };
     });
