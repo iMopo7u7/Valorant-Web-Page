@@ -90,46 +90,24 @@ async function connectDB() {
 // -------------------
 // --- Función de cálculo de score por partida ajustada por rol
 // -------------------
-function calculateMatchScore(playerStats, playerTeam, teamStats) {
-  // --- Roles según personaje
+function calculateMatchScore(playerStats, playerTeam, teamStats, didWin) {
   const duelistas = ["Jett", "Reyna", "Phoenix", "Raze", "Yoru", "Neon", "Iso", "Waylay"];
   const iniciadores = ["Sova", "Skye", "KAY/O", "Fade", "Breach", "Gekko", "Tejo"];
   const controladores = ["Omen", "Viper", "Brimstone", "Astra", "Clove", "Harbor"];
   const centinelas = ["Sage", "Killjoy", "Cypher", "Chamber", "Deadlock", "Vyse"];
 
-  // Pesos base por stat
   let roleWeight = {
-    kills: 1.0,
-    deaths: -0.8,
-    assists: 0.7,
-    ACS: 0.05,
-    ADR: 0.05,
-    DDDelta: 0.08,
-    hsPercent: 0.1,
-    KAST: 0.08,
-    FK: 2.0,
-    FD: -1.0,
-    MK: 1.2
+    kills: 1.0, deaths: -0.8, assists: 0.7, ACS: 0.05,
+    ADR: 0.05, DDDelta: 0.08, hsPercent: 0.1, KAST: 0.08,
+    FK: 2.0, FD: -1.0, MK: 1.2
   };
 
-  // Ajuste de pesos según rol
   const char = playerStats.character;
-  if (duelistas.includes(char)) {
-    roleWeight.kills = 1.5;
-    roleWeight.FK = 2.5;
-    roleWeight.MK = 1.5;
-  } else if (iniciadores.includes(char)) {
-    roleWeight.KAST = 0.12;
-    roleWeight.ADR = 0.07;
-  } else if (controladores.includes(char)) {
-    roleWeight.KAST = 0.12;
-    roleWeight.assists = 0.9;
-  } else if (centinelas.includes(char)) {
-    roleWeight.KAST = 0.1;
-    roleWeight.assists = 0.85;
-  }
+  if (duelistas.includes(char)) { roleWeight.kills = 1.5; roleWeight.FK = 2.5; roleWeight.MK = 1.5; }
+  else if (iniciadores.includes(char)) { roleWeight.KAST = 0.12; roleWeight.ADR = 0.07; }
+  else if (controladores.includes(char)) { roleWeight.KAST = 0.12; roleWeight.assists = 0.9; }
+  else if (centinelas.includes(char)) { roleWeight.KAST = 0.1; roleWeight.assists = 0.85; }
 
-  // --- Cálculo base del score
   const base =
     playerStats.kills * roleWeight.kills +
     playerStats.deaths * roleWeight.deaths +
@@ -143,7 +121,6 @@ function calculateMatchScore(playerStats, playerTeam, teamStats) {
     playerStats.FD * roleWeight.FD +
     playerStats.MK * roleWeight.MK;
 
-  // --- Normalización respecto al equipo
   const teamBases = teamStats.map(p =>
     p.kills * roleWeight.kills +
     p.deaths * roleWeight.deaths +
@@ -160,10 +137,8 @@ function calculateMatchScore(playerStats, playerTeam, teamStats) {
 
   const minBase = Math.min(...teamBases);
   const maxBase = Math.max(...teamBases);
-
-  // Definir rango de salida para que siempre se den puntos positivos
-  const outMin = 5;  // mínimo garantizado
-  const outMax = 20; // máximo posible
+  const outMin = 5;
+  const outMax = 20;
 
   let mapped;
   if (maxBase === minBase) {
@@ -172,7 +147,10 @@ function calculateMatchScore(playerStats, playerTeam, teamStats) {
     mapped = ((base - minBase) * (outMax - outMin)) / (maxBase - minBase) + outMin;
   }
 
-  const totalScore = Math.round(mapped);
+  let totalScore = Math.round(mapped);
+
+  // Si el equipo perdió, restamos 5 puntos
+  if (!didWin) totalScore = Math.max(0, totalScore - 5);
 
   return {
     totalScore,
