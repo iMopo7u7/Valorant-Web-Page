@@ -204,61 +204,125 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- FUNCIÓN PARA PROCESAR STATS DE TRACKER ---
 document.getElementById('processStatsBtn').addEventListener('click', () => {
   const text = document.getElementById('trackerStats').value;
-  if(!text) return alert('Pega los stats primero');
+  if (!text) return alert('Pega los stats primero');
 
-  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
   let currentTeam = '';
   let teamAPlayers = [];
   let teamBPlayers = [];
-
   let i = 0;
-  while(i < lines.length){
+
+  while (i < lines.length) {
     const line = lines[i];
-    if(line.startsWith('Team A')){ currentTeam = 'A'; i++; continue; }
-    if(line.startsWith('Team B')){ currentTeam = 'B'; i++; continue; }
 
-    if(i + 15 >= lines.length){ i++; continue; }
+    if (line.startsWith('Team A')) { currentTeam = 'A'; i += 2; continue; }
+    if (line.startsWith('Team B')) { currentTeam = 'B'; i += 2; continue; }
 
-    const nameLine = line;
-    const tagLine = lines[i+1] || '';
-    const ACS = parseInt(lines[i+3]) || 0;
-    const K = parseInt(lines[i+4]) || 0;
-    const D = parseInt(lines[i+5]) || 0;
-    const A = parseInt(lines[i+6]) || 0;
-    const plusMinus = lines[i+7] ? parseInt(lines[i+7].replace('+','')) : 0;
-    const DDDelta = parseInt(lines[i+9]) || 0;
-    const ADR = parseFloat(lines[i+10]) || 0;
-    const HS = parseFloat(lines[i+11]) || 0;
-    const KAST = parseFloat(lines[i+12]) || 0;
-    const FK = parseInt(lines[i+13]) || 0;
-    const FD = parseInt(lines[i+14]) || 0;
-    const MK = parseInt(lines[i+15]) || 0;
+    // Ignorar líneas que no sean nombres de jugador
+    if (!line || line.includes('Avg. Rank:') || line.includes('Current Rank')) { i++; continue; }
 
-    const playerObj = {
-      name: nameLine,
-      tag: tagLine,
-      ACS, kills: K, deaths: D, assists: A,
-      plusMinus, DDDelta, ADR, hsPercent: HS,
-      KAST, FK, FD, MK
+    // Bloque de stats por jugador (16 líneas)
+    if (i + 15 >= lines.length) break;
+
+    const player = {
+      name: lines[i],
+      ACS: parseInt(lines[i+1]) || 0,
+      kills: parseInt(lines[i+2]) || 0,
+      deaths: parseInt(lines[i+3]) || 0,
+      assists: parseInt(lines[i+4]) || 0,
+      plusMinus: parseInt(lines[i+5]) || 0,
+      DDDelta: parseInt(lines[i+7]) || 0,
+      ADR: parseFloat(lines[i+8]) || 0,
+      hsPercent: parseFloat(lines[i+9]) || 0,
+      KAST: parseFloat(lines[i+10]) || 0,
+      FK: parseInt(lines[i+11]) || 0,
+      FD: parseInt(lines[i+12]) || 0,
+      MK: parseInt(lines[i+13]) || 0
     };
 
-    if(currentTeam === 'A') teamAPlayers.push(playerObj);
-    else if(currentTeam === 'B') teamBPlayers.push(playerObj);
+    if (currentTeam === 'A') teamAPlayers.push(player);
+    if (currentTeam === 'B') teamBPlayers.push(player);
 
-    i += 16;
+    i += 14; // Pasamos al siguiente jugador
   }
 
   const fillTeam = (teamDiv, players) => {
     const rows = [...teamDiv.querySelectorAll('.team-row')];
-    players.forEach((p, idx)=>{
-      if(!rows[idx]) return;
+    players.forEach((p, idx) => {
+      if (!rows[idx]) return;
       const sel = rows[idx].querySelector('.player-select');
-      const playerExists = allPlayers.find(ap=>ap.name === p.name);
-      if(playerExists){
-        sel.value = `${playerExists.name}||${playerExists.tag}`;
-      } else {
-        if(confirm(`El jugador ${p.name} no está registrado. Ignorar o agregar manualmente?`)) sel.value = '';
-      }
+      const playerExists = allPlayers.find(ap => ap.name.trim().toLowerCase() === p.name.trim().toLowerCase());
+      if (playerExists) sel.value = `${playerExists.name}||${playerExists.tag}`;
+      rows[idx].querySelector('.acs').value = p.ACS;
+      rows[idx].querySelector('.kill').value = p.kills;
+      rows[idx].querySelector('.death').value = p.deaths;
+      rows[idx].querySelector('.assist').value = p.assists;
+      rows[idx].querySelector('.hs').value = p.hsPercent;
+      rows[idx].querySelector('.fb').value = p.FK;
+      rows[idx].querySelector('.fd').value = p.FD;
+      rows[idx].querySelector('.mk').value = p.MK;
+      rows[idx].querySelector('.kast').value = p.KAST;
+      rows[idx].querySelector('.adr').value = p.ADR;
+      rows[idx].querySelector('.dddelta').value = p.DDDelta;
+    });
+  };
+
+  fillTeam(document.getElementById('teamA'), teamAPlayers);
+  fillTeam(document.getElementById('teamB'), teamBPlayers);
+
+  alert('Stats procesados y formulario llenado automáticamente.');
+});
+document.getElementById('processStatsBtn').addEventListener('click', () => {
+  const text = document.getElementById('trackerStats').value;
+  if (!text) return alert('Pega los stats primero');
+
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+  let currentTeam = '';
+  let teamAPlayers = [];
+  let teamBPlayers = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (line.startsWith('Team A')) { currentTeam = 'A'; i += 2; continue; }
+    if (line.startsWith('Team B')) { currentTeam = 'B'; i += 2; continue; }
+
+    // Ignorar líneas que no sean nombres de jugador
+    if (!line || line.includes('Avg. Rank:') || line.includes('Current Rank')) { i++; continue; }
+
+    // Bloque de stats por jugador (16 líneas)
+    if (i + 15 >= lines.length) break;
+
+    const player = {
+      name: lines[i],
+      ACS: parseInt(lines[i+1]) || 0,
+      kills: parseInt(lines[i+2]) || 0,
+      deaths: parseInt(lines[i+3]) || 0,
+      assists: parseInt(lines[i+4]) || 0,
+      plusMinus: parseInt(lines[i+5]) || 0,
+      DDDelta: parseInt(lines[i+7]) || 0,
+      ADR: parseFloat(lines[i+8]) || 0,
+      hsPercent: parseFloat(lines[i+9]) || 0,
+      KAST: parseFloat(lines[i+10]) || 0,
+      FK: parseInt(lines[i+11]) || 0,
+      FD: parseInt(lines[i+12]) || 0,
+      MK: parseInt(lines[i+13]) || 0
+    };
+
+    if (currentTeam === 'A') teamAPlayers.push(player);
+    if (currentTeam === 'B') teamBPlayers.push(player);
+
+    i += 14; // Pasamos al siguiente jugador
+  }
+
+  const fillTeam = (teamDiv, players) => {
+    const rows = [...teamDiv.querySelectorAll('.team-row')];
+    players.forEach((p, idx) => {
+      if (!rows[idx]) return;
+      const sel = rows[idx].querySelector('.player-select');
+      const playerExists = allPlayers.find(ap => ap.name.trim().toLowerCase() === p.name.trim().toLowerCase());
+      if (playerExists) sel.value = `${playerExists.name}||${playerExists.tag}`;
       rows[idx].querySelector('.acs').value = p.ACS;
       rows[idx].querySelector('.kill').value = p.kills;
       rows[idx].querySelector('.death').value = p.deaths;
