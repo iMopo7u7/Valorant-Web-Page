@@ -409,7 +409,7 @@ app.get("/leaderboard", async (req, res) => {
         avgFK: matches ? (p.totalFK / matches) : 0,
         avgADR: matches ? (p.totalADR / matches) : 0,
         avgDDDelta: matches ? (p.totalDDDelta / matches) : 0,
-        avgKAST: matches ? (p.totalKAST / matches) : 0, // si quieres mantenerlo
+        avgKAST: matches ? (p.totalKAST / matches) : 0,
         hsPercent: p.totalKills ? (p.totalHeadshotKills / p.totalKills * 100) : 0
       };
     });
