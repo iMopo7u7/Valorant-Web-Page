@@ -66,12 +66,19 @@ section.active { display:block; }
           <th>Kills</th>
           <th>Deaths</th>
           <th>Assists</th>
+          <th>ACS</th>
+          <th>DDDelta</th>
+          <th>ADR</th>
+          <th>KAST</th>
+          <th>FK</th>
+          <th>FD</th>
+          <th>MK</th>
           <th>Redes / Avatar</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody id="playersTableBody">
-        <tr><td colspan="8">No hay jugadores registrados</td></tr>
+        <tr><td colspan="15">No hay jugadores registrados</td></tr>
       </tbody>
     </table>
   </section>
@@ -142,7 +149,6 @@ let allMatches = [];
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // Navegación entre secciones
   const navLinks = document.querySelectorAll('nav a');
   const sections = document.querySelectorAll('section');
   navLinks.forEach(link => {
@@ -157,13 +163,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   sections[0].style.display = 'block';
 
-  // Logout
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await fetch('/logout', { method: 'POST', credentials: 'include' });
     window.location.href = '/login.html';
   });
 
-  // Registrar nuevo jugador
   document.getElementById('addPlayerForm').addEventListener('submit', async e => {
     e.preventDefault();
     const name = document.getElementById('playerName').value.trim();
@@ -191,7 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadMatches();
 });
 
-// Cargar jugadores
 async function loadPlayers() {
   const res = await fetch('/players', { credentials:'include' });
   allPlayers = await res.json();
@@ -200,11 +203,10 @@ async function loadPlayers() {
   updateDashboard();
 }
 
-// Actualizar tabla jugadores
 function updatePlayersTable() {
   const tbody = document.getElementById('playersTableBody');
   tbody.innerHTML = '';
-  if(!allPlayers.length){ tbody.innerHTML='<tr><td colspan="8">No hay jugadores registrados</td></tr>'; return; }
+  if(!allPlayers.length){ tbody.innerHTML='<tr><td colspan="15">No hay jugadores registrados</td></tr>'; return; }
 
   allPlayers.forEach((p,index)=>{
     const row = document.createElement('tr');
@@ -216,6 +218,13 @@ function updatePlayersTable() {
       <td>${p.totalKills||0}</td>
       <td>${p.totalDeaths||0}</td>
       <td>${p.totalAssists||0}</td>
+      <td>${p.totalACS||0}</td>
+      <td>${p.totalDDDelta||0}</td>
+      <td>${p.totalADR||0}</td>
+      <td>${p.totalKAST||0}</td>
+      <td>${p.totalFK||0}</td>
+      <td>${p.totalFD||0}</td>
+      <td>${p.totalMK||0}</td>
       <td>
         <input type="text" placeholder="Tracker" value="${p.social?.tracker||''}" class="edit-tracker"><br>
         <input type="text" placeholder="Twitter" value="${p.social?.twitter||''}" class="edit-twitter"><br>
@@ -274,7 +283,6 @@ function updatePlayersTable() {
   });
 }
 
-// Dashboard
 async function updateDashboard(){
   document.getElementById('totalPlayers').innerText=allPlayers.length;
   const resMatches=await fetch('/matches-count',{credentials:'include'});
@@ -285,19 +293,41 @@ async function updateDashboard(){
   document.getElementById('lastMatchDate').innerText=last.date?new Date(last.date).toLocaleString():'N/A';
 }
 
-// Equipos
 function populateTeams(){
   const teamA=document.getElementById('teamA'); const teamB=document.getElementById('teamB');
   teamA.innerHTML=''; teamB.innerHTML='';
   const createRow=()=>{ const row=document.createElement('div'); row.className='team-row';
     row.innerHTML=`
       <select class="player-select"><option value="">-- Selecciona jugador --</option>${allPlayers.map(p=>`<option value="${p.name}||${p.tag}">${p.name} (${p.tag})</option>`).join('')}</select>
+      <select class="character-select">
+        <option value="">-- Personaje --</option>
+        <option value="Jett">Jett</option>
+        <option value="Reyna">Reyna</option>
+        <option value="Phoenix">Phoenix</option>
+        <option value="Raze">Raze</option>
+        <option value="Sova">Sova</option>
+        <option value="Skye">Skye</option>
+        <option value="KAY/O">KAY/O</option>
+        <option value="Fade">Fade</option>
+        <option value="Omen">Omen</option>
+        <option value="Viper">Viper</option>
+        <option value="Brimstone">Brimstone</option>
+        <option value="Astra">Astra</option>
+        <option value="Sage">Sage</option>
+        <option value="Killjoy">Killjoy</option>
+        <option value="Cypher">Cypher</option>
+      </select>
       <input type="number" placeholder="ACS" class="acs" min="0">
       <input type="number" placeholder="Kills" class="kill" min="0">
       <input type="number" placeholder="Deaths" class="death" min="0">
       <input type="number" placeholder="Assists" class="assist" min="0">
       <input type="number" placeholder="HS%" class="hs" min="0" max="100">
-      <input type="number" placeholder="FirstBloods" class="fb" min="0">
+      <input type="number" placeholder="FK" class="fb" min="0">
+      <input type="number" placeholder="FD" class="fd" min="0">
+      <input type="number" placeholder="MK" class="mk" min="0">
+      <input type="number" placeholder="KAST" class="kast" min="0" max="100">
+      <input type="number" placeholder="ADR" class="adr" min="0">
+      <input type="number" placeholder="DDDelta" class="dddelta" min="0">
     `;
     return row;
   };
@@ -309,82 +339,74 @@ document.getElementById('submitMatchBtn').addEventListener('click', async () => 
   const map=document.getElementById('matchMap').value;
   const winnerTeam=document.getElementById('winnerTeam').value;
   const score=document.getElementById('matchScore').value.trim();
-  if(!map||!winnerTeam||!score) return alert('Completa todos los campos de la partida');
+  if(!map||!winnerTeam||!score){ alert('Completa todos los campos'); return; }
 
   const matchPlayers=[];
-  const rows=[...document.querySelectorAll('#teamA .team-row'),...document.querySelectorAll('#teamB .team-row')];
-  const selectedPlayers = new Set();
-  for(const row of rows){
-    const select=row.querySelector('.player-select'); if(!select.value) continue;
-    if(selectedPlayers.has(select.value)) return alert('No se puede repetir jugadores en la partida');
-    selectedPlayers.add(select.value);
-    const [name, tag]=select.value.split('||');
+  [...document.querySelectorAll('#teamA .team-row'), ...document.querySelectorAll('#teamB .team-row')].forEach(row=>{
+    const sel=row.querySelector('.player-select'); if(!sel.value) return;
+    const [name,tag]=sel.value.split('||');
+    const character=row.querySelector('.character-select').value || '';
     matchPlayers.push({
-      name, tag,
-      acs:parseInt(row.querySelector('.acs').value)||0,
-      kills:parseInt(row.querySelector('.kill').value)||0,
-      deaths:parseInt(row.querySelector('.death').value)||0,
-      assists:parseInt(row.querySelector('.assist').value)||0,
-      hsPercent:parseFloat(row.querySelector('.hs').value)||0,
-      firstBloods:parseInt(row.querySelector('.fb').value)||0
+      name, tag, character,
+      ACS: parseInt(row.querySelector('.acs').value)||0,
+      kills: parseInt(row.querySelector('.kill').value)||0,
+      deaths: parseInt(row.querySelector('.death').value)||0,
+      assists: parseInt(row.querySelector('.assist').value)||0,
+      hsPercent: parseFloat(row.querySelector('.hs').value)||0,
+      FK: parseInt(row.querySelector('.fb').value)||0,
+      FD: parseInt(row.querySelector('.fd').value)||0,
+      MK: parseInt(row.querySelector('.mk').value)||0,
+      KAST: parseFloat(row.querySelector('.kast').value)||0,
+      ADR: parseFloat(row.querySelector('.adr').value)||0,
+      DDDelta: parseFloat(row.querySelector('.dddelta').value)||0
     });
-  }
-  if(!matchPlayers.length) return alert('No hay jugadores seleccionados');
+  });
+
+  if(matchPlayers.length!==10){ alert('Selecciona 5 jugadores por equipo'); return; }
 
   try{
-    const res=await fetch('/matches',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({match:matchPlayers,winnerTeam,score,map})});
+    const res=await fetch('/matches',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body: JSON.stringify({ match:matchPlayers, winnerTeam, score, map })
+    });
     const data=await res.json();
-    if(!res.ok) return alert(data.error||'Error al registrar partida');
+    if(!res.ok) return alert(data.error||'Error agregando partida');
     document.getElementById('matchAlert').innerText='Partida registrada correctamente';
     setTimeout(()=>document.getElementById('matchAlert').innerText='',2000);
-    loadPlayers(); loadMatches();
+    loadPlayers();
+    loadMatches();
   }catch(err){ console.error(err); alert('Error de conexión'); }
 });
 
-// Cargar partidas
 async function loadMatches(){
-  const res=await fetch('/matches',{ credentials:'include' });
-  allMatches=await res.json();
-  const tbody=document.getElementById('matchesTableBody'); tbody.innerHTML='';
+  const res = await fetch('/matches',{credentials:'include'});
+  allMatches = await res.json();
+  const tbody=document.getElementById('matchesTableBody');
+  tbody.innerHTML='';
   if(!allMatches.length){ tbody.innerHTML='<tr><td colspan="5">No hay partidas registradas</td></tr>'; return; }
 
-  allMatches.forEach((m,index)=>{
+  allMatches.forEach(m=>{
     const row=document.createElement('tr');
     row.innerHTML=`
-      <td><input type="text" value="${m.map}" class="edit-map"></td>
-      <td><input type="text" value="${m.score}" class="edit-score"></td>
-      <td><input type="text" value="${m.winnerTeam}" class="edit-winner"></td>
+      <td>${m.map}</td>
+      <td>${m.score}</td>
+      <td>${m.winnerTeam}</td>
       <td>${new Date(m.date).toLocaleString()}</td>
-      <td>
-        <button class="btn-save-match">Guardar</button>
-        <button class="btn-delete-match">Eliminar</button>
-        <span class="alert edit-alert" style="margin-left:5px;color:green;"></span>
-      </td>
+      <td><button class="btn-delete">Eliminar</button></td>
     `;
     tbody.appendChild(row);
-
-    row.querySelector('.btn-save-match').addEventListener('click', async ()=>{
-      const updated={map: row.querySelector('.edit-map').value.trim(), score: row.querySelector('.edit-score').value.trim(), winnerTeam: row.querySelector('.edit-winner').value.trim()};
-      if(!updated.map||!updated.score||!updated.winnerTeam) return alert('Todos los campos son obligatorios');
-      try{
-        const res=await fetch(`/matches/${m._id}`,{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(updated)});
-        if(!res.ok) return alert((await res.json()).error||'Error actualizando partida');
-        row.querySelector('.edit-alert').innerText='Editado correctamente';
-        setTimeout(()=>row.querySelector('.edit-alert').innerText='',2000);
-        loadMatches();
-      }catch(err){ console.error(err); alert('Error de conexión'); }
-    });
-
-    row.querySelector('.btn-delete-match').addEventListener('click', async ()=>{
-      if(!confirm('Eliminar esta partida?')) return;
-      try{
-        const res=await fetch(`/matches/${m._id}`,{method:'DELETE',credentials:'include'});
-        if(!res.ok) return alert((await res.json()).error||'Error eliminando partida');
-        loadMatches();
-      }catch(err){ console.error(err); alert('Error de conexión'); }
+    row.querySelector('.btn-delete').addEventListener('click', async () => {
+      if(!confirm('Eliminar partida?')) return;
+      const res = await fetch('/matches/'+m._id, { method:'DELETE', credentials:'include' });
+      if(!res.ok) return alert((await res.json()).error||'Error eliminando partida');
+      loadPlayers();
+      loadMatches();
     });
   });
 }
 </script>
+
 </body>
 </html>
