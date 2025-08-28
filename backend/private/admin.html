@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadMatches();
 });
 
-// --- FUNCIÓN PARA PROCESAR STATS DE TRACKER ---
+// --- FUNCIÓN CORREGIDA PARA PROCESAR STATS DE TRACKER ---
 document.getElementById('processStatsBtn').addEventListener('click', () => {
   const text = document.getElementById('trackerStats').value;
   if (!text) return alert('Pega los stats primero');
@@ -210,119 +210,106 @@ document.getElementById('processStatsBtn').addEventListener('click', () => {
   let currentTeam = '';
   let teamAPlayers = [];
   let teamBPlayers = [];
-  let i = 0;
-
-  while (i < lines.length) {
-    const line = lines[i];
-
-    if (line.startsWith('Team A')) { currentTeam = 'A'; i += 2; continue; }
-    if (line.startsWith('Team B')) { currentTeam = 'B'; i += 2; continue; }
-
-    // Ignorar líneas que no sean nombres de jugador
-    if (!line || line.includes('Avg. Rank:') || line.includes('Current Rank')) { i++; continue; }
-
-    // Bloque de stats por jugador (16 líneas)
-    if (i + 15 >= lines.length) break;
-
-    const player = {
-      name: lines[i],
-      ACS: parseInt(lines[i+1]) || 0,
-      kills: parseInt(lines[i+2]) || 0,
-      deaths: parseInt(lines[i+3]) || 0,
-      assists: parseInt(lines[i+4]) || 0,
-      plusMinus: parseInt(lines[i+5]) || 0,
-      DDDelta: parseInt(lines[i+7]) || 0,
-      ADR: parseFloat(lines[i+8]) || 0,
-      hsPercent: parseFloat(lines[i+9]) || 0,
-      KAST: parseFloat(lines[i+10]) || 0,
-      FK: parseInt(lines[i+11]) || 0,
-      FD: parseInt(lines[i+12]) || 0,
-      MK: parseInt(lines[i+13]) || 0
-    };
-
-    if (currentTeam === 'A') teamAPlayers.push(player);
-    if (currentTeam === 'B') teamBPlayers.push(player);
-
-    i += 14; // Pasamos al siguiente jugador
+  
+  // Extraer información del mapa y marcador
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].includes('Normal') && lines[i+1] && lines[i+1].includes('Normal')) {
+      document.getElementById('matchMap').value = lines[i+2] || '';
+      break;
+    }
+  }
+  
+  // Buscar marcador
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].includes('Team A') && lines[i+1] && lines[i+1].includes('Team B')) {
+      const scoreA = lines[i].replace('Team A', '').trim();
+      const scoreB = lines[i+1].replace('Team B', '').trim();
+      document.getElementById('matchScore').value = `${scoreA}-${scoreB}`;
+      document.getElementById('winnerTeam').value = parseInt(scoreA) > parseInt(scoreB) ? 'A' : 'B';
+      break;
+    }
   }
 
+  // Procesar jugadores
+  let processingTeam = '';
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Detectar inicio de equipo
+    if (line === 'Team A') {
+      processingTeam = 'A';
+      i++; // Saltar línea de separación
+      continue;
+    }
+    
+    if (line === 'Team B') {
+      processingTeam = 'B';
+      i++; // Saltar línea de separación
+      continue;
+    }
+    
+    // Detectar fin de equipo
+    if (line.includes('Avg. Rank:')) {
+      processingTeam = '';
+      continue;
+    }
+    
+    // Procesar jugadores
+    if (processingTeam && line && !line.includes('Current Rank') && !line.includes('ACS') && 
+        !line.includes('K') && !line.includes('D') && !line.includes('A') && 
+        !line.includes('+/-') && !line.includes('K/D') && !line.includes('DDΔ') && 
+        !line.includes('ADR') && !line.includes('HS%') && !line.includes('KAST') && 
+        !line.includes('FK') && !line.includes('FD') && !line.includes('MK')) {
+      
+      // Verificar que tenemos suficientes líneas para procesar
+      if (i + 12 >= lines.length) continue;
+      
+      const playerData = {
+        name: line,
+        agent: lines[i-1] || '', // El agente está en la línea anterior
+        ACS: parseInt(lines[i+1]) || 0,
+        kills: parseInt(lines[i+2]) || 0,
+        deaths: parseInt(lines[i+3]) || 0,
+        assists: parseInt(lines[i+4]) || 0,
+        plusMinus: parseInt(lines[i+5]) || 0,
+        KDRatio: parseFloat(lines[i+6]) || 0,
+        DDDelta: parseInt(lines[i+7]) || 0,
+        ADR: parseFloat(lines[i+8]) || 0,
+        hsPercent: parseFloat(lines[i+9]) || 0,
+        KAST: parseFloat(lines[i+10]) || 0,
+        FK: parseInt(lines[i+11]) || 0,
+        FD: parseInt(lines[i+12]) || 0,
+        MK: parseInt(lines[i+13]) || 0
+      };
+      
+      if (processingTeam === 'A') {
+        teamAPlayers.push(playerData);
+      } else if (processingTeam === 'B') {
+        teamBPlayers.push(playerData);
+      }
+      
+      i += 13; // Saltar las líneas de estadísticas procesadas
+    }
+  }
+
+  // Función para llenar los datos del equipo
   const fillTeam = (teamDiv, players) => {
     const rows = [...teamDiv.querySelectorAll('.team-row')];
     players.forEach((p, idx) => {
       if (!rows[idx]) return;
-      const sel = rows[idx].querySelector('.player-select');
-      const playerExists = allPlayers.find(ap => ap.name.trim().toLowerCase() === p.name.trim().toLowerCase());
-      if (playerExists) sel.value = `${playerExists.name}||${playerExists.tag}`;
-      rows[idx].querySelector('.acs').value = p.ACS;
-      rows[idx].querySelector('.kill').value = p.kills;
-      rows[idx].querySelector('.death').value = p.deaths;
-      rows[idx].querySelector('.assist').value = p.assists;
-      rows[idx].querySelector('.hs').value = p.hsPercent;
-      rows[idx].querySelector('.fb').value = p.FK;
-      rows[idx].querySelector('.fd').value = p.FD;
-      rows[idx].querySelector('.mk').value = p.MK;
-      rows[idx].querySelector('.kast').value = p.KAST;
-      rows[idx].querySelector('.adr').value = p.ADR;
-      rows[idx].querySelector('.dddelta').value = p.DDDelta;
-    });
-  };
-
-  fillTeam(document.getElementById('teamA'), teamAPlayers);
-  fillTeam(document.getElementById('teamB'), teamBPlayers);
-
-  alert('Stats procesados y formulario llenado automáticamente.');
-});
-document.getElementById('processStatsBtn').addEventListener('click', () => {
-  const text = document.getElementById('trackerStats').value;
-  if (!text) return alert('Pega los stats primero');
-
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
-  let currentTeam = '';
-  let teamAPlayers = [];
-  let teamBPlayers = [];
-  let i = 0;
-
-  while (i < lines.length) {
-    const line = lines[i];
-
-    if (line.startsWith('Team A')) { currentTeam = 'A'; i += 2; continue; }
-    if (line.startsWith('Team B')) { currentTeam = 'B'; i += 2; continue; }
-
-    // Ignorar líneas que no sean nombres de jugador
-    if (!line || line.includes('Avg. Rank:') || line.includes('Current Rank')) { i++; continue; }
-
-    // Bloque de stats por jugador (16 líneas)
-    if (i + 15 >= lines.length) break;
-
-    const player = {
-      name: lines[i],
-      ACS: parseInt(lines[i+1]) || 0,
-      kills: parseInt(lines[i+2]) || 0,
-      deaths: parseInt(lines[i+3]) || 0,
-      assists: parseInt(lines[i+4]) || 0,
-      plusMinus: parseInt(lines[i+5]) || 0,
-      DDDelta: parseInt(lines[i+7]) || 0,
-      ADR: parseFloat(lines[i+8]) || 0,
-      hsPercent: parseFloat(lines[i+9]) || 0,
-      KAST: parseFloat(lines[i+10]) || 0,
-      FK: parseInt(lines[i+11]) || 0,
-      FD: parseInt(lines[i+12]) || 0,
-      MK: parseInt(lines[i+13]) || 0
-    };
-
-    if (currentTeam === 'A') teamAPlayers.push(player);
-    if (currentTeam === 'B') teamBPlayers.push(player);
-
-    i += 14; // Pasamos al siguiente jugador
-  }
-
-  const fillTeam = (teamDiv, players) => {
-    const rows = [...teamDiv.querySelectorAll('.team-row')];
-    players.forEach((p, idx) => {
-      if (!rows[idx]) return;
-      const sel = rows[idx].querySelector('.player-select');
-      const playerExists = allPlayers.find(ap => ap.name.trim().toLowerCase() === p.name.trim().toLowerCase());
-      if (playerExists) sel.value = `${playerExists.name}||${playerExists.tag}`;
+      
+      // Buscar jugador por nombre
+      const playerExists = allPlayers.find(ap => 
+        p.name.toLowerCase().includes(ap.name.toLowerCase()) || 
+        ap.name.toLowerCase().includes(p.name.toLowerCase())
+      );
+      
+      if (playerExists) {
+        rows[idx].querySelector('.player-select').value = `${playerExists.name}||${playerExists.tag}`;
+      }
+      
+      // Llenar estadísticas
       rows[idx].querySelector('.acs').value = p.ACS;
       rows[idx].querySelector('.kill').value = p.kills;
       rows[idx].querySelector('.death').value = p.deaths;
@@ -547,4 +534,3 @@ document.getElementById('submitMatchBtn').addEventListener('click', async ()=>{
 
 </body>
 </html>
-
