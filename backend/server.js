@@ -263,7 +263,7 @@ app.get("/players", requireAdmin, async (req, res) => {
       const matches = p.matchesPlayed || 1; // evitar división entre 0
       return {
         ...p,
-        hsPercent: matches ? Math.round((p.totalHeadshotKills / p.totalKills) * 100) : 0,
+        hsPercent: p.totalKills ? Math.round((p.totalHeadshotKills / p.totalKills) * 100) : 0
         KASTPercent: matches ? Math.round(p.totalKAST / matches) : 0
       };
     });
@@ -300,9 +300,6 @@ app.delete("/players", requireAdmin, async (req, res) => {
   }
 });
 
-// -------------------
-// --- CRUD Matches
-// -------------------
 // -------------------
 // --- CRUD Matches
 // -------------------
