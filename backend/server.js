@@ -420,8 +420,18 @@ app.delete("/matches/:id", requireAdmin, async (req, res) => {
 app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
-    players.sort((a, b) => (b.score || 0) - (a.score || 0));
-    res.json(players);
+
+    // Agregamos solo los porcentajes derivados necesarios
+    const formattedPlayers = players.map(p => ({
+      ...p,
+      hsPercent: p.totalKills ? Math.round((p.totalHeadshotKills / p.totalKills) * 100) : 0,
+      kastPercent: p.matchesPlayed ? Math.round((p.totalKAST / p.matchesPlayed * 100)) : 0
+    }));
+
+    // Ordenar por score descendente
+    formattedPlayers.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    res.json(formattedPlayers);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error generando leaderboard" });
