@@ -88,9 +88,6 @@ async function connectDB() {
 }
 
 // -------------------
-// --- Función de cálculo de score por partida
-// -------------------
-// -------------------
 // --- Función de cálculo de score por partida ajustada por rol
 // -------------------
 function calculateMatchScore(playerStats, playerTeam, teamStats) {
@@ -100,11 +97,14 @@ function calculateMatchScore(playerStats, playerTeam, teamStats) {
   const controladores = ["Omen", "Viper", "Brimstone", "Astra"];
   const centinelas = ["Sage", "Killjoy", "Cypher"];
 
+  // Pesos base por stat
   let roleWeight = {
     kills: 1.0,
     deaths: -0.8,
     assists: 0.7,
-    adr: 0.05,
+    ACS: 0.05,
+    ADR: 0.05,
+    DDDelta: 0.08,
     hsPercent: 0.1,
     KAST: 0.08,
     FK: 2.0,
@@ -120,7 +120,7 @@ function calculateMatchScore(playerStats, playerTeam, teamStats) {
     roleWeight.MK = 1.5;
   } else if (iniciadores.includes(char)) {
     roleWeight.KAST = 0.12;
-    roleWeight.adr = 0.07;
+    roleWeight.ADR = 0.07;
   } else if (controladores.includes(char)) {
     roleWeight.KAST = 0.12;
     roleWeight.assists = 0.9;
@@ -134,7 +134,9 @@ function calculateMatchScore(playerStats, playerTeam, teamStats) {
     playerStats.kills * roleWeight.kills +
     playerStats.deaths * roleWeight.deaths +
     playerStats.assists * roleWeight.assists +
-    playerStats.adr * roleWeight.adr +
+    playerStats.ACS * roleWeight.ACS +
+    playerStats.ADR * roleWeight.ADR +
+    playerStats.DDDelta * roleWeight.DDDelta +
     playerStats.hsPercent * roleWeight.hsPercent +
     playerStats.KAST * roleWeight.KAST +
     playerStats.FK * roleWeight.FK +
@@ -146,7 +148,9 @@ function calculateMatchScore(playerStats, playerTeam, teamStats) {
     p.kills * roleWeight.kills +
     p.deaths * roleWeight.deaths +
     p.assists * roleWeight.assists +
-    p.adr * roleWeight.adr +
+    p.ACS * roleWeight.ACS +
+    p.ADR * roleWeight.ADR +
+    p.DDDelta * roleWeight.DDDelta +
     p.hsPercent * roleWeight.hsPercent +
     p.KAST * roleWeight.KAST +
     p.FK * roleWeight.FK +
