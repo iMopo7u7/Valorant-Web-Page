@@ -163,17 +163,21 @@ async function renderLeaderboardTable(players) {
 
   tbody.innerHTML = players.map((p, index) => {
     const matches = p.matchesPlayed || 0;
-    const avgACS = matches ? Math.round(p.totalACS / matches) : 0;
-    const kills = p.totalKills || 0;
-    const deaths = p.totalDeaths || 0;
-    const assists = p.totalAssists || 0;
-    const kdaDisplay = `${kills}/${deaths}/${assists}`;
-    const hsPercent = kills ? ((p.totalHeadshotKills / kills) * 100).toFixed(1) : "0.0";
-    const kastPercent = p.kastPercent?.toFixed(1) || "0.0";
-    const fk = p.FK || 0;
-    const adr = p.adr?.toFixed(1) || 0;
-    const ddDelta = p.ddDelta?.toFixed(1) || 0;
-    const score = Math.max(Math.round(p.score),0);
+
+    // Promedios (siempre dividimos entre matches)
+    const avgKills = matches > 0 ? (p.totalKills / matches).toFixed(1) : "0.0";
+    const avgDeaths = matches > 0 ? (p.totalDeaths / matches).toFixed(1) : "0.0";
+    const avgAssists = matches > 0 ? (p.totalAssists / matches).toFixed(1) : "0.0";
+    const kdaDisplay = `${avgKills}/${avgDeaths}/${avgAssists}`;
+
+    const avgACS = Math.round(p.avgACS || 0);
+    const avgFK = Math.round(p.avgFK || 0);
+    const avgADR = p.avgADR?.toFixed(1) || "0.0";
+    const avgDDDelta = p.avgDDDelta?.toFixed(1) || "0.0";
+    const kastPercent = p.avgKAST?.toFixed(1) || "0.0";
+    const hsPercent = p.hsPercent?.toFixed(1) || "0.0";
+
+    const score = Math.max(Math.round(p.score), 0);
 
     return `
       <tr class="${index < 3 ? 'top-3' : ''}">
@@ -201,10 +205,10 @@ async function renderLeaderboardTable(players) {
         <td class="stat-cell">${avgACS}</td>
         <td class="stat-cell">${kdaDisplay}</td>
         <td class="stat-cell">${hsPercent}%</td>
-        <td class="stat-cell">${fk}</td>
+        <td class="stat-cell">${avgFK}</td>
         <td class="stat-cell">${kastPercent}%</td>
-        <td class="stat-cell">${adr}</td>
-        <td class="stat-cell">${ddDelta}</td>
+        <td class="stat-cell">${avgADR}</td>
+        <td class="stat-cell">${avgDDDelta}</td>
         <td class="score-cell">${score}</td>
       </tr>
     `;
