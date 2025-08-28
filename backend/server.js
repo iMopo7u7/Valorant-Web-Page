@@ -92,10 +92,10 @@ async function connectDB() {
 // -------------------
 function calculateMatchScore(playerStats, playerTeam, teamStats) {
   // --- Roles según personaje
-  const duelistas = ["Jett", "Reyna", "Phoenix", "Raze"];
-  const iniciadores = ["Sova", "Skye", "KAY/O", "Fade"];
-  const controladores = ["Omen", "Viper", "Brimstone", "Astra"];
-  const centinelas = ["Sage", "Killjoy", "Cypher"];
+  const duelistas = ["Jett", "Reyna", "Phoenix", "Raze", "Yoru", "Neon", "Iso", "Waylay"];
+  const iniciadores = ["Sova", "Skye", "KAY/O", "Fade", "Breach", "Gekko", "Tejo"];
+  const controladores = ["Omen", "Viper", "Brimstone", "Astra", "Clove", "Harbor"];
+  const centinelas = ["Sage", "Killjoy", "Cypher", "Chamber", "Deadlock", "Vyse"];
 
   // Pesos base por stat
   let roleWeight = {
