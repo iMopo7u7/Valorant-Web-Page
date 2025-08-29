@@ -101,7 +101,6 @@
             
             <div class="mb-4">
                 <span class="text-green-400 font-bold">Jugadores: <span id="playerCount">0</span></span>
-                <span class="text-gray-400 ml-4">(Permitido: 10, 15, 20 o 25)</span>
             </div>
             
             <div id="playersList" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -140,41 +139,6 @@
                     <input type="checkbox" class="map-checkbox" value="Icebox" checked>
                     <div class="map-icon">IC</div>
                     <span>Icebox</span>
-                </label>
-                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
-                    <input type="checkbox" class="map-checkbox" value="Breeze" checked>
-                    <div class="map-icon">BR</div>
-                    <span>Breeze</span>
-                </label>
-                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
-                    <input type="checkbox" class="map-checkbox" value="Fracture" checked>
-                    <div class="map-icon">FR</div>
-                    <span>Fracture</span>
-                </label>
-                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
-                    <input type="checkbox" class="map-checkbox" value="Pearl" checked>
-                    <div class="map-icon">PE</div>
-                    <span>Pearl</span>
-                </label>
-                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
-                    <input type="checkbox" class="map-checkbox" value="Lotus" checked>
-                    <div class="map-icon">LO</div>
-                    <span>Lotus</span>
-                </label>
-                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
-                    <input type="checkbox" class="map-checkbox" value="Sunset" checked>
-                    <div class="map-icon">SU</div>
-                    <span>Sunset</span>
-                </label>
-                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
-                    <input type="checkbox" class="map-checkbox" value="Abyss" checked>
-                    <div class="map-icon">AB</div>
-                    <span>Abyss</span>
-                </label>
-                <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
-                    <input type="checkbox" class="map-checkbox" value="Corrode" checked>
-                    <div class="map-icon">CO</div>
-                    <span>Corrode</span>
                 </label>
             </div>
             
@@ -225,19 +189,11 @@
         function addPlayer() {
             const input = document.getElementById('playerInput');
             const playerName = input.value.trim();
-            
             if (!playerName) return;
-            
             if (players.includes(playerName)) {
                 alert('Este jugador ya está en la lista');
                 return;
             }
-            
-            if (players.length >= 25) {
-                alert('Máximo 25 jugadores permitidos');
-                return;
-            }
-            
             players.push(playerName);
             input.value = '';
             updatePlayersList();
@@ -251,9 +207,7 @@
         function updatePlayersList() {
             const playersList = document.getElementById('playersList');
             const playerCount = document.getElementById('playerCount');
-            
             playerCount.textContent = players.length;
-            
             playersList.innerHTML = players.map(player => `
                 <div class="bg-gradient-to-r from-purple-900/50 to-pink-900/50 rounded-lg p-3 flex items-center justify-between border border-purple-500/30">
                     <span class="font-bold">${player}</span>
@@ -277,174 +231,80 @@
         }
 
         function generateDraw() {
-            if (![10, 15, 20, 25].includes(players.length)) {
-                alert('Necesitas exactamente 10, 15, 20 o 25 jugadores para generar el sorteo');
+            if (players.length < 10) {
+                alert('Se necesitan al menos 10 jugadores para generar el sorteo');
                 return;
             }
-            
+
             const selectedMaps = getSelectedMaps();
             if (selectedMaps.length === 0) {
                 alert('Selecciona al menos un mapa');
                 return;
             }
-            
+
             const shuffledPlayers = shuffleArray(players);
+            const fullTeamsCount = Math.floor(shuffledPlayers.length / 10) * 10;
+            const mainPlayers = shuffledPlayers.slice(0, fullTeamsCount);
+            const leftoverPlayers = shuffledPlayers.slice(fullTeamsCount);
+
             const resultsSection = document.getElementById('resultsSection');
             const resultsContent = document.getElementById('resultsContent');
-            
             resultsSection.classList.remove('hidden');
-            
-            if (players.length === 10) {
-                generate10ManResults(shuffledPlayers, selectedMaps, resultsContent);
-            } else {
-                generateMultipleGamesResults(shuffledPlayers, selectedMaps, resultsContent);
-            }
-        }
 
-        function generate10ManResults(shuffledPlayers, selectedMaps, container) {
-            const teamA = shuffledPlayers.slice(0, 5);
-            const teamB = shuffledPlayers.slice(5, 10);
-            const selectedMap = selectedMaps[Math.floor(Math.random() * selectedMaps.length)];
-            const attackingTeam = Math.random() < 0.5 ? 'A' : 'B';
-            
-            container.innerHTML = `
-                <div class="text-center mb-8">
-                    <h3 class="text-2xl font-bold text-green-400 mb-4">MAPA: ${selectedMap}</h3>
-                </div>
-                
-                <div class="grid md:grid-cols-2 gap-8">
-                    <div class="team-card rounded-xl p-6 ${attackingTeam === 'A' ? 'neon-glow' : ''}">
-                        <h3 class="text-2xl font-bold text-pink-400 mb-4 text-center">
-                            TEAM A (${attackingTeam === 'A' ? 'ATAQUE' : 'DEFENSA'})
-                        </h3>
-                        <div class="space-y-3">
-                            ${teamA.map((player, index) => `
-                                <div class="player-animate bg-gray-800/50 rounded-lg p-3 text-center font-bold" style="animation-delay: ${index * 0.2}s">
-                                    ${player}
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                    
-                    <div class="team-card rounded-xl p-6 ${attackingTeam === 'B' ? 'neon-glow' : ''}">
-                        <h3 class="text-2xl font-bold text-green-400 mb-4 text-center">
-                            TEAM B (${attackingTeam === 'B' ? 'ATAQUE' : 'DEFENSA'})
-                        </h3>
-                        <div class="space-y-3">
-                            ${teamB.map((player, index) => `
-                                <div class="player-animate bg-gray-800/50 rounded-lg p-3 text-center font-bold" style="animation-delay: ${(index + 5) * 0.2}s">
-                                    ${player}
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            currentResults = `**VALORANT 10 MANS - SORTEO**\n\n**PARTIDA 1** | ${selectedMap}\nTeam A (${attackingTeam === 'A' ? 'ATK' : 'DEF'}): ${teamA.join(', ')}\nTeam B (${attackingTeam === 'B' ? 'ATK' : 'DEF'}): ${teamB.join(', ')}`;
-        }
+            const gamesCount = fullTeamsCount / 10;
+            let gamesHtml = '';
+            let discordMessage = `**VALORANT ${players.length} MANS - SORTEO**\n\n`;
 
-        function generateMultipleGamesResults(shuffledPlayers, selectedMaps, container) {
-            const gamesCount = Math.floor(players.length / 10);
-            const remainingPlayers = players.length % 10;
-            const games = [];
-            
-            // Generar partidas principales
             for (let i = 0; i < gamesCount; i++) {
-                const gameStart = i * 10;
-                const teamA = shuffledPlayers.slice(gameStart, gameStart + 5);
-                const teamB = shuffledPlayers.slice(gameStart + 5, gameStart + 10);
+                const teamA = mainPlayers.slice(i * 10, i * 10 + 5);
+                const teamB = mainPlayers.slice(i * 10 + 5, i * 10 + 10);
                 const selectedMap = selectedMaps[Math.floor(Math.random() * selectedMaps.length)];
                 const attackingTeam = Math.random() < 0.5 ? 'A' : 'B';
-                
-                games.push({ teamA, teamB, map: selectedMap, attackingTeam, gameNumber: i + 1 });
-            }
-            
-            // Manejar jugadores restantes
-            let waitingTeam = null;
-            if (remainingPlayers === 5) {
-                waitingTeam = {
-                    players: shuffledPlayers.slice(gamesCount * 10),
-                    map: selectedMaps[Math.floor(Math.random() * selectedMaps.length)],
-                    side: Math.random() < 0.5 ? 'ATAQUE' : 'DEFENSA'
-                };
-            }
-            
-            let gamesHtml = games.map(game => `
+
+                gamesHtml += `
                 <div class="border-2 border-purple-500/30 rounded-xl p-6">
                     <h3 class="text-2xl font-bold text-yellow-400 mb-4 text-center">
-                        PARTIDA ${game.gameNumber} - ${game.map}
+                        PARTIDA ${i + 1} - ${selectedMap}
                     </h3>
-                    
                     <div class="grid md:grid-cols-2 gap-6">
-                        <div class="team-card rounded-lg p-4 ${game.attackingTeam === 'A' ? 'neon-glow' : ''}">
+                        <div class="team-card rounded-lg p-4 ${attackingTeam === 'A' ? 'neon-glow' : ''}">
                             <h4 class="text-lg font-bold text-pink-400 mb-3 text-center">
-                                TEAM A (${game.attackingTeam === 'A' ? 'ATAQUE' : 'DEFENSA'})
+                                TEAM A (${attackingTeam === 'A' ? 'ATAQUE' : 'DEFENSA'})
                             </h4>
                             <div class="space-y-2">
-                                ${game.teamA.map(player => `
-                                    <div class="bg-gray-800/50 rounded p-2 text-center font-bold">${player}</div>
-                                `).join('')}
+                                ${teamA.map(player => `<div class="bg-gray-800/50 rounded p-2 text-center font-bold">${player}</div>`).join('')}
                             </div>
                         </div>
-                        
-                        <div class="team-card rounded-lg p-4 ${game.attackingTeam === 'B' ? 'neon-glow' : ''}">
+                        <div class="team-card rounded-lg p-4 ${attackingTeam === 'B' ? 'neon-glow' : ''}">
                             <h4 class="text-lg font-bold text-green-400 mb-3 text-center">
-                                TEAM B (${game.attackingTeam === 'B' ? 'ATAQUE' : 'DEFENSA'})
+                                TEAM B (${attackingTeam === 'B' ? 'ATAQUE' : 'DEFENSA'})
                             </h4>
                             <div class="space-y-2">
-                                ${game.teamB.map(player => `
-                                    <div class="bg-gray-800/50 rounded p-2 text-center font-bold">${player}</div>
-                                `).join('')}
+                                ${teamB.map(player => `<div class="bg-gray-800/50 rounded p-2 text-center font-bold">${player}</div>`).join('')}
                             </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
-            
-            if (waitingTeam) {
+                </div>`;
+                discordMessage += `**PARTIDA ${i + 1}** | ${selectedMap}\nTeam A (${attackingTeam === 'A' ? 'ATK' : 'DEF'}): ${teamA.join(', ')}\nTeam B (${attackingTeam === 'B' ? 'ATK' : 'DEF'}): ${teamB.join(', ')}\n\n`;
+            }
+
+            if (leftoverPlayers.length > 0) {
+                const shuffledLeftovers = shuffleArray(leftoverPlayers);
                 gamesHtml += `
-                    <div class="border-2 border-orange-500/50 rounded-xl p-6 bg-orange-900/20">
-                        <h3 class="text-2xl font-bold text-orange-400 mb-4 text-center">
-                            EQUIPO EN ESPERA - ${waitingTeam.map}
-                        </h3>
-                        <div class="text-center mb-4">
-                            <span class="text-orange-300 font-bold">Jugará contra el ganador de la Partida 1</span>
-                        </div>
-                        <div class="team-card rounded-lg p-4 max-w-md mx-auto">
-                            <h4 class="text-lg font-bold text-orange-400 mb-3 text-center">
-                                TEAM WAITING (${waitingTeam.side})
-                            </h4>
-                            <div class="space-y-2">
-                                ${waitingTeam.players.map(player => `
-                                    <div class="bg-gray-800/50 rounded p-2 text-center font-bold">${player}</div>
-                                `).join('')}
-                            </div>
-                        </div>
+                <div class="border-2 border-red-500/50 rounded-xl p-6 bg-red-900/20">
+                    <h3 class="text-2xl font-bold text-red-400 mb-4 text-center">
+                        JUGADORES SOBRANTES
+                    </h3>
+                    <div class="text-center space-y-2">
+                        ${shuffledLeftovers.map(player => `<div class="bg-gray-800/50 rounded p-2 text-center font-bold">${player}</div>`).join('')}
                     </div>
-                `;
+                    <p class="text-red-300 mt-4 font-bold">Estos jugadores no jugarán en esta ronda.</p>
+                </div>`;
+                discordMessage += `**JUGADORES SOBRANTES:** ${shuffledLeftovers.join(', ')}\n`;
             }
-            
-            container.innerHTML = `<div class="space-y-8">${gamesHtml}</div>`;
-            
-            // Generar mensaje para Discord más limpio
-            let discordMessage = `**VALORANT ${players.length} MANS - SORTEO**\n\n`;
-            
-            games.forEach(game => {
-                discordMessage += `**PARTIDA ${game.gameNumber}** | ${game.map}\n`;
-                discordMessage += `Team A (${game.attackingTeam === 'A' ? 'ATK' : 'DEF'}): ${game.teamA.join(', ')}\n`;
-                discordMessage += `Team B (${game.attackingTeam === 'B' ? 'ATK' : 'DEF'}): ${game.teamB.join(', ')}\n\n`;
-            });
-            
-            if (waitingTeam) {
-                discordMessage += `**EQUIPO EN ESPERA** | ${waitingTeam.map}\n`;
-                discordMessage += `Team Waiting (${waitingTeam.side}): ${waitingTeam.players.join(', ')}\n`;
-                discordMessage += `*Jugará contra el ganador de la Partida 1*\n\n`;
-            }
-            
-            discordMessage = discordMessage.trim();
-            
-            currentResults = discordMessage;
+
+            resultsContent.innerHTML = `<div class="space-y-8">${gamesHtml}</div>`;
+            currentResults = discordMessage.trim();
         }
 
         function copyResults() {
@@ -453,5 +313,5 @@
             });
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97051fd0e638ac55',t:'MTc1NTM5MTI3MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
