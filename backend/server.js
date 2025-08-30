@@ -380,14 +380,13 @@ app.put("/matches/:id", requireAdmin, async (req, res) => {
 app.delete("/matches/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    // Buscar la partida
+    // 1️⃣ Buscar y eliminar la partida
     const matchToDelete = await matchesCollection.findOne({ _id: new ObjectId(id) });
     if (!matchToDelete) return res.status(404).json({ error: "Partida no encontrada" });
 
-    // Borrar la partida
     await matchesCollection.deleteOne({ _id: new ObjectId(id) });
 
-    // Resetear stats de todos los jugadores
+    // 2️⃣ Resetear stats de todos los jugadores
     await playersCollection.updateMany({}, {
       $set: {
         totalKills: 0,
@@ -407,9 +406,10 @@ app.delete("/matches/:id", requireAdmin, async (req, res) => {
       }
     });
 
-    // Recalcular stats de todos los jugadores basándose en las partidas restantes
+    // 3️⃣ Obtener todas las partidas restantes
     const allMatches = await matchesCollection.find().toArray();
 
+    // 4️⃣ Recalcular stats acumuladas de cada jugador
     for (const match of allMatches) {
       const teamA = match.match.slice(0, 5);
       const teamB = match.match.slice(5, 10);
@@ -418,11 +418,15 @@ app.delete("/matches/:id", requireAdmin, async (req, res) => {
         const p = match.match[i];
         const playerTeam = i < 5 ? "A" : "B";
         const teamStats = playerTeam === "A" ? teamA : teamB;
+        const didWin = playerTeam === match.winnerTeam;
 
-        const { totalScore } = calculateMatchScore(p, playerTeam, teamStats);
+        // 5️⃣ Calcular score usando la misma función que en POST
+        const { totalScore } = calculateMatchScore(p, playerTeam, teamStats, didWin);
 
+        // Calcular headshots reales
         const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
 
+        // Actualizar stats acumulativos
         await playersCollection.updateOne(
           { name: p.name, tag: p.tag },
           {
@@ -439,7 +443,7 @@ app.delete("/matches/:id", requireAdmin, async (req, res) => {
               totalFD: p.FD,
               totalMK: p.MK,
               matchesPlayed: 1,
-              wins: playerTeam === match.winnerTeam ? 1 : 0,
+              wins: didWin ? 1 : 0,
               score: totalScore
             }
           }
