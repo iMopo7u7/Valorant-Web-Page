@@ -468,192 +468,191 @@ td:nth-child(8) { color: #fd971f; }
     <input type="text" id="search" placeholder="🔍 Buscar jugador (name#tag)">
     <ul id="matchesList"></ul>
   </div>
+<script>
+const API_BASE_URL = "https://valorant-10-mans.onrender.com";
+let matchesCache = [];
 
-  <script>
-    const API_BASE_URL = "https://valorant-10-mans.onrender.com";
-    let matchesCache = [];
+// -------------------
+// --- Score Frontend (igual al backend)
+// -------------------
+function calculateMatchScoreFront(playerStats, playerTeam, teamPlayers, didWin) {
+  const duelistas = ["Jett","Reyna","Phoenix","Raze","Yoru","Neon","Iso","Waylay"];
+  const iniciadores = ["Sova","Skye","KAY/O","Fade","Breach","Gekko","Tejo"];
+  const controladores = ["Omen","Viper","Brimstone","Astra","Clove","Harbor"];
+  const centinelas = ["Sage","Killjoy","Cypher","Chamber","Deadlock","Vyse"];
 
-    // -------------------
-    // --- Score Frontend (igual al backend)
-    // -------------------
-    function calculateMatchScoreFront(playerStats, playerTeam, allPlayers, didWin) {
-      const duelistas = ["Jett","Reyna","Phoenix","Raze","Yoru","Neon","Iso","Waylay"];
-      const iniciadores = ["Sova","Skye","KAY/O","Fade","Breach","Gekko","Tejo"];
-      const controladores = ["Omen","Viper","Brimstone","Astra","Clove","Harbor"];
-      const centinelas = ["Sage","Killjoy","Cypher","Chamber","Deadlock","Vyse"];
+  let roleWeight = {
+    kills: 1.0, deaths: -0.8, assists: 0.7, ACS: 0.05,
+    ADR: 0.05, DDDelta: 0.08, hsPercent: 0.1, KAST: 0.08,
+    FK: 2.0, FD: -1.0, MK: 1.2
+  };
 
-      let roleWeight = {
-        kills: 1.0, deaths: -0.8, assists: 0.7, ACS: 0.05,
-        ADR: 0.05, DDDelta: 0.08, hsPercent: 0.1, KAST: 0.08,
-        FK: 2.0, FD: -1.0, MK: 1.2
-      };
+  const char = playerStats.character;
+  if (duelistas.includes(char)) { roleWeight.kills = 1.5; roleWeight.FK = 2.5; roleWeight.MK = 1.5; }
+  else if (iniciadores.includes(char)) { roleWeight.KAST = 0.12; roleWeight.ADR = 0.07; }
+  else if (controladores.includes(char)) { roleWeight.KAST = 0.12; roleWeight.assists = 0.9; }
+  else if (centinelas.includes(char)) { roleWeight.KAST = 0.1; roleWeight.assists = 0.85; }
 
-      const char = playerStats.character;
-      if (duelistas.includes(char)) { roleWeight.kills = 1.5; roleWeight.FK = 2.5; roleWeight.MK = 1.5; }
-      else if (iniciadores.includes(char)) { roleWeight.KAST = 0.12; roleWeight.ADR = 0.07; }
-      else if (controladores.includes(char)) { roleWeight.KAST = 0.12; roleWeight.assists = 0.9; }
-      else if (centinelas.includes(char)) { roleWeight.KAST = 0.1; roleWeight.assists = 0.85; }
+  const base =
+    playerStats.kills * roleWeight.kills +
+    playerStats.deaths * roleWeight.deaths +
+    playerStats.assists * roleWeight.assists +
+    playerStats.ACS * roleWeight.ACS +
+    playerStats.ADR * roleWeight.ADR +
+    playerStats.DDDelta * roleWeight.DDDelta +
+    playerStats.hsPercent * roleWeight.hsPercent +
+    playerStats.KAST * roleWeight.KAST +
+    playerStats.FK * roleWeight.FK +
+    playerStats.FD * roleWeight.FD +
+    playerStats.MK * roleWeight.MK;
 
-      const base =
-        playerStats.kills * roleWeight.kills +
-        playerStats.deaths * roleWeight.deaths +
-        playerStats.assists * roleWeight.assists +
-        playerStats.ACS * roleWeight.ACS +
-        playerStats.ADR * roleWeight.ADR +
-        playerStats.DDDelta * roleWeight.DDDelta +
-        playerStats.hsPercent * roleWeight.hsPercent +
-        playerStats.KAST * roleWeight.KAST +
-        playerStats.FK * roleWeight.FK +
-        playerStats.FD * roleWeight.FD +
-        playerStats.MK * roleWeight.MK;
+  // Solo se comparan los stats del equipo
+  const teamBases = teamPlayers.map(p =>
+    p.kills * roleWeight.kills +
+    p.deaths * roleWeight.deaths +
+    p.assists * roleWeight.assists +
+    p.ACS * roleWeight.ACS +
+    p.ADR * roleWeight.ADR +
+    p.DDDelta * roleWeight.DDDelta +
+    p.hsPercent * roleWeight.hsPercent +
+    p.KAST * roleWeight.KAST +
+    p.FK * roleWeight.FK +
+    p.FD * roleWeight.FD +
+    p.MK * roleWeight.MK
+  );
 
-      const teamBases = allPlayers.map(p =>
-        p.kills * roleWeight.kills +
-        p.deaths * roleWeight.deaths +
-        p.assists * roleWeight.assists +
-        p.ACS * roleWeight.ACS +
-        p.ADR * roleWeight.ADR +
-        p.DDDelta * roleWeight.DDDelta +
-        p.hsPercent * roleWeight.hsPercent +
-        p.KAST * roleWeight.KAST +
-        p.FK * roleWeight.FK +
-        p.FD * roleWeight.FD +
-        p.MK * roleWeight.MK
-      );
+  const minBase = Math.min(...teamBases);
+  const maxBase = Math.max(...teamBases);
 
-      const minBase = Math.min(...teamBases);
-      const maxBase = Math.max(...teamBases);
+  const outMin = 5;
+  const outMax = 20;
 
-      const outMin = 5;
-      const outMax = 20;
+  let mapped;
+  if (maxBase === minBase) {
+    mapped = (outMin + outMax) / 2;
+  } else {
+    mapped = ((base - minBase) * (outMax - outMin)) / (maxBase - minBase) + outMin;
+  }
 
-      let mapped;
-      if (maxBase === minBase) {
-        mapped = (outMin + outMax) / 2;
-      } else {
-        mapped = ((base - minBase) * (outMax - outMin)) / (maxBase - minBase) + outMin;
-      }
+  let totalScore = Math.round(mapped);
+  if (!didWin) totalScore = Math.max(0, totalScore - 5);
 
-      let totalScore = Math.round(mapped);
-      if (!didWin) totalScore = Math.max(0, totalScore - 5);
+  return { totalScore };
+}
 
-      return { totalScore };
-    }
+// -------------------
+// --- Cargar partidas
+// -------------------
+async function loadMatches() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/matches`);
+    matchesCache = await res.json();
+    renderMatches(matchesCache);
+  } catch (err) {
+    console.error("Error cargando partidas:", err);
+  }
+}
 
-    // -------------------
-    // --- Cargar partidas
-    // -------------------
-    async function loadMatches() {
-      try {
-        const res = await fetch(`${API_BASE_URL}/matches`);
-        matchesCache = await res.json();
-        renderMatches(matchesCache);
-      } catch (err) {
-        console.error("Error cargando partidas:", err);
-      }
-    }
+// -------------------
+// --- Render Matches
+// -------------------
+function renderMatches(matches) {
+  const list = document.getElementById("matchesList");
+  list.innerHTML = "";
 
-    // -------------------
-    // --- Render Matches
-    // -------------------
-    function renderMatches(matches) {
-      const list = document.getElementById("matchesList");
-      list.innerHTML = "";
+  matches.forEach((match, idx) => {
+    const li = document.createElement("li");
 
-      matches.forEach((match, idx) => {
-        const li = document.createElement("li");
+    li.innerHTML = `
+      <div class="match-header">
+        <span>Mapa: ${match.map}</span>
+        <span>Score: ${match.score}</span>
+        <span>Ganador: Team ${match.winnerTeam}</span>
+        <span>${new Date(match.date).toLocaleString()}</span>
+      </div>
+      <div class="details" id="details-${idx}" style="display:none">
+        <h3>Estadísticas de jugadores</h3>
+        <div class="team-title">Team A</div>
+        ${renderTeam(match.match.slice(0, 5), match.winnerTeam, "A")}
+        <div class="team-title">Team B</div>
+        ${renderTeam(match.match.slice(5, 10), match.winnerTeam, "B")}
+      </div>
+    `;
 
-        li.innerHTML = `
-          <div class="match-header">
-            <span>Mapa: ${match.map}</span>
-            <span>Score: ${match.score}</span>
-            <span>Ganador: Team ${match.winnerTeam}</span>
-            <span>${new Date(match.date).toLocaleString()}</span>
-          </div>
-          <div class="details" id="details-${idx}" style="display:none">
-            <h3>Estadísticas de jugadores</h3>
-            <div class="team-title">Team A</div>
-            ${renderTeam(match.match.slice(0, 5), match.winnerTeam, "A", match.match)}
-            <div class="team-title">Team B</div>
-            ${renderTeam(match.match.slice(5, 10), match.winnerTeam, "B", match.match)}
-          </div>
-        `;
-
-        // Toggle (solo uno abierto a la vez)
-        li.addEventListener("click", () => {
-          document.querySelectorAll(".details").forEach(d => d.style.display = "none");
-          const details = document.getElementById(`details-${idx}`);
-          details.style.display = "block";
-        });
-
-        list.appendChild(li);
-      });
-    }
-
-    // -------------------
-    // --- Render Team
-    // -------------------
-    function renderTeam(teamPlayers, winnerTeam, teamLabel, allPlayers) {
-      return `
-        <table>
-          <thead>
-            <tr>
-              <th>Jugador</th>
-              <th>Agente</th>
-              <th>Puntos</th>
-              <th>K</th>
-              <th>D</th>
-              <th>A</th>
-              <th>ACS</th>
-              <th>ADR</th>
-              <th>DDΔ</th>
-              <th>HS%</th>
-              <th>KAST%</th>
-              <th>FK</th>
-              <th>FD</th>
-              <th>MK</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${teamPlayers.map((p, idx) => {
-              const { totalScore } = calculateMatchScoreFront(p, teamLabel, allPlayers, winnerTeam === teamLabel);
-              const scoreColor = totalScore >= 15 ? "lime" : totalScore >= 10 ? "orange" : "red";
-              return `
-                <tr>
-                  <td>${p.name}#${p.tag}</td>
-                  <td>${p.character}</td>
-                  <td style="color:${scoreColor};font-weight:bold">${totalScore}</td>
-                  <td>${p.kills}</td>
-                  <td>${p.deaths}</td>
-                  <td>${p.assists}</td>
-                  <td>${p.ACS}</td>
-                  <td>${p.ADR}</td>
-                  <td>${p.DDDelta}</td>
-                  <td>${p.hsPercent}%</td>
-                  <td>${p.KAST}%</td>
-                  <td>${p.FK}</td>
-                  <td>${p.FD}</td>
-                  <td>${p.MK}</td>
-                </tr>
-              `;
-            }).join("")}
-          </tbody>
-        </table>
-      `;
-    }
-
-    // -------------------
-    // --- Search filter
-    // -------------------
-    document.getElementById("search").addEventListener("input", (e) => {
-      const query = e.target.value.toLowerCase();
-      const filtered = matchesCache.filter(m =>
-        m.match.some(p => `${p.name}#${p.tag}`.toLowerCase().includes(query))
-      );
-      renderMatches(filtered);
+    li.addEventListener("click", () => {
+      document.querySelectorAll(".details").forEach(d => d.style.display = "none");
+      const details = document.getElementById(`details-${idx}`);
+      details.style.display = "block";
     });
 
-    loadMatches();
+    list.appendChild(li);
+  });
+}
+
+// -------------------
+// --- Render Team
+// -------------------
+function renderTeam(teamPlayers, winnerTeam, teamLabel) {
+  return `
+    <table>
+      <thead>
+        <tr>
+          <th>Jugador</th>
+          <th>Agente</th>
+          <th>Puntos</th>
+          <th>K</th>
+          <th>D</th>
+          <th>A</th>
+          <th>ACS</th>
+          <th>ADR</th>
+          <th>DDΔ</th>
+          <th>HS%</th>
+          <th>KAST%</th>
+          <th>FK</th>
+          <th>FD</th>
+          <th>MK</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${teamPlayers.map(p => {
+          const { totalScore } = calculateMatchScoreFront(p, teamLabel, teamPlayers, winnerTeam === teamLabel);
+          const scoreColor = totalScore >= 15 ? "lime" : totalScore >= 10 ? "orange" : "red";
+          return `
+            <tr>
+              <td>${p.name}#${p.tag}</td>
+              <td>${p.character}</td>
+              <td style="color:${scoreColor};font-weight:bold">${totalScore}</td>
+              <td>${p.kills}</td>
+              <td>${p.deaths}</td>
+              <td>${p.assists}</td>
+              <td>${p.ACS}</td>
+              <td>${p.ADR}</td>
+              <td>${p.DDDelta}</td>
+              <td>${p.hsPercent}%</td>
+              <td>${p.KAST}%</td>
+              <td>${p.FK}</td>
+              <td>${p.FD}</td>
+              <td>${p.MK}</td>
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+// -------------------
+// --- Search filter
+// -------------------
+document.getElementById("search").addEventListener("input", (e) => {
+  const query = e.target.value.toLowerCase();
+  const filtered = matchesCache.filter(m =>
+    m.match.some(p => `${p.name}#${p.tag}`.toLowerCase().includes(query))
+  );
+  renderMatches(filtered);
+});
+
+loadMatches();
   </script>
 </body>
 </html>
