@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadMatches();
 });
 
-// --- Funciones de jugadores y dashboard (igual que tu código original) ---
+// --- Funciones de jugadores y dashboard
 async function loadPlayers() {
   const res = await fetch('/players', { credentials:'include' });
   allPlayers = await res.json();
@@ -355,39 +355,48 @@ function populateTeams(){
 // --- NUEVA FUNCIONALIDAD: CARGAR JSON ---
 document.getElementById('loadJsonBtn').addEventListener('click', () => {
   let json;
-  try { json = JSON.parse(document.getElementById('jsonInput').value); }
-  catch (e) { alert('JSON inválido'); return; }
+  try { 
+    json = JSON.parse(document.getElementById('jsonInput').value); 
+  } catch (e) { 
+    alert('JSON inválido'); 
+    return; 
+  }
 
+  // Map, ganador y score
   document.getElementById('matchMap').value = json.map || '';
-  document.getElementById('winnerTeam').value = json.winnerTeam==='A'?'A':'B';
+  document.getElementById('winnerTeam').value = json.winner === 'A' ? 'A' : 'B';
   document.getElementById('matchScore').value = json.score || '';
 
-  function fillTeam(teamDiv, teamPlayers){
+  // Separar jugadores por equipo
+  const teamAPlayers = json.players.filter(p => p.equipo === 'A');
+  const teamBPlayers = json.players.filter(p => p.equipo === 'B');
+
+  function fillTeam(teamDiv, players) {
     const rows = [...teamDiv.querySelectorAll('.team-row')];
-    teamPlayers.forEach((p,i)=>{
-      if(i>=rows.length) return;
-      const row=rows[i];
-      row.querySelector('.player-select').value=`${p.name}||${p.tag}`;
-      row.querySelector('.character-select').value=p.character||'';
-      row.querySelector('.acs').value=p.ACS||0;
-      row.querySelector('.kill').value=p.kills||0;
-      row.querySelector('.death').value=p.deaths||0;
-      row.querySelector('.assist').value=p.assists||0;
-      row.querySelector('.hs').value=p.hsPercent||0;
-      row.querySelector('.fb').value=p.FK||0;
-      row.querySelector('.fd').value=p.FD||0;
-      row.querySelector('.mk').value=p.MK||0;
-      row.querySelector('.kast').value=p.KAST||0;
-      row.querySelector('.adr').value=p.ADR||0;
-      row.querySelector('.dddelta').value=p.DDDelta||0;
+    players.forEach((p, i) => {
+      if (i >= rows.length) return;
+      const row = rows[i];
+      row.querySelector('.player-select').value = `${p.nombre}||${p.tag}`;
+      row.querySelector('.character-select').value = p.personaje || '';
+      row.querySelector('.acs').value = p.ACS || 0;
+      row.querySelector('.kill').value = p.K || 0;
+      row.querySelector('.death').value = p.D || 0;
+      row.querySelector('.assist').value = p.A || 0;
+      row.querySelector('.hs').value = p['HS%'] || 0;
+      row.querySelector('.fb').value = p.FK || 0;
+      row.querySelector('.fd').value = p.FD || 0;
+      row.querySelector('.mk').value = p.MK || 0;
+      row.querySelector('.kast').value = p.KAST || 0;
+      row.querySelector('.adr').value = p.ADR || 0;
+      row.querySelector('.dddelta').value = p.DDDelta || 0;
     });
   }
 
-  fillTeam(document.getElementById('teamA'), json.teamA || []);
-  fillTeam(document.getElementById('teamB'), json.teamB || []);
+  fillTeam(document.getElementById('teamA'), teamAPlayers);
+  fillTeam(document.getElementById('teamB'), teamBPlayers);
 });
 
-// --- Registrar partida (igual que tu código original) ---
+// --- Registrar partida
 document.getElementById('submitMatchBtn').addEventListener('click', async () => {
   const map=document.getElementById('matchMap').value;
   const winnerTeam=document.getElementById('winnerTeam').value;
