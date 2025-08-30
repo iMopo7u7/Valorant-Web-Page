@@ -380,12 +380,74 @@ app.put("/matches/:id", requireAdmin, async (req, res) => {
 app.delete("/matches/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    const match = await matchesCollection.findOne({ _id: new ObjectId(id) });
-    if (!match) return res.status(404).json({ error: "Partida no encontrada" });
+    // Buscar la partida
+    const matchToDelete = await matchesCollection.findOne({ _id: new ObjectId(id) });
+    if (!matchToDelete) return res.status(404).json({ error: "Partida no encontrada" });
 
+    // Borrar la partida
     await matchesCollection.deleteOne({ _id: new ObjectId(id) });
 
-    res.json({ message: "✅ Partida eliminada correctamente" });
+    // Resetear stats de todos los jugadores
+    await playersCollection.updateMany({}, {
+      $set: {
+        totalKills: 0,
+        totalDeaths: 0,
+        totalAssists: 0,
+        totalACS: 0,
+        totalDDDelta: 0,
+        totalADR: 0,
+        totalHeadshotKills: 0,
+        totalKAST: 0,
+        totalFK: 0,
+        totalFD: 0,
+        totalMK: 0,
+        matchesPlayed: 0,
+        wins: 0,
+        score: 0
+      }
+    });
+
+    // Recalcular stats de todos los jugadores basándose en las partidas restantes
+    const allMatches = await matchesCollection.find().toArray();
+
+    for (const match of allMatches) {
+      const teamA = match.match.slice(0, 5);
+      const teamB = match.match.slice(5, 10);
+
+      for (let i = 0; i < match.match.length; i++) {
+        const p = match.match[i];
+        const playerTeam = i < 5 ? "A" : "B";
+        const teamStats = playerTeam === "A" ? teamA : teamB;
+
+        const { totalScore } = calculateMatchScore(p, playerTeam, teamStats);
+
+        const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
+
+        await playersCollection.updateOne(
+          { name: p.name, tag: p.tag },
+          {
+            $inc: {
+              totalKills: p.kills,
+              totalDeaths: p.deaths,
+              totalAssists: p.assists,
+              totalACS: p.ACS,
+              totalDDDelta: p.DDDelta,
+              totalADR: p.ADR,
+              totalHeadshotKills: headshotsThisMatch,
+              totalKAST: p.KAST,
+              totalFK: p.FK,
+              totalFD: p.FD,
+              totalMK: p.MK,
+              matchesPlayed: 1,
+              wins: playerTeam === match.winnerTeam ? 1 : 0,
+              score: totalScore
+            }
+          }
+        );
+      }
+    }
+
+    res.json({ message: "✅ Partida eliminada y estadísticas recalculadas correctamente" });
   } catch (err) {
     console.error("❌ Error eliminando partida:", err);
     res.status(500).json({ error: "Error eliminando partida" });
