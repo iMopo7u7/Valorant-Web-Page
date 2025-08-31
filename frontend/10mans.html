@@ -927,6 +927,20 @@ function updatePlayButton() {
     playBtn.classList.remove('pulse-glow');
   }
 }
+
+// ------------------------
+// --- Fetch Active Matches
+// ------------------------
+async function fetchActiveMatches() {
+  try {
+    const res = await fetch(`${API_BASE}/api/queue/active`, { credentials: "include", headers: { "Content-Type": "application/json" }});
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    activeMatches = await res.json();
+    renderMatches(activeMatches);
+  } catch (err) {
+    console.error("Error fetching active matches:", err);
+  }
+}
 </script>
 </body>
 </html>
