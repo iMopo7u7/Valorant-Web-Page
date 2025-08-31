@@ -220,16 +220,22 @@ async function renderLeaderboardTable(players) {
 // ==========================
 async function checkDiscordLogin() {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/users/me`, { credentials: "include" });
-    if (res.ok) {
-      const user = await res.json();
-      if (user?.discordId) {
-        // Usuario logeado, redirigir a la página de 10mans
-        window.location.href = "/10mans"; 
-      }
+    const res = await fetch("https://valorant-10-mans.onrender.com/api/users/me", {
+      method: "GET",
+      credentials: "include"  // 👈 importante
+    });
+
+    if (!res.ok) {
+      console.warn("Usuario no autenticado");
+      return null;
     }
+
+    const user = await res.json();
+    console.log("Usuario autenticado:", user);
+    return user;
   } catch (err) {
-    console.error("Error verificando sesión de Discord:", err);
+    console.error("Error en checkDiscordLogin:", err);
+    return null;
   }
 }
 
