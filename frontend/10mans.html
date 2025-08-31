@@ -846,33 +846,6 @@ async function joinQueue() {
   }
 }
 
-async function startMatch(match) {
-  try {
-    // Asignar mapa aleatorio
-    const map = MAPS[Math.floor(Math.random() * MAPS.length)];
-    // Mezclar jugadores aleatoriamente y dividir en equipos
-    const shuffledPlayers = [...match.players].sort(() => Math.random() - 0.5);
-    const teamA = shuffledPlayers.slice(0, Math.ceil(shuffledPlayers.length / 2));
-    const teamB = shuffledPlayers.slice(Math.ceil(shuffledPlayers.length / 2));
-    // Elegir líder aleatorio
-    const leaderId = shuffledPlayers[Math.floor(Math.random() * shuffledPlayers.length)];
-
-    const res = await fetch(`${API_BASE}/api/queue/start-match`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ matchId: match._id, map, teamA, teamB, leaderId })
-    });
-
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    await fetchActiveMatches();
-    alert(`¡Partida iniciada! Mapa: ${map}`);
-  } catch (err) {
-    console.error("Error starting match:", err);
-    alert("Error al iniciar partida");
-  }
-}
-
 // ------------------------
 // --- Render Partidas
 // ------------------------
