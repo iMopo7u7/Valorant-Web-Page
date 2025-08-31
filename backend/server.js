@@ -218,38 +218,54 @@ apiRouter.get("/queue/active", async (req, res) => {
   }
 });
 
+const TEST_PLAYER_COUNT = 2; // Cambiar a 10 para producción
+const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze"];
+
 apiRouter.post("/queue/join", requireAuth, async (req, res) => {
   try {
     const { matchId } = req.body;
+
+    // 1️⃣ Agregar jugador a la partida
     await customMatchesCollection.updateOne(
       { _id: new ObjectId(matchId) },
-      { $addToSet: { players: req.session.userId }, $set: { updatedAt: new Date() } }
+      { 
+        $addToSet: { players: req.session.userId },
+        $set: { updatedAt: new Date() }
+      }
     );
-    const matches = await customMatchesCollection.find({ status: { $in: ["waiting","in_progress"] } }).toArray();
-    res.json({ success: true, activeMatches: matches });
+
+    // 2️⃣ Obtener la partida actualizada
+    const match = await customMatchesCollection.findOne({ _id: new ObjectId(matchId) });
+
+    // 3️⃣ Revisar si hay suficientes jugadores para iniciar
+    if (match.players.length >= TEST_PLAYER_COUNT && match.status === "waiting") {
+      // Elegir mapa random
+      const map = MAPS[Math.floor(Math.random() * MAPS.length)];
+
+      // Mezclar jugadores y formar equipos
+      const shuffled = [...match.players].sort(() => 0.5 - Math.random());
+      const teamA = shuffled.slice(0, Math.floor(shuffled.length / 2));
+      const teamB = shuffled.slice(Math.floor(shuffled.length / 2));
+
+      // Elegir líder random
+      const leaderId = match.players[Math.floor(Math.random() * match.players.length)];
+
+      // Actualizar partida con equipos, mapa, líder y estado
+      await customMatchesCollection.updateOne(
+        { _id: new ObjectId(matchId) },
+        { $set: { map, teamA, teamB, leaderId, status: "in_progress", updatedAt: new Date() } }
+      );
+
+      // Actualizar el match para enviar al frontend
+      const updatedMatch = await customMatchesCollection.findOne({ _id: new ObjectId(matchId) });
+      return res.json({ success: true, match: updatedMatch, message: "Partida iniciada automáticamente" });
+    }
+
+    // 4️⃣ Si no hay suficientes jugadores, devolver solo la partida actual
+    res.json({ success: true, match, message: "Jugador agregado a la cola" });
+
   } catch (err) {
     console.error("Error en /queue/join:", err);
-    res.status(500).json({ error: "Error del servidor" });
-  }
-});
-
-apiRouter.post("/queue/start", requireAuth, async (req, res) => {
-  try {
-    const { map } = req.body;
-    const newMatch = {
-      leaderId: req.session.userId,
-      players: [req.session.userId],
-      map,
-      roomCode: "",
-      trackerUrl: "",
-      status: "waiting",
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    const result = await customMatchesCollection.insertOne(newMatch);
-    res.json({ success: true, match: { ...newMatch, _id: result.insertedId } });
-  } catch (err) {
-    console.error("Error en /queue/start:", err);
     res.status(500).json({ error: "Error del servidor" });
   }
 });
