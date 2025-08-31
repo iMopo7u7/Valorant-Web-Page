@@ -88,18 +88,6 @@ async function connectDB() {
 }
 
 // -------------------
-// --- Inicializar QueueManager y rutas API
-// -------------------
-connectDB().then(async () => {
-  await initQueueDB(db);
-  app.use("/api", newQueueRouter);
-
-  app.listen(PORT, () => {
-    console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-  });
-});
-
-// -------------------
 // --- Función de cálculo de score por partida ajustada por rol
 // -------------------
 function calculateMatchScore(playerStats, playerTeam, teamStats, didWin) {
