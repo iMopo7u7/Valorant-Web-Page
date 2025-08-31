@@ -61,6 +61,7 @@ router.get("/auth/discord/callback", async (req, res) => {
       body: params
     });
     const tokenData = await tokenRes.json();
+
     const userRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` }
     });
@@ -81,13 +82,19 @@ router.get("/auth/discord/callback", async (req, res) => {
       { upsert: true }
     );
 
-req.session.userId = discordUser.id;
-req.session.save(err => {
-  if (err) {
-    console.error("Error guardando sesión:", err);
-    return res.status(500).send("Error en login");
+    req.session.userId = discordUser.id;
+    req.session.save(err => {
+      if (err) {
+        console.error("Error guardando sesión:", err);
+        return res.status(500).send("Error en login");
+      }
+      res.redirect(process.env.FRONTEND_URL || "/");
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error en login Discord" });
   }
-  res.redirect(process.env.FRONTEND_URL || "/");
 });
 
 // -------------------
