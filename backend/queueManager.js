@@ -81,12 +81,13 @@ router.get("/auth/discord/callback", async (req, res) => {
       { upsert: true }
     );
 
-    req.session.userId = discordUser.id;
-    res.redirect(process.env.FRONTEND_URL || "/");
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error en login Discord" });
+req.session.userId = discordUser.id;
+req.session.save(err => {
+  if (err) {
+    console.error("Error guardando sesión:", err);
+    return res.status(500).send("Error en login");
   }
+  res.redirect(process.env.FRONTEND_URL || "/");
 });
 
 // -------------------
