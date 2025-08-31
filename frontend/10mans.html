@@ -821,24 +821,25 @@ function updateUserDisplay() {
 // ------------------------
 async function joinQueue() {
   try {
-    // Unirse a la cola
     const res = await fetch(`${API_BASE}/api/queue/join`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({}) // solo se une, no elige mapa
+      body: JSON.stringify({ matchId: activeMatches[0]?._id || null }) // usar la partida de prueba
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    activeMatches = await res.json();
+    
+    const data = await res.json();
+    const updatedMatch = data.match || data; // dependiendo de si el backend devuelve match directamente
+    activeMatches = activeMatches.map(m => m._id === updatedMatch._id ? updatedMatch : m);
+
     renderMatches(activeMatches);
     updateUserDisplay();
 
-    // Verificar si hay suficientes jugadores para crear la partida
-    const waitingMatch = activeMatches.find(m => m.status === 'waiting');
-    if (waitingMatch && waitingMatch.players.length >= TEST_PLAYER_COUNT) {
-      await startMatch(waitingMatch);
+    // Mensaje opcional si la partida acaba de iniciarse
+    if (updatedMatch.status === 'in_progress') {
+      alert(`¡Partida iniciada automáticamente! Mapa: ${updatedMatch.map}`);
     }
-
   } catch (err) {
     console.error("Error joining queue:", err);
     alert("Error al unirse a la cola");
