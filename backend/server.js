@@ -270,38 +270,57 @@ apiRouter.post("/queue/join", requireAuth, async (req, res) => {
   }
 });
 
+// -----------------------------
+// --- Subir código de sala
+// -----------------------------
 apiRouter.post("/queue/submit-room-code", requireAuth, async (req, res) => {
   try {
     const { matchId, roomCode } = req.body;
+
+    // Validar formato de room code (ejemplo: 5 letras mayúsculas)
+    if (!/^[A-Z]{5}$/.test(roomCode)) {
+      return res.status(400).json({ error: "Código de sala inválido. Debe tener 5 letras mayúsculas." });
+    }
+
     const result = await customMatchesCollection.updateOne(
       { _id: new ObjectId(matchId), leaderId: req.session.userId },
       { $set: { roomCode, updatedAt: new Date() } }
     );
-    
+
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: "Partida no encontrada o no eres el líder" });
     }
-    
-    res.json({ success: true });
+
+    res.json({ success: true, roomCode });
   } catch (err) {
     console.error("Error en /queue/submit-room-code:", err);
     res.status(500).json({ error: "Error del servidor" });
   }
 });
 
+// -----------------------------
+// --- Subir tracker y finalizar partida
+// -----------------------------
 apiRouter.post("/queue/submit-tracker", requireAuth, async (req, res) => {
   try {
     const { matchId, trackerUrl } = req.body;
+
+    // Validar URL de tracker (formato UUID de tracker.gg)
+    const trackerRegex = /^https:\/\/tracker\.gg\/valorant\/match\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    if (!trackerRegex.test(trackerUrl)) {
+      return res.status(400).json({ error: "URL de tracker inválida. Debe tener formato correcto de tracker.gg." });
+    }
+
     const result = await customMatchesCollection.updateOne(
       { _id: new ObjectId(matchId), leaderId: req.session.userId },
       { $set: { trackerUrl, status: "completed", updatedAt: new Date() } }
     );
-    
+
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: "Partida no encontrada o no eres el líder" });
     }
-    
-    res.json({ success: true });
+
+    res.json({ success: true, trackerUrl, status: "completed" });
   } catch (err) {
     console.error("Error en /queue/submit-tracker:", err);
     res.status(500).json({ error: "Error del servidor" });
