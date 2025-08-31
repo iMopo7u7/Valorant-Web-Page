@@ -906,10 +906,45 @@ function renderMatches(matches) {
 // ------------------------
 function renderLeaderInputs(match) {
   const isLeader = !!match;
-  document.getElementById('room-code-input').parentElement.style.display = isLeader ? 'flex' : 'none';
-  document.getElementById('submit-room-code').style.display = isLeader ? 'block' : 'none';
-  document.getElementById('tracker-url-input').parentElement.style.display = isLeader ? 'flex' : 'none';
-  document.getElementById('submit-tracker').style.display = isLeader ? 'block' : 'none';
+  const roomInputWrapper = document.getElementById('room-code-input').parentElement;
+  const trackerInputWrapper = document.getElementById('tracker-url-input').parentElement;
+  const submitRoomCodeBtn = document.getElementById('submit-room-code');
+  const submitTrackerBtn = document.getElementById('submit-tracker');
+
+  if (isLeader) {
+    roomInputWrapper.style.display = 'flex';
+    submitRoomCodeBtn.style.display = 'block';
+    trackerInputWrapper.style.display = 'flex';
+    submitTrackerBtn.style.display = 'block';
+
+    // Si ya existe room code, bloquear input
+    if (match.roomCode) {
+      document.getElementById('room-code-input').value = match.roomCode;
+      document.getElementById('room-code-input').disabled = true;
+      submitRoomCodeBtn.disabled = true;
+    } else {
+      document.getElementById('room-code-input').disabled = false;
+      submitRoomCodeBtn.disabled = false;
+      document.getElementById('room-code-input').value = '';
+    }
+
+    // Si ya existe tracker URL, bloquear input
+    if (match.trackerUrl) {
+      document.getElementById('tracker-url-input').value = match.trackerUrl;
+      document.getElementById('tracker-url-input').disabled = true;
+      submitTrackerBtn.disabled = true;
+    } else {
+      document.getElementById('tracker-url-input').disabled = false;
+      submitTrackerBtn.disabled = false;
+      document.getElementById('tracker-url-input').value = '';
+    }
+
+  } else {
+    roomInputWrapper.style.display = 'none';
+    submitRoomCodeBtn.style.display = 'none';
+    trackerInputWrapper.style.display = 'none';
+    submitTrackerBtn.style.display = 'none';
+  }
 }
 
 // ------------------------
@@ -978,14 +1013,25 @@ async function fetchActiveMatches() {
 // --- Update Room & Tracker
 // ------------------------
 async function updateRoomCode(matchId, roomCode) {
+  // Validar formato (5 letras mayúsculas)
+  if (!/^[A-Z]{5}$/.test(roomCode)) {
+    return alert("Código de sala inválido. Debe tener 5 letras mayúsculas.");
+  }
+
   try {
-    const res = await fetch(`${API_BASE}/api/queue/update-room`, {
+    const res = await fetch(`${API_BASE}/api/queue/submit-room-code`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ matchId, roomCode })
     });
     if (!res.ok) throw new Error("Error al actualizar código de sala");
+    const data = await res.json();
+
+    // Bloquear input y actualizar display
+    document.getElementById('room-code-input').value = data.roomCode;
+    document.getElementById('room-code-input').disabled = true;
+    document.getElementById('submit-room-code').disabled = true;
     alert("Código de sala actualizado correctamente");
   } catch (err) {
     console.error(err);
@@ -994,15 +1040,32 @@ async function updateRoomCode(matchId, roomCode) {
 }
 
 async function updateTrackerUrl(matchId, trackerUrl) {
+  // Validar URL tracker.gg
+  const trackerRegex = /^https:\/\/tracker\.gg\/valorant\/match\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  if (!trackerRegex.test(trackerUrl)) {
+    return alert("URL de tracker inválida. Debe tener formato correcto de tracker.gg.");
+  }
+
   try {
-    const res = await fetch(`${API_BASE}/api/queue/update-tracker`, {
+    const res = await fetch(`${API_BASE}/api/queue/submit-tracker`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ matchId, trackerUrl })
     });
     if (!res.ok) throw new Error("Error al subir tracker URL");
-    alert("Tracker URL subida correctamente");
+    const data = await res.json();
+
+    // Bloquear input y botones
+    document.getElementById('tracker-url-input').value = data.trackerUrl;
+    document.getElementById('tracker-url-input').disabled = true;
+    document.getElementById('submit-tracker').disabled = true;
+
+    alert("Tracker subido correctamente. Partida finalizada.");
+    
+    // Refrescar partidas activas
+    await fetchActiveMatches();
+
   } catch (err) {
     console.error(err);
     alert("Error al subir tracker URL");
