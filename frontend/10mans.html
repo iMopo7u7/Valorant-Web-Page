@@ -679,6 +679,8 @@ const API_BASE = "https://valorant-10-mans.onrender.com";
 let currentUser = null;
 let isQueueOpen = false;
 let activeMatches = [];
+const TEST_PLAYER_COUNT = 2; // Para test, luego cambiar a 10
+const MAPS = ["Ascent", "Bind", "Haven", "Split", "Icebox"]; // Mapas disponibles
 
 // ------------------------
 // --- Inicialización
@@ -715,74 +717,19 @@ function setupTabNavigation() {
 // --- Event Listeners
 // ------------------------
 function setupEventListeners() {
-  // Discord login
   const discordLoginBtn = document.getElementById('discord-login-btn');
-  if (discordLoginBtn) {
-    discordLoginBtn.addEventListener('click', () => {
-      window.location.href = `${API_BASE}/api/auth/discord`;
-    });
-  }
+  if (discordLoginBtn) discordLoginBtn.addEventListener('click', () => window.location.href = `${API_BASE}/api/auth/discord`);
 
-  // Play button
   const playBtn = document.getElementById('play-btn');
-  if (playBtn) {
-    playBtn.addEventListener('click', async () => {
-      if (!currentUser) {
-        alert("Debes iniciar sesión con Discord primero");
-        return;
-      }
-      if (!currentUser.riotId) {
-        alert("Debes registrar tu Riot ID para unirte a las partidas");
-        return;
-      }
-      if (!isQueueOpen) {
-        alert("La cola está cerrada en este momento");
-        return;
-      }
-      if (activeMatches.length === 0) {
-        // Crear nueva partida si no hay activas
-        await createNewMatch();
-        return;
-      }
-      // Unirse a la primera partida activa
-      const matchId = activeMatches[0]._id;
-      await joinQueue(matchId);
-    });
-  }
+  if (playBtn) playBtn.addEventListener('click', async () => {
+    if (!currentUser) return alert("Debes iniciar sesión con Discord primero");
+    if (!currentUser.riotId) return alert("Debes registrar tu Riot ID para unirte a las partidas");
+    if (!isQueueOpen) return alert("La cola está cerrada en este momento");
 
-  // Room code submission
-  const submitRoomCodeBtn = document.getElementById('submit-room-code');
-  if (submitRoomCodeBtn) {
-    submitRoomCodeBtn.addEventListener('click', async () => {
-      const roomCode = document.getElementById('room-code-input')?.value.trim();
-      if (!roomCode) return alert("Por favor ingresa el código de la sala");
-      const match = activeMatches.find(m => m.leaderId === currentUser?.discordId);
-      if (!match) return alert("No eres líder de ninguna partida");
-      await submitRoomCode(match._id, roomCode);
-      if (document.getElementById('room-code-input')) {
-        document.getElementById('room-code-input').value = '';
-      }
-      await fetchActiveMatches();
-    });
-  }
+    // Unirse a la cola
+    await joinQueue();
+  });
 
-  // Tracker submission
-  const submitTrackerBtn = document.getElementById('submit-tracker');
-  if (submitTrackerBtn) {
-    submitTrackerBtn.addEventListener('click', async () => {
-      const trackerUrl = document.getElementById('tracker-url-input')?.value.trim();
-      if (!trackerUrl) return alert("Por favor ingresa la URL del tracker");
-      const match = activeMatches.find(m => m.leaderId === currentUser?.discordId);
-      if (!match) return alert("No eres líder de ninguna partida");
-      await submitTracker(match._id, trackerUrl);
-      if (document.getElementById('tracker-url-input')) {
-        document.getElementById('tracker-url-input').value = '';
-      }
-      await fetchActiveMatches();
-    });
-  }
-
-  // Riot ID update
   const riotIdForm = document.getElementById('riot-id-form');
   if (riotIdForm) {
     riotIdForm.addEventListener('submit', async (e) => {
@@ -802,27 +749,11 @@ function setupEventListeners() {
 // ------------------------
 async function fetchCurrentUser() {
   try {
-    const res = await fetch(`${API_BASE}/api/users/me`, { 
-      credentials: "include",
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (res.status === 401) {
-      // No autenticado, es normal
-      currentUser = null;
-      updateUserDisplay();
-      return;
-    }
-    
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    
+    const res = await fetch(`${API_BASE}/api/users/me`, { credentials: "include", headers: { 'Content-Type': 'application/json' }});
+    if (res.status === 401) { currentUser = null; updateUserDisplay(); return; }
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     currentUser = await res.json();
     updateUserDisplay();
-    
   } catch (err) {
     console.error("Error fetching user:", err);
     currentUser = null;
@@ -834,17 +765,11 @@ async function updateRiotId(riotId) {
   try {
     const res = await fetch(`${API_BASE}/api/users/update-riot`, {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ riotId })
     });
-    
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const data = await res.json();
     if (data.success) {
       currentUser.riotId = riotId;
@@ -869,26 +794,17 @@ function updateUserDisplay() {
     if (loggedOutState) loggedOutState.classList.add('hidden');
     if (loggedInState) loggedInState.classList.remove('hidden');
     if (loginBtn) loginBtn.classList.add('hidden');
-    
     const userAvatar = document.getElementById('user-avatar');
     const userName = document.getElementById('user-name');
     const userRiotId = document.getElementById('user-riot-id');
-    
     if (userAvatar) userAvatar.src = currentUser.avatar ? 
-      `https://cdn.discordapp.com/avatars/${currentUser.discordId}/${currentUser.avatar}.png` : 
-      '/default-avatar.png';
-    
+      `https://cdn.discordapp.com/avatars/${currentUser.discordId}/${currentUser.avatar}.png` : '/default-avatar.png';
     if (userName) userName.textContent = `${currentUser.username}#${currentUser.discriminator}`;
     if (userRiotId) userRiotId.textContent = currentUser.riotId || "No registrado";
     if (riotIdForm) riotIdForm.classList.remove('hidden');
-
-    // Mostrar sección de líder si es líder de alguna partida
     if (leaderSection) {
-      if (activeMatches.some(m => m.leaderId === currentUser.discordId)) {
-        leaderSection.classList.remove('hidden');
-      } else {
-        leaderSection.classList.add('hidden');
-      }
+      if (activeMatches.some(m => m.leaderId === currentUser.discordId)) leaderSection.classList.remove('hidden');
+      else leaderSection.classList.add('hidden');
     }
   } else {
     if (loggedOutState) loggedOutState.classList.remove('hidden');
@@ -897,189 +813,62 @@ function updateUserDisplay() {
     if (leaderSection) leaderSection.classList.add('hidden');
     if (riotIdForm) riotIdForm.classList.add('hidden');
   }
-  
   updatePlayButton();
 }
 
 // ------------------------
-// --- Cola y Partidas
+// --- Cola y Partidas con asignación automática
 // ------------------------
-async function createNewMatch() {
+async function joinQueue() {
   try {
-    const map = prompt("¿En qué mapa quieres jugar? (Ej: Ascent, Bind, Haven...)");
-    if (!map) return;
-    
-    const res = await fetch(`${API_BASE}/api/queue/start`, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({ map })
-    });
-    
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    
-    const data = await res.json();
-    if (data.success) {
-      await fetchActiveMatches();
-      alert("Partida creada exitosamente");
-    }
-  } catch (err) {
-    console.error("Error creating match:", err);
-    alert("Error al crear partida");
-  }
-}
-
-async function joinQueue(matchId) {
-  try {
+    // Unirse a la cola
     const res = await fetch(`${API_BASE}/api/queue/join`, {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ matchId })
+      body: JSON.stringify({}) // solo se une, no elige mapa
     });
-    
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    activeMatches = await res.json();
+    renderMatches(activeMatches);
+    updateUserDisplay();
+
+    // Verificar si hay suficientes jugadores para crear la partida
+    const waitingMatch = activeMatches.find(m => m.status === 'waiting');
+    if (waitingMatch && waitingMatch.players.length >= TEST_PLAYER_COUNT) {
+      await startMatch(waitingMatch);
     }
-    
-    const data = await res.json();
-    if (data.success) {
-      activeMatches = data.activeMatches || [];
-      renderMatches(activeMatches);
-      updateUserDisplay();
-      alert("Te has unido a la cola exitosamente");
-    }
+
   } catch (err) {
     console.error("Error joining queue:", err);
     alert("Error al unirse a la cola");
   }
 }
 
-async function submitRoomCode(matchId, roomCode) {
+async function startMatch(match) {
   try {
-    const res = await fetch(`${API_BASE}/api/queue/submit-room-code`, {
+    // Asignar mapa aleatorio
+    const map = MAPS[Math.floor(Math.random() * MAPS.length)];
+    // Mezclar jugadores aleatoriamente y dividir en equipos
+    const shuffledPlayers = [...match.players].sort(() => Math.random() - 0.5);
+    const teamA = shuffledPlayers.slice(0, Math.ceil(shuffledPlayers.length / 2));
+    const teamB = shuffledPlayers.slice(Math.ceil(shuffledPlayers.length / 2));
+    // Elegir líder aleatorio
+    const leaderId = shuffledPlayers[Math.floor(Math.random() * shuffledPlayers.length)];
+
+    const res = await fetch(`${API_BASE}/api/queue/start-match`, {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ matchId, roomCode })
+      body: JSON.stringify({ matchId: match._id, map, teamA, teamB, leaderId })
     });
-    
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    
-    const data = await res.json();
-    if (data.success) {
-      alert("Código de sala enviado exitosamente");
-    }
+
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    await fetchActiveMatches();
+    alert(`¡Partida iniciada! Mapa: ${map}`);
   } catch (err) {
-    console.error("Error submitting room code:", err);
-    alert("Error al enviar código de sala");
-  }
-}
-
-async function submitTracker(matchId, trackerUrl) {
-  try {
-    const res = await fetch(`${API_BASE}/api/queue/submit-tracker`, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({ matchId, trackerUrl })
-    });
-    
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    
-    const data = await res.json();
-    if (data.success) {
-      alert("Tracker URL enviada exitosamente");
-    }
-  } catch (err) {
-    console.error("Error submitting tracker:", err);
-    alert("Error al enviar tracker URL");
-  }
-}
-
-async function fetchActiveMatches() {
-  try {
-    const res = await fetch(`${API_BASE}/api/queue/active`);
-    
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    
-    activeMatches = await res.json();
-    renderMatches(activeMatches);
-    updateUserDisplay();
-  } catch (err) {
-    console.error("Error fetching active matches:", err);
-    // No mostrar error al usuario para evitar spam en la consola
-  }
-}
-
-function updateQueueStatus() {
-  const now = new Date();
-  const openHour = 0, closeHour = 23;
-  const playBtn = document.getElementById('play-btn');
-  const queueStatus = document.getElementById('queue-status');
-  const riotWarning = document.getElementById('riot-id-warning');
-
-  if (now.getHours() >= openHour && now.getHours() < closeHour) {
-    isQueueOpen = true;
-    if (queueStatus) {
-      queueStatus.innerHTML = '<span class="text-success">✅ COLA ABIERTA</span>';
-    }
-  } else {
-    isQueueOpen = false;
-    let hours = now.getHours() < openHour ? openHour - now.getHours() : 24 - now.getHours() + openHour;
-    let minutes = 60 - now.getMinutes();
-    if (queueStatus) {
-      queueStatus.innerHTML = `⏰ COLA CERRADA - Abre en: <span class="text-primary font-bold">${hours}h ${minutes}m</span>`;
-    }
-  }
-
-  updatePlayButton();
-}
-
-function updatePlayButton() {
-  const playBtn = document.getElementById('play-btn');
-  const riotWarning = document.getElementById('riot-id-warning');
-  
-  if (!playBtn) return;
-
-  const canPlay = isQueueOpen && currentUser?.riotId;
-
-  if (canPlay) {
-    playBtn.textContent = '⚔️ UNIRSE A LA COLA';
-    playBtn.disabled = false;
-    playBtn.classList.add('pulse-glow');
-    if (riotWarning) riotWarning.classList.add('hidden');
-  } else if (!isQueueOpen) {
-    playBtn.textContent = '⏰ COLA CERRADA';
-    playBtn.disabled = true;
-    playBtn.classList.remove('pulse-glow');
-    if (riotWarning) riotWarning.classList.add('hidden');
-  } else if (!currentUser?.riotId) {
-    playBtn.textContent = '⚔️ UNIRSE A LA COLA';
-    playBtn.disabled = true;
-    playBtn.classList.remove('pulse-glow');
-    if (riotWarning && currentUser) riotWarning.classList.remove('hidden');
-  } else if (!currentUser) {
-    playBtn.textContent = '🔒 INICIA SESIÓN PRIMERO';
-    playBtn.disabled = true;
-    playBtn.classList.remove('pulse-glow');
-    if (riotWarning) riotWarning.classList.add('hidden');
+    console.error("Error starting match:", err);
+    alert("Error al iniciar partida");
   }
 }
 
@@ -1091,108 +880,78 @@ function renderMatches(matches) {
   if (!container) return;
 
   if (!matches || matches.length === 0) {
-    container.innerHTML = `
-      <div class="card">
-        <div class="card-content text-center">
-          <p class="text-muted">No hay partidas activas en este momento</p>
-          ${currentUser?.riotId ? '<button id="create-match-btn" class="btn btn-primary mt-3">Crear Partida</button>' : ''}
-        </div>
-      </div>
-    `;
-    
-    // Agregar event listener al botón de crear partida
-    const createMatchBtn = document.getElementById('create-match-btn');
-    if (createMatchBtn) {
-      createMatchBtn.addEventListener('click', createNewMatch);
-    }
-    
+    container.innerHTML = `<div class="card"><div class="card-content text-center"><p class="text-muted">No hay partidas activas</p></div></div>`;
     return;
   }
 
   container.innerHTML = matches.map(match => {
-    // Para simulación - en la realidad necesitarías obtener info de usuarios
     const playersCount = match.players ? match.players.length : 0;
-    
     return `
       <div class="card match-card">
         <div class="card-content">
           <div class="flex justify-between items-center mb-3">
             <span class="badge badge-${match.status === 'waiting' ? 'warning' : 'success'}">${match.status.toUpperCase()}</span>
-            <span class="text-sm text-muted">${playersCount}/10 jugadores</span>
+            <span class="text-sm text-muted">${playersCount}/${TEST_PLAYER_COUNT} jugadores</span>
           </div>
-          
           <div class="flex justify-between items-center mb-4">
             <div>
-              <h4 class="font-bold">${match.map || 'Mapa no especificado'}</h4>
+              <h4 class="font-bold">${match.map || 'Mapa aleatorio'}</h4>
               <p class="text-sm text-muted">Líder: ${match.leaderId === currentUser?.discordId ? 'Tú' : 'Otro jugador'}</p>
             </div>
-            ${match.roomCode ? `
-              <div class="text-right">
-                <p class="text-xs text-muted">Código de sala:</p>
-                <p class="font-mono font-bold">${match.roomCode}</p>
-              </div>
-            ` : ''}
-          </div>
-
-          <div class="flex justify-between items-center">
-            <div>
-              ${match.status === 'waiting' ? `
-                <button class="btn btn-sm btn-primary join-match-btn" data-match-id="${match._id}">
-                  ${match.players?.includes(currentUser?.discordId) ? '✅ Unido' : 'Unirse'}
-                </button>
-              ` : ''}
-            </div>
-            
-            ${match.leaderId === currentUser?.discordId ? `
-              <div class="flex gap-2">
-                ${!match.roomCode ? `
-                  <input type="text" placeholder="Código sala" class="input input-sm" 
-                         id="room-code-input-${match._id}">
-                  <button class="btn btn-sm btn-secondary submit-room-code-btn" 
-                          data-match-id="${match._id}">Enviar código</button>
-                ` : ''}
-                
-                ${!match.trackerUrl ? `
-                  <input type="text" placeholder="URL Tracker" class="input input-sm" 
-                         id="tracker-url-input-${match._id}">
-                  <button class="btn btn-sm btn-success submit-tracker-btn" 
-                          data-match-id="${match._id}">Enviar tracker</button>
-                ` : ''}
-              </div>
-            ` : ''}
           </div>
         </div>
       </div>
     `;
   }).join('');
+}
 
-  // Agregar event listeners dinámicos
-  document.querySelectorAll('.join-match-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const matchId = e.target.dataset.matchId;
-      joinQueue(matchId);
-    });
-  });
+// ------------------------
+// --- Cola Status
+// ------------------------
+function updateQueueStatus() {
+  const now = new Date();
+  const openHour = 0, closeHour = 23;
+  const playBtn = document.getElementById('play-btn');
+  const queueStatus = document.getElementById('queue-status');
+  const riotWarning = document.getElementById('riot-id-warning');
 
-  document.querySelectorAll('.submit-room-code-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const matchId = e.target.dataset.matchId;
-      const roomCode = document.getElementById(`room-code-input-${matchId}`)?.value.trim();
-      if (roomCode) {
-        submitRoomCode(matchId, roomCode);
-      }
-    });
-  });
+  if (now.getHours() >= openHour && now.getHours() < closeHour) {
+    isQueueOpen = true;
+    if (queueStatus) queueStatus.innerHTML = '<span class="text-success">✅ COLA ABIERTA</span>';
+  } else {
+    isQueueOpen = false;
+    let hours = now.getHours() < openHour ? openHour - now.getHours() : 24 - now.getHours() + openHour;
+    let minutes = 60 - now.getMinutes();
+    if (queueStatus) queueStatus.innerHTML = `⏰ COLA CERRADA - Abre en: <span class="text-primary font-bold">${hours}h ${minutes}m</span>`;
+  }
+  updatePlayButton();
+}
 
-  document.querySelectorAll('.submit-tracker-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const matchId = e.target.dataset.matchId;
-      const trackerUrl = document.getElementById(`tracker-url-input-${matchId}`)?.value.trim();
-      if (trackerUrl) {
-        submitTracker(matchId, trackerUrl);
-      }
-    });
-  });
+function updatePlayButton() {
+  const playBtn = document.getElementById('play-btn');
+  const riotWarning = document.getElementById('riot-id-warning');
+  if (!playBtn) return;
+  const canPlay = isQueueOpen && currentUser?.riotId;
+
+  if (canPlay) {
+    playBtn.textContent = '⚔️ UNIRSE A LA COLA';
+    playBtn.disabled = false;
+    playBtn.classList.add('pulse-glow');
+    if (riotWarning) riotWarning.classList.add('hidden');
+  } else if (!isQueueOpen) {
+    playBtn.textContent = '⏰ COLA CERRADA';
+    playBtn.disabled = true;
+    playBtn.classList.remove('pulse-glow');
+  } else if (!currentUser?.riotId) {
+    playBtn.textContent = '⚔️ UNIRSE A LA COLA';
+    playBtn.disabled = true;
+    playBtn.classList.remove('pulse-glow');
+    if (riotWarning && currentUser) riotWarning.classList.remove('hidden');
+  } else if (!currentUser) {
+    playBtn.textContent = '🔒 INICIA SESIÓN PRIMERO';
+    playBtn.disabled = true;
+    playBtn.classList.remove('pulse-glow');
+  }
 }
 </script>
 </body>
