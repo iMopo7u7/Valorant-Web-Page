@@ -726,7 +726,6 @@ function setupEventListeners() {
     if (!currentUser.riotId) return alert("Debes registrar tu Riot ID para unirte a las partidas");
     if (!isQueueOpen) return alert("La cola está cerrada en este momento");
 
-    // Unirse a la cola
     await joinQueue();
   });
 
@@ -742,6 +741,28 @@ function setupEventListeners() {
       }
     });
   }
+
+  // Leader Inputs
+  const submitRoomCodeBtn = document.getElementById('submit-room-code');
+  const roomCodeInput = document.getElementById('room-code-input');
+  const submitTrackerBtn = document.getElementById('submit-tracker');
+  const trackerInput = document.getElementById('tracker-url-input');
+
+  submitRoomCodeBtn?.addEventListener('click', async () => {
+    const match = activeMatches.find(m => m.leaderId === currentUser?.discordId);
+    if (!match) return alert("Solo el líder puede enviar el código de sala");
+    const code = roomCodeInput.value.trim();
+    if (!code) return alert("Ingresa un código válido");
+    await updateRoomCode(match._id, code);
+  });
+
+  submitTrackerBtn?.addEventListener('click', async () => {
+    const match = activeMatches.find(m => m.leaderId === currentUser?.discordId);
+    if (!match) return alert("Solo el líder puede subir el tracker");
+    const url = trackerInput.value.trim();
+    if (!url) return alert("Ingresa una URL válida");
+    await updateTrackerUrl(match._id, url);
+  });
 }
 
 // ------------------------
@@ -791,33 +812,30 @@ function updateUserDisplay() {
   const riotIdForm = document.getElementById('riot-id-form');
 
   if (currentUser) {
-    if (loggedOutState) loggedOutState.classList.add('hidden');
-    if (loggedInState) loggedInState.classList.remove('hidden');
-    if (loginBtn) loginBtn.classList.add('hidden');
-    const userAvatar = document.getElementById('user-avatar');
-    const userName = document.getElementById('user-name');
-    const userRiotId = document.getElementById('user-riot-id');
-    if (userAvatar) userAvatar.src = currentUser.avatar ? 
+    loggedOutState?.classList.add('hidden');
+    loggedInState?.classList.remove('hidden');
+    loginBtn?.classList.add('hidden');
+    document.getElementById('user-avatar').src = currentUser.avatar ? 
       `https://cdn.discordapp.com/avatars/${currentUser.discordId}/${currentUser.avatar}.png` : '/default-avatar.png';
-    if (userName) userName.textContent = `${currentUser.username}#${currentUser.discriminator}`;
-    if (userRiotId) userRiotId.textContent = currentUser.riotId || "No registrado";
-    if (riotIdForm) riotIdForm.classList.remove('hidden');
+    document.getElementById('user-name').textContent = `${currentUser.username}#${currentUser.discriminator}`;
+    document.getElementById('user-riot-id').textContent = currentUser.riotId || "No registrado";
+    riotIdForm?.classList.remove('hidden');
     if (leaderSection) {
       if (activeMatches.some(m => m.leaderId === currentUser.discordId)) leaderSection.classList.remove('hidden');
       else leaderSection.classList.add('hidden');
     }
   } else {
-    if (loggedOutState) loggedOutState.classList.remove('hidden');
-    if (loggedInState) loggedInState.classList.add('hidden');
-    if (loginBtn) loginBtn.classList.remove('hidden');
-    if (leaderSection) leaderSection.classList.add('hidden');
-    if (riotIdForm) riotIdForm.classList.add('hidden');
+    loggedOutState?.classList.remove('hidden');
+    loggedInState?.classList.add('hidden');
+    loginBtn?.classList.remove('hidden');
+    leaderSection?.classList.add('hidden');
+    riotIdForm?.classList.add('hidden');
   }
   updatePlayButton();
 }
 
 // ------------------------
-// --- Cola y Partidas con asignación automática
+// --- Cola y Partidas
 // ------------------------
 async function joinQueue() {
   try {
@@ -825,18 +843,17 @@ async function joinQueue() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ matchId: activeMatches[0]?._id || null }) // usar la partida de prueba
+      body: JSON.stringify({ matchId: activeMatches[0]?._id || null })
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     
     const data = await res.json();
-    const updatedMatch = data.match || data; // dependiendo de si el backend devuelve match directamente
+    const updatedMatch = data.match || data;
     activeMatches = activeMatches.map(m => m._id === updatedMatch._id ? updatedMatch : m);
 
     renderMatches(activeMatches);
     updateUserDisplay();
 
-    // Mensaje opcional si la partida acaba de iniciarse
     if (updatedMatch.status === 'in_progress') {
       alert(`¡Partida iniciada automáticamente! Mapa: ${updatedMatch.map}`);
     }
@@ -860,6 +877,7 @@ function renderMatches(matches) {
 
   container.innerHTML = matches.map(match => {
     const playersCount = match.players ? match.players.length : 0;
+    const isLeader = currentUser?.discordId === match.leaderId;
     return `
       <div class="card match-card">
         <div class="card-content">
@@ -870,13 +888,28 @@ function renderMatches(matches) {
           <div class="flex justify-between items-center mb-4">
             <div>
               <h4 class="font-bold">${match.map || 'Mapa aleatorio'}</h4>
-              <p class="text-sm text-muted">Líder: ${match.leaderId === currentUser?.discordId ? 'Tú' : 'Otro jugador'}</p>
+              <p class="text-sm text-muted">Líder: ${isLeader ? 'Tú' : 'Otro jugador'}</p>
             </div>
           </div>
         </div>
       </div>
     `;
   }).join('');
+
+  // Mostrar u ocultar inputs del líder
+  const leaderMatch = matches.find(m => m.leaderId === currentUser?.discordId);
+  renderLeaderInputs(leaderMatch);
+}
+
+// ------------------------
+// --- Inputs Líder
+// ------------------------
+function renderLeaderInputs(match) {
+  const isLeader = !!match;
+  document.getElementById('room-code-input').parentElement.style.display = isLeader ? 'flex' : 'none';
+  document.getElementById('submit-room-code').style.display = isLeader ? 'block' : 'none';
+  document.getElementById('tracker-url-input').parentElement.style.display = isLeader ? 'flex' : 'none';
+  document.getElementById('submit-tracker').style.display = isLeader ? 'block' : 'none';
 }
 
 // ------------------------
@@ -885,19 +918,17 @@ function renderMatches(matches) {
 function updateQueueStatus() {
   const now = new Date();
   const openHour = 0, closeHour = 23;
-  const playBtn = document.getElementById('play-btn');
   const queueStatus = document.getElementById('queue-status');
   const riotWarning = document.getElementById('riot-id-warning');
 
-  if (now.getHours() >= openHour && now.getHours() < closeHour) {
-    isQueueOpen = true;
-    if (queueStatus) queueStatus.innerHTML = '<span class="text-success">✅ COLA ABIERTA</span>';
-  } else {
-    isQueueOpen = false;
-    let hours = now.getHours() < openHour ? openHour - now.getHours() : 24 - now.getHours() + openHour;
-    let minutes = 60 - now.getMinutes();
-    if (queueStatus) queueStatus.innerHTML = `⏰ COLA CERRADA - Abre en: <span class="text-primary font-bold">${hours}h ${minutes}m</span>`;
+  isQueueOpen = now.getHours() >= openHour && now.getHours() < closeHour;
+
+  if (queueStatus) {
+    queueStatus.innerHTML = isQueueOpen 
+      ? '<span class="text-success">✅ COLA ABIERTA</span>'
+      : `⏰ COLA CERRADA - Abre en: ${openHour}h`;
   }
+
   updatePlayButton();
 }
 
@@ -911,7 +942,7 @@ function updatePlayButton() {
     playBtn.textContent = '⚔️ UNIRSE A LA COLA';
     playBtn.disabled = false;
     playBtn.classList.add('pulse-glow');
-    if (riotWarning) riotWarning.classList.add('hidden');
+    riotWarning?.classList.add('hidden');
   } else if (!isQueueOpen) {
     playBtn.textContent = '⏰ COLA CERRADA';
     playBtn.disabled = true;
@@ -920,7 +951,7 @@ function updatePlayButton() {
     playBtn.textContent = '⚔️ UNIRSE A LA COLA';
     playBtn.disabled = true;
     playBtn.classList.remove('pulse-glow');
-    if (riotWarning && currentUser) riotWarning.classList.remove('hidden');
+    riotWarning?.classList.remove('hidden');
   } else if (!currentUser) {
     playBtn.textContent = '🔒 INICIA SESIÓN PRIMERO';
     playBtn.disabled = true;
@@ -937,8 +968,44 @@ async function fetchActiveMatches() {
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     activeMatches = await res.json();
     renderMatches(activeMatches);
+    updateUserDisplay();
   } catch (err) {
     console.error("Error fetching active matches:", err);
+  }
+}
+
+// ------------------------
+// --- Update Room & Tracker
+// ------------------------
+async function updateRoomCode(matchId, roomCode) {
+  try {
+    const res = await fetch(`${API_BASE}/api/queue/update-room`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ matchId, roomCode })
+    });
+    if (!res.ok) throw new Error("Error al actualizar código de sala");
+    alert("Código de sala actualizado correctamente");
+  } catch (err) {
+    console.error(err);
+    alert("Error al actualizar código de sala");
+  }
+}
+
+async function updateTrackerUrl(matchId, trackerUrl) {
+  try {
+    const res = await fetch(`${API_BASE}/api/queue/update-tracker`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ matchId, trackerUrl })
+    });
+    if (!res.ok) throw new Error("Error al subir tracker URL");
+    alert("Tracker URL subida correctamente");
+  } catch (err) {
+    console.error(err);
+    alert("Error al subir tracker URL");
   }
 }
 </script>
