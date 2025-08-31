@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Valorant 10-Mans System</title>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
+    
+    /* Reset and base styles */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        /* Colors */
+        --bg-primary: hsl(220, 13%, 9%);
+        --bg-secondary: hsl(220, 13%, 12%);
+        --bg-card: hsl(220, 13%, 15%);
+        --valorant-red: hsl(351, 100%, 61%);
+        --valorant-blue: hsl(208, 100%, 70%);
+        --text-primary: hsl(0, 0%, 95%);
+        --text-secondary: hsl(0, 0%, 70%);
+        --text-muted: hsl(0, 0%, 50%);
+        --border-color: hsl(0, 0%, 20%);
+        --accent: hsl(351, 100%, 61%);
+        
+        /* Fonts */
+        --font-orbitron: 'Orbitron', monospace;
+        --font-rajdhani: 'Rajdhani', sans-serif;
+        
+        /* Animations */
+        --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-fast: all 0.2s ease-out;
+        
+        /* Gradients */
+        --gradient-valorant: linear-gradient(135deg, hsl(351 100% 61% / 0.2), hsl(208 100% 70% / 0.1));
+        --gradient-neon: linear-gradient(90deg, hsl(351 100% 61%) 0%, hsl(351 85% 65%) 100%);
+        --gradient-card: linear-gradient(145deg, hsl(220 13% 15%) 0%, hsl(220 13% 12%) 100%);
+        
+        /* Shadows */
+        --shadow-neon: 0 0 20px hsl(351 100% 61% / 0.3);
+        --shadow-card: 0 4px 24px hsl(220 30% 6% / 0.5);
+        --shadow-intense: 0 0 40px hsl(351 100% 61% / 0.5);
+    }
+
+    body {
+        font-family: var(--font-rajdhani);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        line-height: 1.6;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+    }
+
+    /* Header */
+    .header {
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: blur(8px);
+    }
+
+    .header .container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+    }
+
+    .logo {
+        font-family: var(--font-orbitron);
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: var(--text-primary);
+    }
+
+    .logo .accent {
+        color: var(--valorant-red);
+        text-shadow: 0 0 10px var(--valorant-red);
+    }
+
+    /* Navigation */
+    .nav-tabs {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .nav-tab {
+        padding: 0.75rem 1.5rem;
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        font-family: var(--font-rajdhani);
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 0.5rem;
+        transition: var(--transition-smooth);
+        position: relative;
+        overflow: hidden;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .nav-tab:hover {
+        color: var(--valorant-red);
+        border-color: var(--valorant-red);
+        box-shadow: 0 0 20px rgba(255, 70, 85, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .nav-tab.active {
+        background: linear-gradient(135deg, rgba(255, 70, 85, 0.1), rgba(255, 70, 85, 0.05));
+        border-color: var(--valorant-red);
+        color: var(--valorant-red);
+        box-shadow: 0 0 20px rgba(255, 70, 85, 0.3);
+    }
+
+    /* Main Content */
+    .main-content {
+        padding: 2rem 0;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Card Styles */
+    .card {
+        background: var(--gradient-card);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        box-shadow: var(--shadow-card);
+        transition: var(--transition-smooth);
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .card:hover {
+        border-color: hsl(var(--valorant-red) / 0.3);
+        box-shadow: 
+            var(--shadow-card),
+            0 0 20px hsl(var(--valorant-red) / 0.1);
+        transform: translateY(-2px);
+    }
+
+    .card-content {
+        padding: 1.5rem;
+    }
+
+    .card-header {
+        padding: 1.5rem 1.5rem 0;
+    }
+
+    .card-title {
+        font-family: var(--font-orbitron);
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Button Styles */
+    .btn {
+        background: var(--gradient-neon);
+        color: var(--text-primary);
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        transition: var(--transition-smooth);
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-neon);
+        font-family: var(--font-rajdhani);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn:hover {
+        box-shadow: var(--shadow-intense);
+        transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+        background: var(--bg-card);
+        color: var(--text-muted);
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+    }
+
+    .btn:disabled:hover {
+        background: var(--bg-card);
+        color: var(--text-muted);
+        transform: none;
+        box-shadow: none;
+    }
+
+    .btn-large {
+        width: 100%;
+        max-width: 28rem;
+        height: 4rem;
+        font-size: 1.25rem;
+        font-family: var(--font-orbitron);
+        font-weight: 700;
+        margin: 0 auto;
+        display: flex;
+    }
+
+    .btn-discord {
+        background: #5865F2;
+    }
+
+    .btn-discord:hover {
+        background: #4752C4;
+        box-shadow: 0 0 20px rgba(88, 101, 242, 0.5);
+    }
+
+    .btn-outline {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        box-shadow: none;
+    }
+
+    .btn-outline:hover {
+        background: var(--bg-secondary);
+        border-color: var(--valorant-red);
+        color: var(--valorant-red);
+        box-shadow: 0 0 10px rgba(255, 70, 85, 0.2);
+    }
+
+    /* Input Styles */
+    .input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        color: var(--text-primary);
+        font-family: var(--font-rajdhani);
+        font-size: 1rem;
+        transition: var(--transition-smooth);
+    }
+
+    .input:focus {
+        outline: none;
+        border-color: var(--valorant-red);
+        box-shadow: 0 0 10px rgba(255, 70, 85, 0.2);
+    }
+
+    .input::placeholder {
+        color: var(--text-muted);
+    }
+
+    /* Badge Styles */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .badge-warning {
+        background: rgba(234, 179, 8, 0.2);
+        color: rgb(234, 179, 8);
+        border: 1px solid rgba(234, 179, 8, 0.3);
+    }
+
+    .badge-success {
+        background: rgba(34, 197, 94, 0.2);
+        color: rgb(34, 197, 94);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .badge-info {
+        background: rgba(59, 130, 246, 0.2);
+        color: rgb(59, 130, 246);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    /* Avatar Styles */
+    .avatar {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        border: 2px solid var(--valorant-red);
+        object-fit: cover;
+    }
+
+    .avatar-small {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    /* Layout Utilities */
+    .flex {
+        display: flex;
+    }
+
+    .items-center {
+        align-items: center;
+    }
+
+    .justify-between {
+        justify-content: space-between;
+    }
+
+    .justify-center {
+        justify-content: center;
+    }
+
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .gap-6 { gap: 1.5rem; }
+
+    .grid {
+        display: grid;
+    }
+
+    .grid-cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .space-y-2 > * + * { margin-top: 0.5rem; }
+    .space-y-3 > * + * { margin-top: 0.75rem; }
+    .space-y-4 > * + * { margin-top: 1rem; }
+    .space-y-6 > * + * { margin-top: 1.5rem; }
+
+    .text-center { text-align: center; }
+    .text-lg { font-size: 1.125rem; }
+    .text-xl { font-size: 1.25rem; }
+    .text-2xl { font-size: 1.5rem; }
+    .text-sm { font-size: 0.875rem; }
+    .text-xs { font-size: 0.75rem; }
+
+    .font-bold { font-weight: 700; }
+    .font-semibold { font-weight: 600; }
+    .font-medium { font-weight: 500; }
+
+    .text-primary { color: var(--valorant-red); }
+    .text-muted { color: var(--text-muted); }
+    .text-blue { color: rgb(59, 130, 246); }
+    .text-red { color: rgb(239, 68, 68); }
+    .text-yellow { color: rgb(234, 179, 8); }
+
+    .bg-primary-10 {
+        background: rgba(255, 70, 85, 0.1);
+        border: 1px solid rgba(255, 70, 85, 0.2);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .bg-blue-10 {
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+    }
+
+    .bg-red-10 {
+        background: rgba(239, 68, 68, 0.1);
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+    }
+
+    .bg-secondary-20 {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+
+    .bg-accent-10 {
+        background: rgba(255, 70, 85, 0.1);
+        border: 1px solid rgba(255, 70, 85, 0.2);
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+
+    .step-number {
+        background: var(--gradient-neon);
+        color: var(--text-primary);
+        border-radius: 50%;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+    }
+
+    .pulse-glow {
+        animation: pulse-glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse-glow {
+        from {
+            box-shadow: 0 0 20px rgba(255, 70, 85, 0.3);
+        }
+        to {
+            box-shadow: 0 0 30px rgba(255, 70, 85, 0.5);
+        }
+    }
+
+    .neon-text {
+        color: var(--valorant-red);
+        text-shadow: 
+            0 0 10px rgba(255, 70, 85, 0.5),
+            0 0 20px rgba(255, 70, 85, 0.3),
+            0 0 30px rgba(255, 70, 85, 0.1);
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .header .container {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .nav-tabs {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .grid-cols-2 {
+            grid-template-columns: 1fr;
+        }
+        
+        .btn-large {
+            height: 3rem;
+            font-size: 1rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .container {
+            padding: 0 1rem;
+        }
+        
+        .card-content,
+        .card-header {
+            padding: 1rem;
+        }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="logo">
+        VALORANT<span class="accent"> LEADERBOARD - 10 MANS</span>
+      </div>
+      
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-tab="10mans">10 Mans</button>
+        <button class="nav-tab" data-tab="leaderboard">Leaderboard</button>
+        <button class="nav-tab" data-tab="matches">Matches</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+      
+      <!-- 10 Mans Tab -->
+      <div id="10mans-content" class="tab-content active">
+        
+        <!-- User Status Section -->
+        <div class="card">
+          <div class="card-content">
+            <div class="flex items-center justify-between">
+              <div id="user-info">
+                <div id="logged-out-state">
+                  <h2 class="text-xl font-bold font-orbitron" style="font-family: var(--font-orbitron); margin-bottom: 0.5rem;">
+                    Bienvenido a los 10-Mans de Valorant
+                  </h2>
+                  <p class="text-muted">
+                    Inicia sesión con Discord para participar en las partidas
+                  </p>
+                </div>
+                
+                <div id="logged-in-state" class="hidden">
+                  <div class="flex items-center gap-4">
+                    <img id="user-avatar" class="avatar" src="" alt="User Avatar">
+                    <div>
+                      <p class="text-lg font-semibold font-orbitron" id="user-name">
+                        Usuario#0000
+                      </p>
+                      <p class="text-sm text-muted">
+                        Riot ID: <span class="text-primary" id="user-riot-id">No registrado</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <button id="discord-login-btn" class="btn btn-discord">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.210 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.210 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
+                </svg>
+                Login con Discord
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Play Button Section -->
+        <div class="text-center space-y-4">
+          <button id="play-btn" class="btn btn-large pulse-glow">
+            ⚔️ UNIRSE A LA COLA
+          </button>
+          
+          <div id="queue-status" class="text-lg text-muted">
+            <!-- Dynamic content will be inserted here -->
+          </div>
+          
+          <div id="riot-id-warning" class="bg-primary-10 hidden">
+            ⚠️ Debes registrar tu Riot ID para unirte a las partidas
+          </div>
+        </div>
+
+        <!-- Leader Section -->
+        <div id="leader-section" class="card hidden" style="border-color: rgba(255, 70, 85, 0.3);">
+          <div class="card-header">
+            <div class="card-title text-primary flex items-center gap-2" style="color: var(--valorant-red);">
+              👑 Panel del Líder
+            </div>
+          </div>
+          <div class="card-content space-y-6">
+            <div class="space-y-4">
+              <!-- Step 1 -->
+              <div class="flex items-start gap-3 bg-primary-10">
+                <div class="step-number">1</div>
+                <div>
+                  <h3 class="font-semibold" style="margin-bottom: 0.25rem;">Crear sala en Valorant</h3>
+                  <p class="text-sm text-muted">
+                    Modo personalizado → Configuración estándar de competitivo → Mapa asignado: <span class="text-primary font-medium">Ascent</span>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Step 2 -->
+              <div class="flex items-start gap-3 bg-secondary-20">
+                <div class="step-number" style="background: var(--bg-secondary); color: var(--text-primary);">2</div>
+                <div style="flex: 1;">
+                  <div class="space-y-3">
+                    <div>
+                      <h3 class="font-semibold" style="margin-bottom: 0.25rem;">Ingresar código de sala</h3>
+                      <p class="text-sm text-muted" style="margin-bottom: 0.5rem;">
+                        Comparte el código con los 10 jugadores
+                      </p>
+                    </div>
+                    <div class="flex gap-2">
+                      <input id="room-code-input" class="input" placeholder="Código de la sala (ej: VALORANT123)" style="flex: 1;">
+                      <button id="submit-room-code" class="btn btn-outline">Enviar</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 3 -->
+              <div class="flex items-start gap-3 bg-accent-10">
+                <div class="step-number">3</div>
+                <div style="flex: 1;">
+                  <div class="space-y-3">
+                    <div>
+                      <h3 class="font-semibold" style="margin-bottom: 0.25rem;">Subir resultado del tracker</h3>
+                      <p class="text-sm text-muted" style="margin-bottom: 0.5rem;">
+                        Una vez finalizada la partida, ingresa la URL del Tracker.gg
+                      </p>
+                    </div>
+                    <div class="flex gap-2">
+                      <input id="tracker-url-input" class="input" placeholder="https://tracker.gg/valorant/match/..." style="flex: 1;">
+                      <button id="submit-tracker" class="btn btn-outline">Subir</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Matches Section -->
+        <div>
+          <h2 class="text-2xl font-bold neon-text" style="font-family: var(--font-orbitron); margin-bottom: 1.5rem;">
+            Partidas Activas
+          </h2>
+          
+          <div id="matches-container">
+            <!-- Dynamic matches will be inserted here -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Leaderboard Tab -->
+      <div id="leaderboard-content" class="tab-content">
+        <div class="card">
+          <div class="card-content">
+            <div class="text-center" style="padding: 2rem;">
+              <h2 class="text-2xl font-bold neon-text" style="font-family: var(--font-orbitron);">Leaderboard</h2>
+              <p class="text-muted" style="font-family: var(--font-rajdhani);">Coming soon...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Matches Tab -->
+      <div id="matches-content" class="tab-content">
+        <div class="card">
+          <div class="card-content">
+            <div class="text-center" style="padding: 2rem;">
+              <h2 class="text-2xl font-bold neon-text" style="font-family: var(--font-orbitron);">Match History</h2>
+              <p class="text-muted" style="font-family: var(--font-rajdhani);">Coming soon...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+<script>
+const API_BASE = "http://localhost:3000/api"; // Cambia a tu URL real si es necesario
+let currentUser = null;
+let isQueueOpen = false;
+let activeMatches = [];
+
+// ------------------------
+// --- Inicialización
+// ------------------------
+document.addEventListener("DOMContentLoaded", async () => {
+  setupTabNavigation();
+  setupEventListeners();
+  await fetchCurrentUser();
+  await fetchActiveMatches();
+  updateQueueStatus();
+  setInterval(updateQueueStatus, 60000); // cada minuto
+  setInterval(fetchActiveMatches, 60000); // refrescar partidas
+});
+
+// ------------------------
+// --- Tabs
+// ------------------------
+function setupTabNavigation() {
+  const navTabs = document.querySelectorAll('.nav-tab');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  navTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+      navTabs.forEach(t => t.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(target + '-content').classList.add('active');
+    });
+  });
+}
+
+// ------------------------
+// --- Event Listeners
+// ------------------------
+function setupEventListeners() {
+  document.getElementById('discord-login-btn').addEventListener('click', () => {
+    window.location.href = `${API_BASE}/auth/discord`;
+  });
+
+  document.getElementById('play-btn').addEventListener('click', async () => {
+    if (!currentUser || !currentUser.riotId) {
+      alert("Debes registrar tu Riot ID para unirte a las partidas");
+      return;
+    }
+    if (!isQueueOpen) {
+      alert("La cola está cerrada en este momento");
+      return;
+    }
+    if (activeMatches.length === 0) {
+      alert("No hay partidas activas");
+      return;
+    }
+    // Solo unirse a la primera partida activa por simplicidad
+    const matchId = activeMatches[0]._id;
+    await joinQueue(matchId);
+  });
+
+  document.getElementById('submit-room-code').addEventListener('click', async () => {
+    const roomCode = document.getElementById('room-code-input').value.trim();
+    if (!roomCode) return alert("Por favor ingresa el código de la sala");
+    const match = activeMatches.find(m => m.leaderId === currentUser.discordId);
+    if (!match) return alert("No eres líder de ninguna partida");
+    await submitRoomCode(match._id, roomCode);
+    document.getElementById('room-code-input').value = '';
+    await fetchActiveMatches();
+  });
+
+  document.getElementById('submit-tracker').addEventListener('click', async () => {
+    const trackerUrl = document.getElementById('tracker-url-input').value.trim();
+    if (!trackerUrl) return alert("Por favor ingresa la URL del tracker");
+    const match = activeMatches.find(m => m.leaderId === currentUser.discordId);
+    if (!match) return alert("No eres líder de ninguna partida");
+    await submitTracker(match._id, trackerUrl);
+    document.getElementById('tracker-url-input').value = '';
+    await fetchActiveMatches();
+  });
+}
+
+// ------------------------
+// --- Usuarios
+// ------------------------
+async function fetchCurrentUser() {
+  try {
+    const res = await fetch(`${API_BASE}/users/me`, { credentials: "include" });
+    if (!res.ok) {
+      currentUser = null;
+    } else {
+      currentUser = await res.json();
+    }
+  } catch (err) {
+    console.error(err);
+    currentUser = null;
+  }
+  updateUserDisplay();
+  updatePlayButton();
+}
+
+async function updateRiotId(riotId) {
+  try {
+    const res = await fetch(`${API_BASE}/users/update-riot`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ riotId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentUser.riotId = riotId;
+      updateUserDisplay();
+      updatePlayButton();
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function updateUserDisplay() {
+  const loggedOutState = document.getElementById('logged-out-state');
+  const loggedInState = document.getElementById('logged-in-state');
+  const loginBtn = document.getElementById('discord-login-btn');
+  const leaderSection = document.getElementById('leader-section');
+
+  if (currentUser) {
+    loggedOutState.classList.add('hidden');
+    loggedInState.classList.remove('hidden');
+    loginBtn.classList.add('hidden');
+    document.getElementById('user-avatar').src = currentUser.avatar || '';
+    document.getElementById('user-name').textContent = `${currentUser.username}#${currentUser.discriminator}`;
+    document.getElementById('user-riot-id').textContent = currentUser.riotId || "No registrado";
+
+    if (activeMatches.some(m => m.leaderId === currentUser.discordId)) {
+      leaderSection.classList.remove('hidden');
+    } else {
+      leaderSection.classList.add('hidden');
+    }
+  } else {
+    loggedOutState.classList.remove('hidden');
+    loggedInState.classList.add('hidden');
+    loginBtn.classList.remove('hidden');
+    leaderSection.classList.add('hidden');
+  }
+}
+
+// ------------------------
+// --- Cola
+// ------------------------
+function updateQueueStatus() {
+  const now = new Date();
+  const openHour = 18, closeHour = 23;
+  const playBtn = document.getElementById('play-btn');
+  const queueStatus = document.getElementById('queue-status');
+  const riotWarning = document.getElementById('riot-id-warning');
+
+  if (now.getHours() >= openHour && now.getHours() < closeHour) {
+    isQueueOpen = true;
+    queueStatus.innerHTML = '';
+  } else {
+    isQueueOpen = false;
+    let hours = now.getHours() < openHour ? openHour - now.getHours() : 24 - now.getHours() + openHour;
+    let minutes = 60 - now.getMinutes();
+    queueStatus.innerHTML = `Tiempo restante para que se abran las partidas: <span class="text-primary font-bold">${hours}h ${minutes}m</span>`;
+  }
+
+  updatePlayButton();
+}
+
+function updatePlayButton() {
+  const playBtn = document.getElementById('play-btn');
+  const riotWarning = document.getElementById('riot-id-warning');
+  const canPlay = isQueueOpen && currentUser?.riotId;
+
+  if (canPlay) {
+    playBtn.textContent = '⚔️ UNIRSE A LA COLA';
+    playBtn.disabled = false;
+    playBtn.classList.add('pulse-glow');
+    riotWarning.classList.add('hidden');
+  } else if (!isQueueOpen) {
+    playBtn.textContent = '⏰ COLA CERRADA';
+    playBtn.disabled = true;
+    playBtn.classList.remove('pulse-glow');
+    riotWarning.classList.add('hidden');
+  } else if (!currentUser?.riotId) {
+    playBtn.textContent = '⚔️ UNIRSE A LA COLA';
+    playBtn.disabled = true;
+    playBtn.classList.remove('pulse-glow');
+    if (currentUser) riotWarning.classList.remove('hidden');
+  }
+}
+
+// ------------------------
+// --- Partidas
+// ------------------------
+async function fetchActiveMatches() {
+  try {
+    const res = await fetch(`${API_BASE}/queue/active`);
+    activeMatches = await res.json();
+    renderMatches(activeMatches);
+    updateUserDisplay();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function joinQueue(matchId) {
+  try {
+    const res = await fetch(`${API_BASE}/queue/join`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ matchId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      activeMatches = data.activeMatches;
+      renderMatches(activeMatches);
+      alert("Te has unido a la cola");
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function submitRoomCode(matchId, roomCode) {
+  await fetch(`${API_BASE}/queue/submit-room-code`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ matchId, roomCode })
+  });
+}
+
+async function submitTracker(matchId, trackerUrl) {
+  await fetch(`${API_BASE}/queue/submit-tracker`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ matchId, trackerUrl })
+  });
+}
+
+// ------------------------
+// --- Render Partidas
+// ------------------------
+function renderMatches(matches) {
+  const container = document.getElementById('matches-container');
+  if (!matches || matches.length === 0) {
+    container.innerHTML = `<p class="text-muted">No hay partidas activas en este momento</p>`;
+    return;
+  }
+
+  container.innerHTML = matches.map(match => {
+    const teamAHtml = (match.teamA || []).map(p => `
+      <div class="flex items-center gap-3 bg-blue-10">
+        <img class="avatar avatar-small" src="${p.avatar}" alt="${p.username}">
+        <div>
+          <p class="font-medium">${p.username}#${p.discriminator}</p>
+          <p class="text-xs text-muted">${p.riotId || ''}</p>
+        </div>
+      </div>
+    `).join('');
+
+    const teamBHtml = (match.teamB || []).map(p => `
+      <div class="flex items-center gap-3 bg-red-10">
+        <img class="avatar avatar-small" src="${p.avatar}" alt="${p.username}">
+        <div>
+          <p class="font-medium">${p.username}#${p.discriminator}</p>
+          <p class="text-xs text-muted">${p.riotId || ''}</p>
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="card">
+        <div class="card-content space-y-4">
+          <div class="flex justify-between items-center">
+            <span>Status: ${match.status}</span>
+            <span>Mapa: ${match.map}</span>
+            <span>Líder: ${match.leaderId}</span>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <h4>Team A</h4>
+              ${teamAHtml}
+            </div>
+            <div>
+              <h4>Team B</h4>
+              ${teamBHtml}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+</script>
+
+</body>
+</html>
