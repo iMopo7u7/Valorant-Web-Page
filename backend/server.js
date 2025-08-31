@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
+import { newQueueRouter, initQueueDB } from "./queueManager.js";
 import session from "express-session";
 import MongoStore from "connect-mongo";
 import path from "path";
@@ -525,7 +526,8 @@ app.get("/last-match", async (req, res) => {
 // -------------------
 // --- Servidor 
 // -------------------
-connectDB().then(() => {
-  // Iniciamos el servidor
+connectDB().then(async () => {
+  await initQueueDB(db);
+  app.use("/api", newQueueRouter);
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 });
