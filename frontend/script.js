@@ -216,14 +216,11 @@ async function renderLeaderboardTable(players) {
 }
 
 // ==========================
-// 🔧 INIT
-// ==========================
-// ==========================
 // 🔧 CHECK DISCORD LOGIN
 // ==========================
 async function checkDiscordLogin() {
   try {
-    const res = await fetch(`${API_BASE_URL}/users/me`, { credentials: "include" });
+    const res = await fetch(`${API_BASE_URL}/api/users/me`, { credentials: "include" });
     if (res.ok) {
       const user = await res.json();
       if (user?.discordId) {
