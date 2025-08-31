@@ -23,6 +23,7 @@ const allowedOrigins = [
   "https://valorant-10-mans.onrender.com"
 ];
 
+app.set('trust proxy', 1);
 app.use(cors({
   origin: function(origin, callback) {
     if (!origin) return callback(null, true);
