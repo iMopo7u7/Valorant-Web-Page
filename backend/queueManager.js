@@ -75,20 +75,21 @@ router.get("/auth/discord/callback", async (req, res) => {
       avatar: discordUser.avatar,
       updatedAt: new Date()
     };
-
     await usersCollection.updateOne(
       { discordId: discordUser.id },
       { $set: user },
       { upsert: true }
     );
 
+    // Guardar sesión
     req.session.userId = discordUser.id;
     req.session.save(err => {
       if (err) {
         console.error("Error guardando sesión:", err);
         return res.status(500).send("Error en login");
       }
-      res.redirect(process.env.FRONTEND_URL || "/");
+      // 🔹 Redirige al frontend principal (la cookie se establecerá)
+      res.redirect("https://valorant-10-mans-frontend.onrender.com");
     });
 
   } catch (err) {
