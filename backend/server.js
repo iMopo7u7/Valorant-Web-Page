@@ -15,7 +15,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ==========================
-// CORS
+// CORS - Configuración mejorada
 // ==========================
 const allowedOrigins = [
   "https://valorant-10-mans-frontend.onrender.com",
@@ -23,16 +23,22 @@ const allowedOrigins = [
 ];
 
 app.set('trust proxy', 1);
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error("CORS policy error"), false);
-  },
-  credentials: true,
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization']
-}));
+
+// Middleware CORS mejorado
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 app.use(express.json());
 
@@ -52,8 +58,8 @@ app.use(session({
   store: sessionStore,
   cookie: {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 60 * 60 * 1000
   }
 }));
@@ -84,6 +90,12 @@ async function connectDB() {
     usersCollection = db.collection("users");
     customMatchesCollection = db.collection("customMatches");
 
+    // Crear índices para mejor rendimiento
+    await playersCollection.createIndex({ name: 1, tag: 1 });
+    await matchesCollection.createIndex({ date: -1 });
+    await usersCollection.createIndex({ discordId: 1 });
+    await customMatchesCollection.createIndex({ status: 1 });
+
     console.log("✅ Conectado a MongoDB");
   } catch (err) {
     console.error("❌ Error conectando a MongoDB:", err);
@@ -97,6 +109,11 @@ async function connectDB() {
 function requireAuth(req, res, next) {
   if (req.session?.userId) next();
   else res.status(401).json({ error: "No autorizado" });
+}
+
+function requireAdmin(req, res, next) {
+  if (req.session.isAdmin) next();
+  else res.status(403).json({ error: "Acceso denegado" });
 }
 
 // ==========================
@@ -128,11 +145,21 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params
     });
+    
+    if (!tokenRes.ok) {
+      throw new Error(`Discord token error: ${tokenRes.status}`);
+    }
+    
     const tokenData = await tokenRes.json();
 
     const userRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` }
     });
+    
+    if (!userRes.ok) {
+      throw new Error(`Discord user error: ${userRes.status}`);
+    }
+    
     const discordUser = await userRes.json();
 
     const user = {
@@ -142,6 +169,7 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
       avatar: discordUser.avatar,
       updatedAt: new Date()
     };
+    
     await usersCollection.updateOne(
       { discordId: discordUser.id },
       { $set: user },
@@ -157,81 +185,132 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
       res.redirect("https://valorant-10-mans-frontend.onrender.com");
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error en callback Discord:", err);
     res.status(500).json({ error: "Error en login Discord" });
   }
 });
 
 // --- Users endpoints
 apiRouter.get("/users/me", requireAuth, async (req, res) => {
-  const user = await usersCollection.findOne({ discordId: req.session.userId });
-  res.json(user);
+  try {
+    const user = await usersCollection.findOne({ discordId: req.session.userId });
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    res.json(user);
+  } catch (err) {
+    console.error("Error en /users/me:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
 });
 
 apiRouter.post("/users/update-riot", requireAuth, async (req, res) => {
-  const { riotId } = req.body;
-  await usersCollection.updateOne(
-    { discordId: req.session.userId },
-    { $set: { riotId, updatedAt: new Date() } }
-  );
-  res.json({ success: true });
+  try {
+    const { riotId } = req.body;
+    await usersCollection.updateOne(
+      { discordId: req.session.userId },
+      { $set: { riotId, updatedAt: new Date() } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error en /users/update-riot:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
 });
 
 // --- Queue / Custom Matches
 apiRouter.get("/queue/active", async (req, res) => {
-  const matches = await customMatchesCollection.find({ status: { $in: ["waiting","in_progress"] } }).toArray();
-  res.json(matches);
+  try {
+    const matches = await customMatchesCollection.find({ status: { $in: ["waiting","in_progress"] } }).toArray();
+    res.json(matches);
+  } catch (err) {
+    console.error("Error en /queue/active:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
 });
 
 apiRouter.post("/queue/join", requireAuth, async (req, res) => {
-  const { matchId } = req.body;
-  await customMatchesCollection.updateOne(
-    { _id: ObjectId(matchId) },
-    { $addToSet: { players: req.session.userId }, $set: { updatedAt: new Date() } }
-  );
-  const matches = await customMatchesCollection.find({ status: { $in: ["waiting","in_progress"] } }).toArray();
-  res.json({ success: true, activeMatches: matches });
+  try {
+    const { matchId } = req.body;
+    await customMatchesCollection.updateOne(
+      { _id: new ObjectId(matchId) },
+      { $addToSet: { players: req.session.userId }, $set: { updatedAt: new Date() } }
+    );
+    const matches = await customMatchesCollection.find({ status: { $in: ["waiting","in_progress"] } }).toArray();
+    res.json({ success: true, activeMatches: matches });
+  } catch (err) {
+    console.error("Error en /queue/join:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
 });
 
 apiRouter.post("/queue/start", requireAuth, async (req, res) => {
-  const { map } = req.body;
-  const newMatch = {
-    leaderId: req.session.userId,
-    players: [req.session.userId],
-    map,
-    roomCode: "",
-    trackerUrl: "",
-    status: "waiting",
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
-  const result = await customMatchesCollection.insertOne(newMatch);
-  res.json({ success: true, match: result.ops[0] });
+  try {
+    const { map } = req.body;
+    const newMatch = {
+      leaderId: req.session.userId,
+      players: [req.session.userId],
+      map,
+      roomCode: "",
+      trackerUrl: "",
+      status: "waiting",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    const result = await customMatchesCollection.insertOne(newMatch);
+    res.json({ success: true, match: { ...newMatch, _id: result.insertedId } });
+  } catch (err) {
+    console.error("Error en /queue/start:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
 });
 
 apiRouter.post("/queue/submit-room-code", requireAuth, async (req, res) => {
-  const { matchId, roomCode } = req.body;
-  await customMatchesCollection.updateOne(
-    { _id: ObjectId(matchId), leaderId: req.session.userId },
-    { $set: { roomCode, updatedAt: new Date() } }
-  );
-  res.json({ success: true });
+  try {
+    const { matchId, roomCode } = req.body;
+    const result = await customMatchesCollection.updateOne(
+      { _id: new ObjectId(matchId), leaderId: req.session.userId },
+      { $set: { roomCode, updatedAt: new Date() } }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Partida no encontrada o no eres el líder" });
+    }
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error en /queue/submit-room-code:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
 });
 
 apiRouter.post("/queue/submit-tracker", requireAuth, async (req, res) => {
-  const { matchId, trackerUrl } = req.body;
-  await customMatchesCollection.updateOne(
-    { _id: ObjectId(matchId), leaderId: req.session.userId },
-    { $set: { trackerUrl, status: "completed", updatedAt: new Date() } }
-  );
-  res.json({ success: true });
+  try {
+    const { matchId, trackerUrl } = req.body;
+    const result = await customMatchesCollection.updateOne(
+      { _id: new ObjectId(matchId), leaderId: req.session.userId },
+      { $set: { trackerUrl, status: "completed", updatedAt: new Date() } }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Partida no encontrada o no eres el líder" });
+    }
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error en /queue/submit-tracker:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
 });
 
 // ==========================
-// CRUD Players, Matches, Leaderboard y Login/Admin
+// Montar el router de API
 // ==========================
+app.use("/api", apiRouter);
 
-// --- Función de cálculo de score por partida ajustada por rol
+// ==========================
+// Función de cálculo de score por partida ajustada por rol
+// ==========================
 function calculateMatchScore(playerStats, playerTeam, teamStats, didWin) {
   const duelistas = ["Jett", "Reyna", "Phoenix", "Raze", "Yoru", "Neon", "Iso", "Waylay"];
   const iniciadores = ["Sova", "Skye", "KAY/O", "Fade", "Breach", "Gekko", "Tejo"];
@@ -290,26 +369,27 @@ function calculateMatchScore(playerStats, playerTeam, teamStats, didWin) {
   return { totalScore, basePoints: Math.round(mapped) };
 }
 
-// --- Login / Admin
+// ==========================
+// Login / Admin
+// ==========================
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
 
 app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-  if (username === ADMIN_USER && password === ADMIN_PASS) {
-    req.session.isAdmin = true;
-    res.json({ success: true });
-  } else {
-    res.status(401).json({ error: "Usuario o contraseña incorrectos" });
+  try {
+    const { username, password } = req.body;
+    if (username === ADMIN_USER && password === ADMIN_PASS) {
+      req.session.isAdmin = true;
+      res.json({ success: true });
+    } else {
+      res.status(401).json({ error: "Usuario o contraseña incorrectos" });
+    }
+  } catch (err) {
+    console.error("Error en /login:", err);
+    res.status(500).json({ error: "Error del servidor" });
   }
 });
 
-function requireAdmin(req, res, next) {
-  if (req.session.isAdmin) next();
-  else res.status(403).json({ error: "Acceso denegado" });
-}
-
-// --- Rutas admin.html / login
 app.get("/login.html", (req, res) => {
   res.sendFile(path.join(__dirname, "private/login.html"));
 });
@@ -330,7 +410,9 @@ app.post("/logout", (req, res) => {
   });
 });
 
-// --- CRUD Players
+// ==========================
+// CRUD Players
+// ==========================
 app.post("/players", requireAdmin, async (req, res) => {
   try {
     const { name, tag, badges = [], social = {}, avatarURL } = req.body;
@@ -340,18 +422,31 @@ app.post("/players", requireAdmin, async (req, res) => {
     if (exists) return res.status(400).json({ error: "Jugador ya existe" });
 
     const newPlayer = {
-      name: name.trim(), tag: tag.trim(),
-      totalKills:0,totalDeaths:0,totalAssists:0,totalACS:0,
-      totalDDDelta:0,totalADR:0,totalHeadshotKills:0,
-      totalKAST:0,totalFK:0,totalFD:0,totalMK:0,
-      matchesPlayed:0,wins:0,badges,social,
-      avatarURL: avatarURL||null,score:0
+      name: name.trim(),
+      tag: tag.trim(),
+      totalKills: 0,
+      totalDeaths: 0,
+      totalAssists: 0,
+      totalACS: 0,
+      totalDDDelta: 0,
+      totalADR: 0,
+      totalHeadshotKills: 0,
+      totalKAST: 0,
+      totalFK: 0,
+      totalFD: 0,
+      totalMK: 0,
+      matchesPlayed: 0,
+      wins: 0,
+      badges,
+      social,
+      avatarURL: avatarURL || null,
+      score: 0
     };
 
     await playersCollection.insertOne(newPlayer);
     res.json({ message: "Jugador añadido exitosamente" });
   } catch (err) {
-    console.error(err);
+    console.error("Error en POST /players:", err);
     res.status(500).json({ error: "Error al añadir jugador" });
   }
 });
@@ -359,47 +454,61 @@ app.post("/players", requireAdmin, async (req, res) => {
 app.get("/players", requireAdmin, async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
+
     const playersWithPercentages = players.map(p => {
       const matches = p.matchesPlayed || 1;
       return {
         ...p,
-        hsPercent: p.totalKills ? Math.round((p.totalHeadshotKills/p.totalKills)*100) : 0,
-        KASTPercent: matches ? Math.round(p.totalKAST/matches) : 0
+        hsPercent: p.totalKills ? Math.round((p.totalHeadshotKills / p.totalKills) * 100) : 0,
+        KASTPercent: matches ? Math.round(p.totalKAST / matches) : 0
       };
     });
+
     res.json(playersWithPercentages);
   } catch (err) {
-    console.error(err);
+    console.error("Error en GET /players:", err);
     res.status(500).json({ error: "Error al obtener jugadores" });
   }
 });
 
 app.put("/players", requireAdmin, async (req, res) => {
-  const { oldName, oldTag, newName, newTag, social, avatarURL } = req.body;
   try {
-    await playersCollection.updateOne(
+    const { oldName, oldTag, newName, newTag, social, avatarURL } = req.body;
+    const result = await playersCollection.updateOne(
       { name: oldName, tag: oldTag },
       { $set: { name: newName, tag: newTag, social, avatarURL } }
     );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Jugador no encontrado" });
+    }
+    
     res.json({ message: "Jugador actualizado" });
   } catch (err) {
-    console.error(err);
+    console.error("Error en PUT /players:", err);
     res.status(500).json({ error: "Error actualizando jugador" });
   }
 });
 
 app.delete("/players", requireAdmin, async (req, res) => {
-  const { name, tag } = req.body;
   try {
-    await playersCollection.deleteOne({ name, tag });
+    const { name, tag } = req.body;
+    const result = await playersCollection.deleteOne({ name, tag });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Jugador no encontrado" });
+    }
+    
     res.json({ message: "Jugador eliminado" });
   } catch (err) {
-    console.error(err);
+    console.error("Error en DELETE /players:", err);
     res.status(500).json({ error: "Error eliminando jugador" });
   }
 });
 
-// --- CRUD Matches
+// ==========================
+// CRUD Matches
+// ==========================
 app.post("/matches", requireAdmin, async (req, res) => {
   try {
     const { match, winnerTeam, score: matchScore, map } = req.body;
@@ -408,143 +517,230 @@ app.post("/matches", requireAdmin, async (req, res) => {
     const newMatch = { match, winnerTeam, score: matchScore, map, date: new Date() };
     await matchesCollection.insertOne(newMatch);
 
-    const teamA = match.slice(0,5);
-    const teamB = match.slice(5,10);
+    const teamA = match.slice(0, 5);
+    const teamB = match.slice(5, 10);
 
-    for (let i=0;i<match.length;i++){
+    for (let i = 0; i < match.length; i++) {
       const p = match[i];
-      const playerTeam = i<5?"A":"B";
-      const teamStats = playerTeam==="A"?teamA:teamB;
-      const { totalScore } = calculateMatchScore(p, playerTeam, teamStats, playerTeam===winnerTeam);
-      const currentPlayer = await playersCollection.findOne({ name:p.name, tag:p.tag });
-      const newTotalScore = Math.max((currentPlayer.score||0)+totalScore,0);
-      const headshotsThisMatch = Math.round((p.hsPercent/100)*p.kills);
+      const playerTeam = i < 5 ? "A" : "B";
+      const teamStats = playerTeam === "A" ? teamA : teamB;
+      const didWin = playerTeam === winnerTeam;
+      
+      const { totalScore } = calculateMatchScore(p, playerTeam, teamStats, didWin);
+      const currentPlayer = await playersCollection.findOne({ name: p.name, tag: p.tag });
+      const newTotalScore = Math.max((currentPlayer?.score || 0) + totalScore, 0);
+      const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
 
       await playersCollection.updateOne(
-        { name:p.name, tag:p.tag },
-        { $inc:{
-          totalKills:p.kills,totalDeaths:p.deaths,totalAssists:p.assists,
-          totalACS:p.ACS,totalDDDelta:p.DDDelta,totalADR:p.ADR,
-          totalHeadshotKills:headshotsThisMatch,totalKAST:p.KAST,
-          totalFK:p.FK,totalFD:p.FD,totalMK:p.MK,
-          matchesPlayed:1,wins:playerTeam===winnerTeam?1:0
+        { name: p.name, tag: p.tag },
+        {
+          $inc: {
+            totalKills: p.kills,
+            totalDeaths: p.deaths,
+            totalAssists: p.assists,
+            totalACS: p.ACS,
+            totalDDDelta: p.DDDelta,
+            totalADR: p.ADR,
+            totalHeadshotKills: headshotsThisMatch,
+            totalKAST: p.KAST,
+            totalFK: p.FK,
+            totalFD: p.FD,
+            totalMK: p.MK,
+            matchesPlayed: 1,
+            wins: didWin ? 1 : 0
+          },
+          $set: { score: newTotalScore }
         },
-        $set:{ score:newTotalScore } }
+        { upsert: true }
       );
     }
 
     res.json({ message: "Partida añadida exitosamente" });
   } catch (err) {
-    console.error(err);
+    console.error("Error en POST /matches:", err);
     res.status(500).json({ error: "Error al añadir partida" });
   }
 });
 
 app.get("/matches", async (req, res) => {
   try {
-    const matches = await matchesCollection.find().sort({ date:-1 }).toArray();
+    const matches = await matchesCollection.find().sort({ date: -1 }).toArray();
     res.json(matches);
   } catch (err) {
-    console.error(err);
+    console.error("Error en GET /matches:", err);
     res.status(500).json({ error: "Error obteniendo partidas" });
   }
 });
 
 app.put("/matches/:id", requireAdmin, async (req, res) => {
-  const { id } = req.params;
-  const { map, score, winnerTeam } = req.body;
   try {
-    await matchesCollection.updateOne({ _id: new ObjectId(id) }, { $set: { map, score, winnerTeam } });
+    const { id } = req.params;
+    const { map, score, winnerTeam } = req.body;
+    
+    const result = await matchesCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { map, score, winnerTeam } }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Partida no encontrada" });
+    }
+    
     res.json({ message: "Partida actualizada" });
   } catch (err) {
-    console.error(err);
+    console.error("Error en PUT /matches/:id:", err);
     res.status(500).json({ error: "Error actualizando partida" });
   }
 });
 
 app.delete("/matches/:id", requireAdmin, async (req, res) => {
-  const { id } = req.params;
   try {
+    const { id } = req.params;
     const matchToDelete = await matchesCollection.findOne({ _id: new ObjectId(id) });
     if (!matchToDelete) return res.status(404).json({ error: "Partida no encontrada" });
 
     await matchesCollection.deleteOne({ _id: new ObjectId(id) });
 
-    // Resetear stats
-    await playersCollection.updateMany({}, { $set:{
-      totalKills:0,totalDeaths:0,totalAssists:0,totalACS:0,
-      totalDDDelta:0,totalADR:0,totalHeadshotKills:0,totalKAST:0,
-      totalFK:0,totalFD:0,totalMK:0,matchesPlayed:0,wins:0,score:0
-    }});
+    // Resetear stats de todos los jugadores
+    await playersCollection.updateMany({}, {
+      $set: {
+        totalKills: 0,
+        totalDeaths: 0,
+        totalAssists: 0,
+        totalACS: 0,
+        totalDDDelta: 0,
+        totalADR: 0,
+        totalHeadshotKills: 0,
+        totalKAST: 0,
+        totalFK: 0,
+        totalFD: 0,
+        totalMK: 0,
+        matchesPlayed: 0,
+        wins: 0,
+        score: 0
+      }
+    });
 
+    // Recalcular todas las partidas restantes
     const allMatches = await matchesCollection.find().toArray();
-    for(const match of allMatches){
-      const teamA = match.match.slice(0,5);
-      const teamB = match.match.slice(5,10);
-      for(let i=0;i<match.match.length;i++){
+    for (const match of allMatches) {
+      const teamA = match.match.slice(0, 5);
+      const teamB = match.match.slice(5, 10);
+
+      for (let i = 0; i < match.match.length; i++) {
         const p = match.match[i];
-        const playerTeam = i<5?"A":"B";
-        const teamStats = playerTeam==="A"?teamA:teamB;
-        const didWin = playerTeam===match.winnerTeam;
+        const playerTeam = i < 5 ? "A" : "B";
+        const teamStats = playerTeam === "A" ? teamA : teamB;
+        const didWin = playerTeam === match.winnerTeam;
+        
         const { totalScore } = calculateMatchScore(p, playerTeam, teamStats, didWin);
-        const headshotsThisMatch = Math.round((p.hsPercent/100)*p.kills);
+        const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
 
         await playersCollection.updateOne(
-          { name:p.name, tag:p.tag },
-          { $inc:{
-            totalKills:p.kills,totalDeaths:p.deaths,totalAssists:p.assists,
-            totalACS:p.ACS,totalDDDelta:p.DDDelta,totalADR:p.ADR,
-            totalHeadshotKills:headshotsThisMatch,totalKAST:p.KAST,
-            totalFK:p.FK,totalFD:p.FD,totalMK:p.MK,
-            matchesPlayed:1,wins:didWin?1:0,score:totalScore
-          }}
+          { name: p.name, tag: p.tag },
+          {
+            $inc: {
+              totalKills: p.kills,
+              totalDeaths: p.deaths,
+              totalAssists: p.assists,
+              totalACS: p.ACS,
+              totalDDDelta: p.DDDelta,
+              totalADR: p.ADR,
+              totalHeadshotKills: headshotsThisMatch,
+              totalKAST: p.KAST,
+              totalFK: p.FK,
+              totalFD: p.FD,
+              totalMK: p.MK,
+              matchesPlayed: 1,
+              wins: didWin ? 1 : 0,
+              score: totalScore
+            }
+          },
+          { upsert: true }
         );
       }
     }
 
     res.json({ message: "✅ Partida eliminada y estadísticas recalculadas correctamente" });
   } catch (err) {
-    console.error("❌ Error eliminando partida:", err);
+    console.error("❌ Error en DELETE /matches/:id:", err);
     res.status(500).json({ error: "Error eliminando partida" });
   }
 });
 
-// --- Leaderboard
-app.get("/leaderboard", async (req,res)=>{
+// ==========================
+// Leaderboard
+// ==========================
+app.get("/leaderboard", async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
-    const formattedPlayers = players.map(p=>{
-      const matches = p.matchesPlayed||1;
+
+    const formattedPlayers = players.map(p => {
+      const matches = p.matchesPlayed || 1;
+
       return {
         ...p,
-        avgACS: matches?p.totalACS/matches:0,
-        avgFK: matches?p.totalFK/matches:0,
-        avgADR: matches?p.totalADR/matches:0,
-        avgDDDelta: matches?p.totalDDDelta/matches:0,
-        avgKAST: matches?p.totalKAST/matches:0,
-        hsPercent: p.totalKills?p.totalHeadshotKills/p.totalKills*100:0
+        avgACS: matches ? (p.totalACS / matches) : 0,
+        avgFK: matches ? (p.totalFK / matches) : 0,
+        avgADR: matches ? (p.totalADR / matches) : 0,
+        avgDDDelta: matches ? (p.totalDDDelta / matches) : 0,
+        avgKAST: matches ? (p.totalKAST / matches) : 0,
+        hsPercent: p.totalKills ? (p.totalHeadshotKills / p.totalKills * 100) : 0
       };
     });
-    formattedPlayers.sort((a,b)=>(b.score||0)-(a.score||0));
+
+    formattedPlayers.sort((a, b) => (b.score || 0) - (a.score || 0));
+
     res.json(formattedPlayers);
-  } catch(err){
-    console.error(err);
-    res.status(500).json({error:"Error generando leaderboard"});
+  } catch (err) {
+    console.error("Error en GET /leaderboard:", err);
+    res.status(500).json({ error: "Error generando leaderboard" });
   }
 });
 
-// --- Endpoints adicionales
-app.get("/matches-count", async(req,res)=>{
-  try{const count=await matchesCollection.countDocuments();res.json({count});}
-  catch(err){console.error(err);res.status(500).json({error:"Error al obtener total de partidas"});}
+// ==========================
+// Endpoints adicionales
+// ==========================
+app.get("/matches-count", async (req, res) => {
+  try {
+    const count = await matchesCollection.countDocuments();
+    res.json({ count });
+  } catch (err) {
+    console.error("Error en GET /matches-count:", err);
+    res.status(500).json({ error: "Error al obtener total de partidas" });
+  }
 });
-app.get("/players-count", async(req,res)=>{
-  try{const count=await playersCollection.countDocuments();res.json({count});}
-  catch(err){console.error(err);res.status(500).json({error:"Error al obtener total de jugadores"});}
+
+app.get("/players-count", async (req, res) => {
+  try {
+    const count = await playersCollection.countDocuments();
+    res.json({ count });
+  } catch (err) {
+    console.error("Error en GET /players-count:", err);
+    res.status(500).json({ error: "Error al obtener total de jugadores" });
+  }
 });
-app.get("/last-match", async(req,res)=>{
-  try{const last = await matchesCollection.find().sort({date:-1}).limit(1).toArray();res.json(last[0]||null);}
-  catch(err){console.error(err);res.status(500).json({error:"Error obteniendo última partida"});}
+
+app.get("/last-match", async (req, res) => {
+  try {
+    const lastMatch = await matchesCollection.find().sort({ date: -1 }).limit(1).toArray();
+    res.json(lastMatch[0] || null);
+  } catch (err) {
+    console.error("Error en GET /last-match:", err);
+    res.status(500).json({ error: "Error al obtener última partida" });
+  }
+});
+
+// ==========================
+// Manejo de errores global
+// ==========================
+app.use((err, req, res, next) => {
+  console.error("Error no manejado:", err);
+  res.status(500).json({ error: "Error interno del servidor" });
+});
+
+app.use((req, res) => {
+  res.status(404).json({ error: "Endpoint no encontrado" });
 });
 
 // ==========================
@@ -552,4 +748,7 @@ app.get("/last-match", async(req,res)=>{
 // ==========================
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+}).catch(err => {
+  console.error("❌ Error iniciando servidor:", err);
+  process.exit(1);
 });
