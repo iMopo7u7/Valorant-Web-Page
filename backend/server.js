@@ -80,23 +80,12 @@ async function connectDB() {
     const client = new MongoClient(process.env.MONGODB_URI);
     await client.connect();
     db = client.db("valorantDB");
-
-    // Colecciones principales
     playersCollection = db.collection("players");
     matchesCollection = db.collection("matches");
-    eventsCollection = db.collection("events");
-
-    // Colecciones de queue y Discord
     usersCollection = db.collection("users");
     customMatchesCollection = db.collection("customMatches");
 
-    // Crear índices para mejor rendimiento
-    await playersCollection.createIndex({ name: 1, tag: 1 });
-    await matchesCollection.createIndex({ date: -1 });
-    await usersCollection.createIndex({ discordId: 1 });
-    await customMatchesCollection.createIndex({ status: 1 });
-
-    console.log("✅ Conectado a MongoDB");
+    console.log("✅ MongoDB conectado");
   } catch (err) {
     console.error("❌ Error conectando a MongoDB:", err);
     process.exit(1);
