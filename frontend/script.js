@@ -218,8 +218,30 @@ async function renderLeaderboardTable(players) {
 // ==========================
 // 🔧 INIT
 // ==========================
+// ==========================
+// 🔧 CHECK DISCORD LOGIN
+// ==========================
+async function checkDiscordLogin() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/users/me`, { credentials: "include" });
+    if (res.ok) {
+      const user = await res.json();
+      if (user?.discordId) {
+        // Usuario logeado, redirigir a la página de 10mans
+        window.location.href = "/10mans"; 
+      }
+    }
+  } catch (err) {
+    console.error("Error verificando sesión de Discord:", err);
+  }
+}
+
+// ==========================
+// 🔧 INIT
+// ==========================
 async function initializeApp() {
   try {
+    await checkDiscordLogin();  // <-- chequeo de login antes de renderizar stats
     await renderSystemStats();
     const players = await ApiService.getLeaderboard();
 
