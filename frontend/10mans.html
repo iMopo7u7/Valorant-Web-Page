@@ -768,13 +768,13 @@ async function fetchCurrentUser() {
       currentUser = null;
     } else {
       currentUser = await res.json();
+      // redirigir a /10mans si está logueado
+      if(currentUser?.discordId) window.location.href = "/10mans";
     }
   } catch (err) {
     console.error(err);
     currentUser = null;
   }
-  updateUserDisplay();
-  updatePlayButton();
 }
 
 async function updateRiotId(riotId) {
