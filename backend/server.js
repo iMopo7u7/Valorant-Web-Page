@@ -23,20 +23,13 @@ const allowedOrigins = [
   "https://valorant-10-mans.onrender.com"
 ];
 
-app.set('trust proxy', 1);
+app.set('trust proxy', 1); // para manejar secure cookies detrás de un proxy
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // requests directas desde Postman o navegador sin origen
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error("CORS policy error"), false);
   },
-  credentials: true,
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization']
-}));
-
-app.options('*', cors({
-  origin: allowedOrigins,
   credentials: true,
   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization']
@@ -63,8 +56,8 @@ app.use(session({
   store: sessionStore,
   cookie: {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: true,      // asegúrate que tu front sea HTTPS
+    sameSite: "none",  // necesario para cross-site cookies
     maxAge: 60 * 60 * 1000
   }
 }));
@@ -93,6 +86,18 @@ async function connectDB() {
     process.exit(1);
   }
 }
+
+// -------------------
+// --- Inicializar QueueManager y rutas API
+// -------------------
+connectDB().then(async () => {
+  await initQueueDB(db);
+  app.use("/api", newQueueRouter);
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  });
+});
 
 // -------------------
 // --- Función de cálculo de score por partida ajustada por rol
