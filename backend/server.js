@@ -786,9 +786,6 @@ app.use((req, res) => {
 // ==========================
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
-
-  // Iniciar bot en paralelo
-  startBot().catch(err => console.error("❌ Error iniciando bot:", err));
 }).catch(err => {
   console.error("❌ Error iniciando servidor:", err);
   process.exit(1);
