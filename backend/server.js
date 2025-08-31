@@ -64,7 +64,6 @@ app.use(session({
   cookie: {
     httpOnly: true,
     secure: true,
-    domain: ".valorant-10-mans.onrender.com",
     sameSite: "none",
     maxAge: 60 * 60 * 1000
   }
