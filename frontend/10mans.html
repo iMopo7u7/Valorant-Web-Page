@@ -839,17 +839,23 @@ function updateUserDisplay() {
 // ------------------------
 async function joinQueue() {
   try {
+    // Enviar null o no enviar matchId para que el backend decida
     const res = await fetch(`${API_BASE}/api/queue/join`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ matchId: activeMatches[0]?._id || null })
+      body: JSON.stringify({ matchId: null }) // ⚡ cambio aquí
     });
+
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     
     const data = await res.json();
     const updatedMatch = data.match || data;
-    activeMatches = activeMatches.map(m => m._id === updatedMatch._id ? updatedMatch : m);
+
+    // Agregar a activeMatches si no existe aún
+    const index = activeMatches.findIndex(m => m._id === updatedMatch._id);
+    if (index >= 0) activeMatches[index] = updatedMatch;
+    else activeMatches.push(updatedMatch);
 
     renderMatches(activeMatches);
     updateUserDisplay();
@@ -857,6 +863,7 @@ async function joinQueue() {
     if (updatedMatch.status === 'in_progress') {
       alert(`¡Partida iniciada automáticamente! Mapa: ${updatedMatch.map}`);
     }
+
   } catch (err) {
     console.error("Error joining queue:", err);
     alert("Error al unirse a la cola");
