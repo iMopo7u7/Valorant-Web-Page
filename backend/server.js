@@ -196,11 +196,39 @@ apiRouter.get("/users/me", requireAuth, async (req, res) => {
 apiRouter.post("/users/update-riot", requireAuth, async (req, res) => {
   try {
     const { riotId } = req.body;
-    await usersCollection.updateOne(
-      { discordId: req.session.userId },
-      { $set: { riotId, updatedAt: new Date() } }
-    );
-    res.json({ success: true });
+    const userId = req.session.userId;
+
+    if (!riotId) {
+      return res.status(400).json({ error: "Debes enviar un Riot ID" });
+    }
+
+    // Buscar al usuario
+    const user = await usersCollection.findOne({ discordId: userId });
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Caso 1: nunca tuvo Riot ID
+    if (!user.riotId) {
+      await usersCollection.updateOne(
+        { discordId: userId },
+        { $set: { riotId, riotIdChanged: false, updatedAt: new Date() } }
+      );
+      return res.json({ success: true, riotId });
+    }
+
+    // Caso 2: ya tenía Riot ID pero aún no lo cambió nunca
+    if (user.riotId && !user.riotIdChanged) {
+      await usersCollection.updateOne(
+        { discordId: userId },
+        { $set: { riotId, riotIdChanged: true, updatedAt: new Date() } }
+      );
+      return res.json({ success: true, riotId });
+    }
+
+    // Caso 3: ya lo cambió una vez → bloquear
+    return res.status(403).json({ error: "Ya no puedes cambiar tu Riot ID" });
+
   } catch (err) {
     console.error("Error en /users/update-riot:", err);
     res.status(500).json({ error: "Error del servidor" });
