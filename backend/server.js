@@ -315,7 +315,7 @@ apiRouter.get("/queue/active", async (req, res) => {
   }
 });
 
-const TEST_PLAYER_COUNT = 2; // Cambiar a 10 para producción
+const TEST_PLAYER_COUNT = 10; // Cambiar a 10 para producción
 const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze"];
 
 apiRouter.post("/queue/join", requireAuth, async (req, res) => {
@@ -384,7 +384,7 @@ apiRouter.post("/queue/join", requireAuth, async (req, res) => {
 // -----------------------------
 // --- Subir código de sala
 // -----------------------------
-apiRouter.post("/queue/submit-room-code", requireAuth, async (req, res) => {
+apiRouter.post("/queue/submit-room-code", requireAuthDiscord, async (req, res) => {
   try {
     const { matchId, roomCode } = req.body;
 
@@ -412,7 +412,7 @@ apiRouter.post("/queue/submit-room-code", requireAuth, async (req, res) => {
 // -----------------------------
 // --- Salir de la cola / partida
 // -----------------------------
-apiRouter.post("/queue/leave", requireAuth, async (req, res) => {
+apiRouter.post("/queue/leave", requireAuthDiscord, async (req, res) => {
   try {
     const userId = req.session.userId;
 
@@ -453,7 +453,7 @@ apiRouter.post("/queue/leave", requireAuth, async (req, res) => {
 // -----------------------------
 // --- Subir tracker y finalizar partida
 // -----------------------------
-apiRouter.post("/queue/submit-tracker", requireAuth, async (req, res) => {
+apiRouter.post("/queue/submit-tracker", requireAuthDiscord, async (req, res) => {
   try {
     const { matchId, trackerUrl } = req.body;
 
