@@ -154,7 +154,7 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
     const user = {
       discordId: discordUser.id,
       username: discordUser.username,       // @handle único
-      globalName: discordUser.global_name,  // display name
+      discriminator: discordUser.discriminator,
       avatar: discordUser.avatar,
       updatedAt: new Date()
     };
