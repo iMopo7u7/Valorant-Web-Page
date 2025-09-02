@@ -341,6 +341,47 @@ apiRouter.post("/queue/submit-room-code", requireAuth, async (req, res) => {
 });
 
 // -----------------------------
+// --- Salir de la cola / partida
+// -----------------------------
+apiRouter.post("/queue/leave", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+
+    // Buscar partida donde el usuario esté y que no esté completada
+    const match = await customMatchesCollection.findOne({
+      status: { $in: ["waiting", "in_progress"] },
+      players: userId
+    });
+
+    if (!match) {
+      return res.status(404).json({ error: "No estás en ninguna partida activa" });
+    }
+
+    // Si la partida ya empezó, no permitir salir (solo waiting)
+    if (match.status === "in_progress") {
+      return res.status(403).json({ error: "No puedes salir de una partida en progreso" });
+    }
+
+    // Remover al usuario del array players
+    await customMatchesCollection.updateOne(
+      { _id: match._id },
+      { $pull: { players: userId }, $set: { updatedAt: new Date() } }
+    );
+
+    // Si no queda ningún jugador, eliminar la partida
+    const updatedMatch = await customMatchesCollection.findOne({ _id: match._id });
+    if (!updatedMatch.players || updatedMatch.players.length === 0) {
+      await customMatchesCollection.deleteOne({ _id: match._id });
+    }
+
+    res.json({ success: true, message: "Has salido de la cola" });
+  } catch (err) {
+    console.error("Error en /queue/leave:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+// -----------------------------
 // --- Subir tracker y finalizar partida
 // -----------------------------
 apiRouter.post("/queue/submit-tracker", requireAuth, async (req, res) => {
