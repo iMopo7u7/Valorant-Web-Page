@@ -761,411 +761,409 @@
         </div>
     </main>
 
-    <script>
-        const API_BASE = "https://valorant-10-mans.onrender.com";
-        let currentUser = null;
-        let isQueueOpen = false;
-        let activeMatches = [];
-        const TEST_PLAYER_COUNT = 2;
-        const MAPS = ["Ascent", "Bind", "Haven", "Split", "Icebox"];
+<script>
+    const API_BASE = "https://valorant-10-mans.onrender.com";
+    let currentUser = null;
+    let isQueueOpen = false;
+    let activeMatches = [];
 
-        // ------------------------
-        // --- Inicialización
-        // ------------------------
-        document.addEventListener("DOMContentLoaded", async () => {
-            setupTabNavigation();
-            setupEventListeners();
-            await fetchCurrentUser();
-            await fetchActiveMatches();
-            updateQueueStatus();
-            setInterval(updateQueueStatus, 60000);
-            setInterval(fetchActiveMatches, 10000);
+    // ------------------------
+    // --- Inicialización
+    // ------------------------
+    document.addEventListener("DOMContentLoaded", async () => {
+        setupTabNavigation();
+        setupEventListeners();
+        await fetchCurrentUser();
+        await fetchActiveMatches();
+        updateQueueStatus();
+        setInterval(updateQueueStatus, 60000);
+        setInterval(fetchActiveMatches, 10000);
+    });
+
+    // ------------------------
+    // --- Tabs
+    // ------------------------
+    function setupTabNavigation() {
+        const navTabs = document.querySelectorAll('.nav-tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        navTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.dataset.tab;
+                navTabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(target + '-content').classList.add('active');
+            });
+        });
+    }
+
+    // ------------------------
+    // --- Event Listeners
+    // ------------------------
+    function setupEventListeners() {
+        const discordLoginBtn = document.getElementById('discord-login-btn');
+        if (discordLoginBtn) discordLoginBtn.addEventListener('click', () => window.location.href = `${API_BASE}/api/auth/discord`);
+
+        const playBtn = document.getElementById('play-btn');
+        if (playBtn) playBtn.addEventListener('click', async () => {
+            if (!currentUser) return alert("Debes iniciar sesión con Discord primero");
+            if (!currentUser.riotId) return alert("Debes registrar tu Riot ID para unirte a las partidas");
+            if (!isQueueOpen) return alert("La cola está cerrada en este momento");
+            await joinQueue();
         });
 
-        // ------------------------
-        // --- Tabs
-        // ------------------------
-        function setupTabNavigation() {
-            const navTabs = document.querySelectorAll('.nav-tab');
-            const tabContents = document.querySelectorAll('.tab-content');
-            navTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const target = tab.dataset.tab;
-                    navTabs.forEach(t => t.classList.remove('active'));
-                    tabContents.forEach(c => c.classList.remove('active'));
-                    tab.classList.add('active');
-                    document.getElementById(target + '-content').classList.add('active');
-                });
-            });
-        }
-
-        // ------------------------
-        // --- Event Listeners
-        // ------------------------
-        function setupEventListeners() {
-            const discordLoginBtn = document.getElementById('discord-login-btn');
-            if (discordLoginBtn) discordLoginBtn.addEventListener('click', () => window.location.href = `${API_BASE}/api/auth/discord`);
-
-            const playBtn = document.getElementById('play-btn');
-            if (playBtn) playBtn.addEventListener('click', async () => {
-                if (!currentUser) return alert("Debes iniciar sesión con Discord primero");
-                if (!currentUser.riotId) return alert("Debes registrar tu Riot ID para unirte a las partidas");
-                if (!isQueueOpen) return alert("La cola está cerrada en este momento");
-                await joinQueue();
-            });
-
-            const riotIdForm = document.getElementById('riot-id-form');
-            if (riotIdForm) {
-                riotIdForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const riotIdInput = document.getElementById('riot-id-input');
-                    const riotId = riotIdInput?.value.trim();
-                    if (riotId) {
-                        await updateRiotId(riotId);
-                        riotIdInput.value = '';
-                    }
-                });
-            }
-
-            const submitRoomCodeBtn = document.getElementById('submit-room-code');
-            const roomCodeInput = document.getElementById('room-code-input');
-            const submitTrackerBtn = document.getElementById('submit-tracker');
-            const trackerInput = document.getElementById('tracker-url-input');
-
-            submitRoomCodeBtn?.addEventListener('click', async () => {
-                const match = activeMatches.find(m => m.leaderId === currentUser?.discordId);
-                if (!match) return alert("Solo el líder puede enviar el código de sala");
-                const code = roomCodeInput.value.trim();
-                if (!code) return alert("Ingresa un código válido");
-                await updateRoomCode(match._id, code);
-            });
-
-            submitTrackerBtn?.addEventListener('click', async () => {
-                const match = activeMatches.find(m => m.leaderId === currentUser?.discordId);
-                if (!match) return alert("Solo el líder puede subir el tracker");
-                const url = trackerInput.value.trim();
-                if (!url) return alert("Ingresa una URL válida");
-                await updateTrackerUrl(match._id, url);
-            });
-        }
-
-        // ------------------------
-        // --- Usuarios y Riot ID
-        // ------------------------
-        async function fetchCurrentUser() {
-            try {
-                const res = await fetch(`${API_BASE}/api/users/me`, {
-                    credentials: "include",
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                if (res.status === 401) { currentUser = null; updateUserDisplay(); return; }
-                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                currentUser = await res.json();
-                updateUserDisplay();
-            } catch (err) {
-                console.error("Error fetching user:", err);
-                currentUser = null;
-                updateUserDisplay();
-            }
-        }
-
-        async function updateRiotId(riotId) {
-            try {
-                const res = await fetch(`${API_BASE}/api/users/update-riot`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ riotId })
-                });
-                if (!res.ok) {
-                    const data = await res.json();
-                    throw new Error(data.error || `HTTP error! status: ${res.status}`);
+        const riotIdForm = document.getElementById('riot-id-form');
+        if (riotIdForm) {
+            riotIdForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const riotIdInput = document.getElementById('riot-id-input');
+                const riotId = riotIdInput?.value.trim();
+                if (riotId) {
+                    await updateRiotId(riotId);
+                    riotIdInput.value = '';
                 }
+            });
+        }
+
+        const submitRoomCodeBtn = document.getElementById('submit-room-code');
+        const roomCodeInput = document.getElementById('room-code-input');
+        const submitTrackerBtn = document.getElementById('submit-tracker');
+        const trackerInput = document.getElementById('tracker-url-input');
+
+        submitRoomCodeBtn?.addEventListener('click', async () => {
+            const match = activeMatches.find(m => m.leaderId === currentUser?.discordId);
+            if (!match) return alert("Solo el líder puede enviar el código de sala");
+            const code = roomCodeInput.value.trim();
+            if (!code) return alert("Ingresa un código válido");
+            await updateRoomCode(match._id, code);
+        });
+
+        submitTrackerBtn?.addEventListener('click', async () => {
+            const match = activeMatches.find(m => m.leaderId === currentUser?.discordId);
+            if (!match) return alert("Solo el líder puede subir el tracker");
+            const url = trackerInput.value.trim();
+            if (!url) return alert("Ingresa una URL válida");
+            await updateTrackerUrl(match._id, url);
+        });
+    }
+
+    // ------------------------
+    // --- Usuarios y Riot ID
+    // ------------------------
+    async function fetchCurrentUser() {
+        try {
+            const res = await fetch(`${API_BASE}/api/users/me`, {
+                credentials: "include",
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (res.status === 401) { currentUser = null; updateUserDisplay(); return; }
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            currentUser = await res.json();
+            updateUserDisplay();
+        } catch (err) {
+            console.error("Error fetching user:", err);
+            currentUser = null;
+            updateUserDisplay();
+        }
+    }
+
+    async function updateRiotId(riotId) {
+        try {
+            const res = await fetch(`${API_BASE}/api/users/update-riot`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ riotId })
+            });
+            if (!res.ok) {
                 const data = await res.json();
-                if (data.success) {
-                    currentUser.riotId = riotId;
-                    updateUserDisplay();
-                    updatePlayButton();
-                    alert("Riot ID actualizado correctamente");
-                }
-            } catch (err) {
-                console.error("Error updating Riot ID:", err);
-                alert(err.message || "Error al actualizar Riot ID");
+                throw new Error(data.error || `HTTP error! status: ${res.status}`);
             }
+            const data = await res.json();
+            if (data.success) {
+                currentUser.riotId = riotId;
+                updateUserDisplay();
+                updatePlayButton();
+                alert("Riot ID actualizado correctamente");
+            }
+        } catch (err) {
+            console.error("Error updating Riot ID:", err);
+            alert(err.message || "Error al actualizar Riot ID");
         }
+    }
 
-        function updateUserDisplay() {
-            const loggedOutState = document.getElementById('logged-out-state');
-            const loggedInState = document.getElementById('logged-in-state');
-            const loginBtn = document.getElementById('discord-login-btn');
-            const riotIdForm = document.getElementById('riot-id-form');
-            const userRiotIdSpan = document.getElementById('user-riot-id');
-            const leaderSection = document.getElementById('leader-section');
+    function updateUserDisplay() {
+        const loggedOutState = document.getElementById('logged-out-state');
+        const loggedInState = document.getElementById('logged-in-state');
+        const loginBtn = document.getElementById('discord-login-btn');
+        const riotIdForm = document.getElementById('riot-id-form');
+        const userRiotIdSpan = document.getElementById('user-riot-id');
+        const leaderSection = document.getElementById('leader-section');
 
-            if (currentUser) {
-                loggedOutState?.classList.add('hidden');
-                loggedInState?.classList.remove('hidden');
-                loginBtn?.classList.add('hidden');
+        if (currentUser) {
+            loggedOutState?.classList.add('hidden');
+            loggedInState?.classList.remove('hidden');
+            loginBtn?.classList.add('hidden');
 
-                document.getElementById('user-avatar').src = currentUser.avatar ?
-                    `https://cdn.discordapp.com/avatars/${currentUser.discordId}/${currentUser.avatar}.png` : '/default-avatar.png';
-                document.getElementById('user-name').textContent = `${currentUser.username}#${currentUser.discriminator}`;
-                userRiotIdSpan.textContent = currentUser.riotId || "No registrado";
+            document.getElementById('user-avatar').src = currentUser.avatar ?
+                `https://cdn.discordapp.com/avatars/${currentUser.discordId}/${currentUser.avatar}.png` : '/default-avatar.png';
+            document.getElementById('user-name').textContent = `${currentUser.username}`;
+            userRiotIdSpan.textContent = currentUser.riotId || "No registrado";
 
-                if (!currentUser.riotId) {
-                    riotIdForm?.classList.remove('hidden');
-                } else {
-                    riotIdForm?.classList.add('hidden');
-                }
-
-                if (leaderSection) {
-                    if (activeMatches.some(m => m.leaderId === currentUser.discordId)) leaderSection.classList.remove('hidden');
-                    else leaderSection.classList.add('hidden');
-                }
+            if (!currentUser.riotId) {
+                riotIdForm?.classList.remove('hidden');
             } else {
-                loggedOutState?.classList.remove('hidden');
-                loggedInState?.classList.add('hidden');
-                loginBtn?.classList.remove('hidden');
                 riotIdForm?.classList.add('hidden');
-                userRiotIdSpan.textContent = "No registrado";
-                if (leaderSection) leaderSection.classList.add('hidden');
             }
 
-            updatePlayButton();
+            if (leaderSection) {
+                if (activeMatches.some(m => m.leaderId === currentUser.discordId)) leaderSection.classList.remove('hidden');
+                else leaderSection.classList.add('hidden');
+            }
+        } else {
+            loggedOutState?.classList.remove('hidden');
+            loggedInState?.classList.add('hidden');
+            loginBtn?.classList.remove('hidden');
+            riotIdForm?.classList.add('hidden');
+            userRiotIdSpan.textContent = "No registrado";
+            if (leaderSection) leaderSection.classList.add('hidden');
         }
 
-        // ------------------------
-        // --- Cola y Partidas
-        // ------------------------
-        async function joinQueue() {
-            try {
-                const res = await fetch(`${API_BASE}/api/queue/join`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ matchId: null })
-                });
+        updatePlayButton();
+    }
 
-                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    // ------------------------
+    // --- Cola y Partidas
+    // ------------------------
+    async function joinQueue() {
+        try {
+            const res = await fetch(`${API_BASE}/api/queue/join`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ matchId: null })
+            });
 
-                const data = await res.json();
-                const updatedMatch = data.match || data;
-                const index = activeMatches.findIndex(m => m._id === updatedMatch._id);
-                if (index >= 0) activeMatches[index] = updatedMatch;
-                else activeMatches.push(updatedMatch);
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
-                renderMatches(activeMatches);
-                updateUserDisplay();
+            const data = await res.json();
+            const updatedMatch = data.match || data;
+            const index = activeMatches.findIndex(m => m._id === updatedMatch._id);
+            if (index >= 0) activeMatches[index] = updatedMatch;
+            else activeMatches.push(updatedMatch);
 
-                if (updatedMatch.status === 'in_progress') {
-                    alert(`¡Partida iniciada automáticamente! Mapa: ${updatedMatch.map}`);
-                }
-            } catch (err) {
-                console.error("Error joining queue:", err);
-                alert("Error al unirse a la cola");
+            renderMatches(activeMatches);
+            updateUserDisplay();
+
+            if (updatedMatch.status === 'in_progress') {
+                alert(`¡Partida iniciada automáticamente! Mapa: ${updatedMatch.map}`);
             }
+        } catch (err) {
+            console.error("Error joining queue:", err);
+            alert("Error al unirse a la cola");
+        }
+    }
+
+    // ------------------------
+    // --- Render Partidas
+    // ------------------------
+    function renderMatches(matches) {
+        const container = document.getElementById('matches-container');
+        if (!container) return;
+
+        if (!matches || matches.length === 0) {
+            container.innerHTML = `<div class="card"><div class="card-content text-center"><p class="text-muted">No hay partidas activas</p></div></div>`;
+            return;
         }
 
-        // ------------------------
-        // --- Render Partidas
-        // ------------------------
-        function renderMatches(matches) {
-            const container = document.getElementById('matches-container');
-            if (!container) return;
-
-            if (!matches || matches.length === 0) {
-                container.innerHTML = `<div class="card"><div class="card-content text-center"><p class="text-muted">No hay partidas activas</p></div></div>`;
-                return;
-            }
-
-            container.innerHTML = matches.map(match => {
-                const playersCount = match.players ? match.players.length : 0;
-                const isLeader = currentUser?.discordId === match.leaderId;
-                return `
-      <div class="card match-card">
-        <div class="card-content">
-          <div class="flex justify-between items-center mb-3">
-            <span class="badge badge-${match.status === 'waiting' ? 'warning' : 'success'}">${match.status.toUpperCase()}</span>
-            <span class="text-sm text-muted">${playersCount}/${TEST_PLAYER_COUNT} jugadores</span>
-          </div>
-          <div class="flex justify-between items-center mb-4">
-            <div>
-              <h4 class="font-bold">${match.map || 'Mapa aleatorio'}</h4>
-              <p class="text-sm text-muted">Líder: ${isLeader ? 'Tú' : 'Otro jugador'}</p>
-            </div>
+        container.innerHTML = matches.map(match => {
+            const playersCount = match.players ? match.players.length : 0;
+            const isLeader = currentUser?.discordId === match.leaderId;
+            return `
+    <div class="card match-card">
+      <div class="card-content">
+        <div class="flex justify-between items-center mb-3">
+          <span class="badge badge-${match.status === 'waiting' ? 'warning' : 'success'}">${match.status.toUpperCase()}</span>
+          <span class="text-sm text-muted">${playersCount}/10 jugadores</span>
+        </div>
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h4 class="font-bold">${match.map || 'Mapa aleatorio'}</h4>
+            <p class="text-sm text-muted">Líder: ${isLeader ? 'Tú' : 'Otro jugador'}</p>
           </div>
         </div>
       </div>
-    `;
-            }).join('');
+    </div>
+  `;
+        }).join('');
 
-            const leaderMatch = matches.find(m => m.leaderId === currentUser?.discordId);
-            renderLeaderInputs(leaderMatch);
-        }
+        const leaderMatch = matches.find(m => m.leaderId === currentUser?.discordId);
+        renderLeaderInputs(leaderMatch);
+    }
 
-        // ------------------------
-        // --- Inputs Líder
-        // ------------------------
-        function renderLeaderInputs(match) {
-            const isLeader = !!match;
-            const roomInputWrapper = document.getElementById('room-code-input').parentElement;
-            const trackerInputWrapper = document.getElementById('tracker-url-input').parentElement;
-            const submitRoomCodeBtn = document.getElementById('submit-room-code');
-            const submitTrackerBtn = document.getElementById('submit-tracker');
+    // ------------------------
+    // --- Inputs Líder
+    // ------------------------
+    function renderLeaderInputs(match) {
+        const isLeader = !!match;
+        const roomInputWrapper = document.getElementById('room-code-input').parentElement;
+        const trackerInputWrapper = document.getElementById('tracker-url-input').parentElement;
+        const submitRoomCodeBtn = document.getElementById('submit-room-code');
+        const submitTrackerBtn = document.getElementById('submit-tracker');
 
-            if (isLeader) {
-                roomInputWrapper.style.display = 'flex';
-                submitRoomCodeBtn.style.display = 'block';
-                trackerInputWrapper.style.display = 'flex';
-                submitTrackerBtn.style.display = 'block';
+        if (isLeader) {
+            roomInputWrapper.style.display = 'flex';
+            submitRoomCodeBtn.style.display = 'block';
+            trackerInputWrapper.style.display = 'flex';
+            submitTrackerBtn.style.display = 'block';
 
-                if (match.roomCode) {
-                    document.getElementById('room-code-input').value = match.roomCode;
-                    document.getElementById('room-code-input').disabled = true;
-                    submitRoomCodeBtn.disabled = true;
-                } else {
-                    document.getElementById('room-code-input').disabled = false;
-                    submitRoomCodeBtn.disabled = false;
-                    document.getElementById('room-code-input').value = '';
-                }
-
-                if (match.trackerUrl) {
-                    document.getElementById('tracker-url-input').value = match.trackerUrl;
-                    document.getElementById('tracker-url-input').disabled = true;
-                    submitTrackerBtn.disabled = true;
-                } else {
-                    document.getElementById('tracker-url-input').disabled = false;
-                    submitTrackerBtn.disabled = false;
-                    document.getElementById('tracker-url-input').value = '';
-                }
-            } else {
-                roomInputWrapper.style.display = 'none';
-                submitRoomCodeBtn.style.display = 'none';
-                trackerInputWrapper.style.display = 'none';
-                submitTrackerBtn.style.display = 'none';
-            }
-        }
-
-        // ------------------------
-        // --- Cola Status
-        // ------------------------
-        function updateQueueStatus() {
-            const now = new Date();
-            const openHour = 0, closeHour = 23;
-            const queueStatus = document.getElementById('queue-status');
-            const riotWarning = document.getElementById('riot-id-warning');
-
-            isQueueOpen = now.getHours() >= openHour && now.getHours() < closeHour;
-
-            if (queueStatus) {
-                queueStatus.innerHTML = isQueueOpen
-                    ? '<span class="text-success">✅ COLA ABIERTA</span>'
-                    : `⏰ COLA CERRADA - Abre en: ${openHour}h`;
-            }
-
-            updatePlayButton();
-        }
-
-        function updatePlayButton() {
-            const playBtn = document.getElementById('play-btn');
-            const riotWarning = document.getElementById('riot-id-warning');
-            if (!playBtn) return;
-            const canPlay = isQueueOpen && currentUser?.riotId;
-
-            if (canPlay) {
-                playBtn.textContent = '⚔️ UNIRSE A LA COLA';
-                playBtn.disabled = false;
-                playBtn.classList.add('pulse-glow');
-                riotWarning?.classList.add('hidden');
-            } else if (!isQueueOpen) {
-                playBtn.textContent = '⏰ COLA CERRADA';
-                playBtn.disabled = true;
-                playBtn.classList.remove('pulse-glow');
-            } else if (!currentUser?.riotId) {
-                playBtn.textContent = '⚔️ UNIRSE A LA COLA';
-                playBtn.disabled = true;
-                playBtn.classList.remove('pulse-glow');
-                riotWarning?.classList.remove('hidden');
-            } else if (!currentUser) {
-                playBtn.textContent = '🔒 INICIA SESIÓN PRIMERO';
-                playBtn.disabled = true;
-                playBtn.classList.remove('pulse-glow');
-            }
-        }
-
-        // ------------------------
-        // --- Fetch Active Matches
-        // ------------------------
-        async function fetchActiveMatches() {
-            try {
-                const res = await fetch(`${API_BASE}/api/queue/active`, {
-                    credentials: "include",
-                    headers: { "Content-Type": "application/json" }
-                });
-                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                activeMatches = await res.json();
-                renderMatches(activeMatches);
-                updateUserDisplay();
-            } catch (err) {
-                console.error("Error fetching active matches:", err);
-            }
-        }
-
-        // ------------------------
-        // --- Update Room & Tracker
-        // ------------------------
-        async function updateRoomCode(matchId, roomCode) {
-            if (!/^[A-Z]{5}$/.test(roomCode)) {
-                return alert("Código de sala inválido. Debe tener 5 letras mayúsculas.");
-            }
-
-            try {
-                const res = await fetch(`${API_BASE}/api/queue/submit-room-code`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ matchId, roomCode })
-                });
-                if (!res.ok) throw new Error("Error al actualizar código de sala");
-                const data = await res.json();
-
-                document.getElementById('room-code-input').value = data.roomCode;
+            if (match.roomCode) {
+                document.getElementById('room-code-input').value = match.roomCode;
                 document.getElementById('room-code-input').disabled = true;
-                document.getElementById('submit-room-code').disabled = true;
-                alert("Código de sala actualizado correctamente");
-            } catch (err) {
-                console.error(err);
-                alert("Error al actualizar código de sala");
-            }
-        }
-
-        async function updateTrackerUrl(matchId, trackerUrl) {
-            const trackerRegex = /^https:\/\/tracker\.gg\/valorant\/match\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-            if (!trackerRegex.test(trackerUrl)) {
-                return alert("URL de tracker inválida. Debe tener formato correcto de tracker.gg.");
+                submitRoomCodeBtn.disabled = true;
+            } else {
+                document.getElementById('room-code-input').disabled = false;
+                submitRoomCodeBtn.disabled = false;
+                document.getElementById('room-code-input').value = '';
             }
 
-            try {
-                const res = await fetch(`${API_BASE}/api/queue/submit-tracker`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ matchId, trackerUrl })
-                });
-                if (!res.ok) throw new Error("Error al subir tracker URL");
-                const data = await res.json();
-
-                document.getElementById('tracker-url-input').value = data.trackerUrl;
+            if (match.trackerUrl) {
+                document.getElementById('tracker-url-input').value = match.trackerUrl;
                 document.getElementById('tracker-url-input').disabled = true;
-                document.getElementById('submit-tracker').disabled = true;
-
-                alert("Tracker subido correctamente. Partida finalizada.");
-                await fetchActiveMatches();
-            } catch (err) {
-                console.error(err);
-                alert("Error al subir tracker URL");
+                submitTrackerBtn.disabled = true;
+            } else {
+                document.getElementById('tracker-url-input').disabled = false;
+                submitTrackerBtn.disabled = false;
+                document.getElementById('tracker-url-input').value = '';
             }
+        } else {
+            roomInputWrapper.style.display = 'none';
+            submitRoomCodeBtn.style.display = 'none';
+            trackerInputWrapper.style.display = 'none';
+            submitTrackerBtn.style.display = 'none';
         }
-    </script>
+    }
+
+    // ------------------------
+    // --- Cola Status
+    // ------------------------
+    function updateQueueStatus() {
+        const now = new Date();
+        const openHour = 0, closeHour = 23;
+        const queueStatus = document.getElementById('queue-status');
+
+        isQueueOpen = now.getHours() >= openHour && now.getHours() < closeHour;
+
+        if (queueStatus) {
+            queueStatus.innerHTML = isQueueOpen
+                ? '<span class="text-success">✅ COLA ABIERTA</span>'
+                : `⏰ COLA CERRADA - Abre en: ${openHour}h`;
+        }
+
+        updatePlayButton();
+    }
+
+    function updatePlayButton() {
+        const playBtn = document.getElementById('play-btn');
+        const riotWarning = document.getElementById('riot-id-warning');
+        if (!playBtn) return;
+        const canPlay = isQueueOpen && currentUser?.riotId;
+
+        if (canPlay) {
+            playBtn.textContent = '⚔️ UNIRSE A LA COLA';
+            playBtn.disabled = false;
+            playBtn.classList.add('pulse-glow');
+            riotWarning?.classList.add('hidden');
+        } else if (!isQueueOpen) {
+            playBtn.textContent = '⏰ COLA CERRADA';
+            playBtn.disabled = true;
+            playBtn.classList.remove('pulse-glow');
+        } else if (!currentUser?.riotId) {
+            playBtn.textContent = '⚔️ UNIRSE A LA COLA';
+            playBtn.disabled = true;
+            playBtn.classList.remove('pulse-glow');
+            riotWarning?.classList.remove('hidden');
+        } else if (!currentUser) {
+            playBtn.textContent = '🔒 INICIA SESIÓN PRIMERO';
+            playBtn.disabled = true;
+            playBtn.classList.remove('pulse-glow');
+        }
+    }
+
+    // ------------------------
+    // --- Fetch Active Matches
+    // ------------------------
+    async function fetchActiveMatches() {
+        try {
+            const res = await fetch(`${API_BASE}/api/queue/active`, {
+                credentials: "include",
+                headers: { "Content-Type": "application/json" }
+            });
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            activeMatches = await res.json();
+            renderMatches(activeMatches);
+            updateUserDisplay();
+        } catch (err) {
+            console.error("Error fetching active matches:", err);
+        }
+    }
+
+    // ------------------------
+    // --- Update Room & Tracker
+    // ------------------------
+    async function updateRoomCode(matchId, roomCode) {
+        if (!/^[A-Z0-9]{5,6}$/.test(roomCode)) {
+            return alert("Código de sala inválido. Debe tener 5-6 caracteres alfanuméricos en mayúscula.");
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/api/queue/submit-room-code`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ matchId, roomCode })
+            });
+            if (!res.ok) throw new Error("Error al actualizar código de sala");
+            const data = await res.json();
+
+            document.getElementById('room-code-input').value = data.roomCode;
+            document.getElementById('room-code-input').disabled = true;
+            document.getElementById('submit-room-code').disabled = true;
+            alert("Código de sala actualizado correctamente");
+        } catch (err) {
+            console.error(err);
+            alert("Error al actualizar código de sala");
+        }
+    }
+
+    async function updateTrackerUrl(matchId, trackerUrl) {
+        const trackerRegex = /^https:\/\/tracker\.gg\/valorant\/match\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+        if (!trackerRegex.test(trackerUrl)) {
+            return alert("URL de tracker inválida. Debe tener formato correcto de tracker.gg.");
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/api/queue/submit-tracker`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ matchId, trackerUrl })
+            });
+            if (!res.ok) throw new Error("Error al subir tracker URL");
+            const data = await res.json();
+
+            document.getElementById('tracker-url-input').value = data.trackerUrl;
+            document.getElementById('tracker-url-input').disabled = true;
+            document.getElementById('submit-tracker').disabled = true;
+
+            alert("Tracker subido correctamente. Partida finalizada.");
+            await fetchActiveMatches();
+        } catch (err) {
+            console.error(err);
+            alert("Error al subir tracker URL");
+        }
+    }
+</script>
+
 </body>
 </html>
