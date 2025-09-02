@@ -153,8 +153,8 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
 
     const user = {
       discordId: discordUser.id,
-      username: discordUser.username,
-      discriminator: discordUser.discriminator,
+      username: discordUser.username,       // @handle único
+      globalName: discordUser.global_name,  // display name
       avatar: discordUser.avatar,
       updatedAt: new Date()
     };
@@ -246,8 +246,8 @@ apiRouter.get("/queue/active", async (req, res) => {
   }
 });
 
-const TEST_PLAYER_COUNT = 2; // Cambiar a 10 para producción
-const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze"];
+const TEST_PLAYER_COUNT = 10;
+const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze", "Split", "Fracture", "Pearl", "Lotus", "Sunset", "Corrode", "Abyss"];
 
 apiRouter.post("/queue/join", requireAuth, async (req, res) => {
   try {
@@ -319,9 +319,9 @@ apiRouter.post("/queue/submit-room-code", requireAuth, async (req, res) => {
   try {
     const { matchId, roomCode } = req.body;
 
-    // Validar formato de room code (ejemplo: 5 letras mayúsculas)
-    if (!/^[A-Z]{5}$/.test(roomCode)) {
-      return res.status(400).json({ error: "Código de sala inválido. Debe tener 5 letras mayúsculas." });
+    // Validar formato de room code (6 caracteres alfanuméricos en mayúsculas)
+    if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
+      return res.status(400).json({ error: "Código de sala inválido. Debe tener 6 caracteres alfanuméricos en mayúsculas (ej: ZIK271)." });
     }
 
     const result = await customMatchesCollection.updateOne(
