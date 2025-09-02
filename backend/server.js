@@ -119,6 +119,33 @@ apiRouter.get("/auth/discord", (req, res) => {
   res.redirect(discordUrl);
 });
 
+async function fetchDiscordTokenWithRetry(params, retries = 3) {
+  try {
+    const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params
+    });
+
+    if (tokenRes.status === 429) {
+      const retryAfter = parseFloat(tokenRes.headers.get("retry-after") || "1");
+      console.warn(`Rate limit hit, retrying after ${retryAfter} seconds`);
+      await new Promise(r => setTimeout(r, retryAfter * 1000));
+      if (retries > 0) return fetchDiscordTokenWithRetry(params, retries - 1);
+      throw new Error("Too many requests to Discord API, retry limit reached");
+    }
+
+    if (!tokenRes.ok) {
+      throw new Error(`Discord token error: ${tokenRes.status}`);
+    }
+
+    return await tokenRes.json();
+  } catch (err) {
+    throw err;
+  }
+}
+
+// Callback actualizado
 apiRouter.get("/auth/discord/callback", async (req, res) => {
   const code = req.query.code;
   try {
@@ -129,26 +156,16 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
     params.append("code", code);
     params.append("redirect_uri", process.env.DISCORD_REDIRECT_URI);
 
-    const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params
-    });
-    
-    if (!tokenRes.ok) {
-      throw new Error(`Discord token error: ${tokenRes.status}`);
-    }
-    
-    const tokenData = await tokenRes.json();
+    const tokenData = await fetchDiscordTokenWithRetry(params);
 
     const userRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` }
     });
-    
+
     if (!userRes.ok) {
       throw new Error(`Discord user error: ${userRes.status}`);
     }
-    
+
     const discordUser = await userRes.json();
 
     const user = {
@@ -158,7 +175,7 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
       avatar: discordUser.avatar,
       updatedAt: new Date()
     };
-    
+
     await usersCollection.updateOne(
       { discordId: discordUser.id },
       { $set: user },
