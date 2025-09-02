@@ -134,40 +134,45 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params
     });
-
+    
     if (!tokenRes.ok) {
       throw new Error(`Discord token error: ${tokenRes.status}`);
     }
-
+    
     const tokenData = await tokenRes.json();
 
     const userRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` }
     });
-
-    if (!userRes.ok) throw new Error(`Discord user error: ${userRes.status}`);
+    
+    if (!userRes.ok) {
+      throw new Error(`Discord user error: ${userRes.status}`);
+    }
+    
     const discordUser = await userRes.json();
 
-    // Guardar o actualizar en Mongo
+    const user = {
+      discordId: discordUser.id,
+      username: discordUser.username,
+      discriminator: discordUser.discriminator,
+      avatar: discordUser.avatar,
+      updatedAt: new Date()
+    };
+    
     await usersCollection.updateOne(
       { discordId: discordUser.id },
-      { $set: { 
-          discordId: discordUser.id,
-          username: discordUser.username,
-          avatar: discordUser.avatar,
-          updatedAt: new Date()
-        } 
-      },
+      { $set: user },
       { upsert: true }
     );
 
-    // Guardar en la sesión
     req.session.userId = discordUser.id;
     req.session.save(err => {
-      if (err) return res.status(500).send("Error guardando sesión");
+      if (err) {
+        console.error("Error guardando sesión:", err);
+        return res.status(500).send("Error en login");
+      }
       res.redirect("https://valorant-10-mans-frontend.onrender.com");
     });
-
   } catch (err) {
     console.error("Error en callback Discord:", err);
     res.status(500).json({ error: "Error en login Discord" });
