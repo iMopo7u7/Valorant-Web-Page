@@ -766,7 +766,7 @@ const API_BASE = "https://valorant-10-mans.onrender.com";
 let currentUser = null;
 let isQueueOpen = false;
 let activeMatches = [];
-let inQueue = false; // <-- Estado si el usuario está en la cola
+let inQueue = false; // Estado si el usuario está en la cola
 
 // ------------------------
 // --- Inicialización
@@ -803,7 +803,9 @@ function setupTabNavigation() {
 // ------------------------
 function setupEventListeners() {
     const discordLoginBtn = document.getElementById('discord-login-btn');
-    if (discordLoginBtn) discordLoginBtn.addEventListener('click', () => window.location.href = `${API_BASE}/api/auth/discord`);
+    if (discordLoginBtn) discordLoginBtn.addEventListener('click', () => 
+        window.location.href = `${API_BASE}/api/auth/discord`
+    );
 
     const playBtn = document.getElementById('play-btn');
     if (playBtn) playBtn.addEventListener('click', async () => {
@@ -812,9 +814,9 @@ function setupEventListeners() {
         if (!isQueueOpen) return alert("La cola está cerrada en este momento");
 
         if (inQueue) {
-            await leaveQueue(); // Si ya está en cola, salir
+            await leaveQueue(); // Salir si ya está en cola
         } else {
-            await joinQueue(); // Si no está, unirse
+            await joinQueue(); // Unirse si no
         }
     });
 
@@ -916,11 +918,8 @@ function updateUserDisplay() {
         document.getElementById('user-name').textContent = `${currentUser.username}`;
         userRiotIdSpan.textContent = currentUser.riotId || "No registrado";
 
-        if (!currentUser.riotId) {
-            riotIdForm?.classList.remove('hidden');
-        } else {
-            riotIdForm?.classList.add('hidden');
-        }
+        if (!currentUser.riotId) riotIdForm?.classList.remove('hidden');
+        else riotIdForm?.classList.add('hidden');
 
         if (leaderSection) {
             if (activeMatches.some(m => m.leaderId === currentUser.discordId)) leaderSection.classList.remove('hidden');
@@ -949,7 +948,6 @@ async function joinQueue() {
             credentials: "include",
             body: JSON.stringify({ matchId: null })
         });
-
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
         const data = await res.json();
@@ -958,7 +956,7 @@ async function joinQueue() {
         if (index >= 0) activeMatches[index] = updatedMatch;
         else activeMatches.push(updatedMatch);
 
-        inQueue = true; // <-- Usuario ahora está en cola
+        inQueue = true;
         updateQueueButton();
         renderMatches(activeMatches);
 
@@ -978,7 +976,6 @@ async function leaveQueue() {
             headers: { "Content-Type": "application/json" },
             credentials: "include",
         });
-
         if (!res.ok) throw new Error("Error al salir de la cola");
 
         inQueue = false;
@@ -1037,7 +1034,6 @@ async function fetchActiveMatches() {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         activeMatches = await res.json();
 
-        // Verificar si el usuario está en cola
         inQueue = activeMatches.some(m => m.players?.some(p => p.discordId === currentUser?.discordId));
 
         renderMatches(activeMatches);
@@ -1047,9 +1043,6 @@ async function fetchActiveMatches() {
     }
 }
 
-// ------------------------
-// --- Render Matches
-// ------------------------
 function renderMatches(matches) {
     const container = document.getElementById('matches-container');
     if (!container) return;
@@ -1076,8 +1069,7 @@ function renderMatches(matches) {
       </div>
     </div>
   </div>
-</div>
-`;
+</div>`;
     }).join('');
 
     const leaderMatch = matches.find(m => m.leaderId === currentUser?.discordId);
