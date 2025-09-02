@@ -134,45 +134,40 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params
     });
-    
+
     if (!tokenRes.ok) {
       throw new Error(`Discord token error: ${tokenRes.status}`);
     }
-    
+
     const tokenData = await tokenRes.json();
 
     const userRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` }
     });
-    
-    if (!userRes.ok) {
-      throw new Error(`Discord user error: ${userRes.status}`);
-    }
-    
+
+    if (!userRes.ok) throw new Error(`Discord user error: ${userRes.status}`);
     const discordUser = await userRes.json();
 
-    const user = {
-      discordId: discordUser.id,
-      username: discordUser.username,
-      discriminator: discordUser.discriminator,
-      avatar: discordUser.avatar,
-      updatedAt: new Date()
-    };
-    
+    // Guardar o actualizar en Mongo
     await usersCollection.updateOne(
       { discordId: discordUser.id },
-      { $set: user },
+      { $set: { 
+          discordId: discordUser.id,
+          username: discordUser.username,
+          avatar: discordUser.avatar,
+          updatedAt: new Date()
+        } 
+      },
       { upsert: true }
     );
 
+    // Guardar en la sesión
     req.session.userId = discordUser.id;
     req.session.save(err => {
-      if (err) {
-        console.error("Error guardando sesión:", err);
-        return res.status(500).send("Error en login");
-      }
+      if (err) return res.status(500).send("Error guardando sesión");
       res.redirect("https://valorant-10-mans-frontend.onrender.com");
     });
+
   } catch (err) {
     console.error("Error en callback Discord:", err);
     res.status(500).json({ error: "Error en login Discord" });
@@ -246,8 +241,49 @@ apiRouter.get("/queue/active", async (req, res) => {
   }
 });
 
-const TEST_PLAYER_COUNT = 2; // Cambiar a 10 para producción
-const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze"];
+// -----------------------------
+// --- Salir de la cola / partida
+// -----------------------------
+apiRouter.post("/queue/leave", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+
+    // Buscar partida donde el usuario esté y que no esté completada
+    const match = await customMatchesCollection.findOne({
+      status: { $in: ["waiting", "in_progress"] },
+      players: userId
+    });
+
+    if (!match) {
+      return res.status(404).json({ error: "No estás en ninguna partida activa" });
+    }
+
+    // Si la partida ya empezó, no permitir salir (solo waiting)
+    if (match.status === "in_progress") {
+      return res.status(403).json({ error: "No puedes salir de una partida en progreso" });
+    }
+
+    // Remover al usuario del array players
+    await customMatchesCollection.updateOne(
+      { _id: match._id },
+      { $pull: { players: userId }, $set: { updatedAt: new Date() } }
+    );
+
+    // Si no queda ningún jugador, eliminar la partida
+    const updatedMatch = await customMatchesCollection.findOne({ _id: match._id });
+    if (!updatedMatch.players || updatedMatch.players.length === 0) {
+      await customMatchesCollection.deleteOne({ _id: match._id });
+    }
+
+    res.json({ success: true, message: "Has salido de la cola" });
+  } catch (err) {
+    console.error("Error en /queue/leave:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+const TEST_PLAYER_COUNT = 10;
+const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze", "Split", "Fracture", "Pearl", "Lotus", "Sunset", "Corrode", "Abyss"];
 
 apiRouter.post("/queue/join", requireAuth, async (req, res) => {
   try {
@@ -319,9 +355,9 @@ apiRouter.post("/queue/submit-room-code", requireAuth, async (req, res) => {
   try {
     const { matchId, roomCode } = req.body;
 
-    // Validar formato de room code (ejemplo: 5 letras mayúsculas)
-    if (!/^[A-Z]{5}$/.test(roomCode)) {
-      return res.status(400).json({ error: "Código de sala inválido. Debe tener 5 letras mayúsculas." });
+    // Validar formato de room code (6 caracteres alfanuméricos en mayúsculas)
+    if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
+      return res.status(400).json({ error: "Código de sala inválido. Debe tener 6 caracteres alfanuméricos en mayúsculas (ej: ZIK271)." });
     }
 
     const result = await customMatchesCollection.updateOne(
