@@ -6,7 +6,6 @@ import session from "express-session";
 import MongoStore from "connect-mongo";
 import path from "path";
 import { fileURLToPath } from "url";
-import fetch from "node-fetch";
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
