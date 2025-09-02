@@ -262,7 +262,7 @@ apiRouter.get("/users/me", requireAuth, async (req, res) => {
   }
 });
 
-apiRouter.post("/users/update-riot", requireAuth, async (req, res) => {
+apiRouter.post("/users/update-riot", requireAuthDiscord, async (req, res) => {
   try {
     const { riotId } = req.body;
     const userId = req.session.userId;
@@ -318,7 +318,7 @@ apiRouter.get("/queue/active", async (req, res) => {
 const TEST_PLAYER_COUNT = 10; // Cambiar a 10 para producción
 const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze"];
 
-apiRouter.post("/queue/join", requireAuth, async (req, res) => {
+apiRouter.post("/queue/join", requireAuthDiscord, async (req, res) => {
   try {
     const { matchId } = req.body;
 
