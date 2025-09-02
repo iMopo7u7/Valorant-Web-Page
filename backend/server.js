@@ -6,6 +6,7 @@ import session from "express-session";
 import MongoStore from "connect-mongo";
 import path from "path";
 import { fileURLToPath } from "url";
+import fetch from "node-fetch";
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -119,7 +120,8 @@ apiRouter.get("/auth/discord", (req, res) => {
   res.redirect(discordUrl);
 });
 
-async function fetchDiscordTokenWithRetry(params, retries = 3) {
+// --- Función para pedir token con retry y control de rate limit
+async function fetchDiscordToken(params, retries = 3) {
   try {
     const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
       method: "POST",
@@ -129,15 +131,13 @@ async function fetchDiscordTokenWithRetry(params, retries = 3) {
 
     if (tokenRes.status === 429) {
       const retryAfter = parseFloat(tokenRes.headers.get("retry-after") || "1");
-      console.warn(`Rate limit hit, retrying after ${retryAfter} seconds`);
+      console.warn(`Rate limit hit, retrying after ${retryAfter}s`);
       await new Promise(r => setTimeout(r, retryAfter * 1000));
-      if (retries > 0) return fetchDiscordTokenWithRetry(params, retries - 1);
-      throw new Error("Too many requests to Discord API, retry limit reached");
+      if (retries > 0) return fetchDiscordToken(params, retries - 1);
+      throw new Error("Too many requests to Discord API");
     }
 
-    if (!tokenRes.ok) {
-      throw new Error(`Discord token error: ${tokenRes.status}`);
-    }
+    if (!tokenRes.ok) throw new Error(`Discord token error: ${tokenRes.status}`);
 
     return await tokenRes.json();
   } catch (err) {
@@ -145,10 +145,25 @@ async function fetchDiscordTokenWithRetry(params, retries = 3) {
   }
 }
 
-// Callback actualizado
+// --- Función para refrescar token si expiró
+async function refreshDiscordToken(user) {
+  const params = new URLSearchParams();
+  params.append("client_id", process.env.DISCORD_CLIENT_ID);
+  params.append("client_secret", process.env.DISCORD_CLIENT_SECRET);
+  params.append("grant_type", "refresh_token");
+  params.append("refresh_token", user.refreshToken);
+  params.append("redirect_uri", process.env.DISCORD_REDIRECT_URI);
+
+  const tokenData = await fetchDiscordToken(params);
+  return tokenData;
+}
+
+// --- Callback OAuth
 apiRouter.get("/auth/discord/callback", async (req, res) => {
   const code = req.query.code;
   try {
+    if (!code) return res.status(400).json({ error: "No se recibió código de Discord" });
+
     const params = new URLSearchParams();
     params.append("client_id", process.env.DISCORD_CLIENT_ID);
     params.append("client_secret", process.env.DISCORD_CLIENT_SECRET);
@@ -156,15 +171,15 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
     params.append("code", code);
     params.append("redirect_uri", process.env.DISCORD_REDIRECT_URI);
 
-    const tokenData = await fetchDiscordTokenWithRetry(params);
+    // Pedimos token
+    const tokenData = await fetchDiscordToken(params);
 
+    // Obtenemos info del usuario
     const userRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` }
     });
 
-    if (!userRes.ok) {
-      throw new Error(`Discord user error: ${userRes.status}`);
-    }
+    if (!userRes.ok) throw new Error(`Discord user fetch failed: ${userRes.status}`);
 
     const discordUser = await userRes.json();
 
@@ -173,15 +188,20 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
       username: discordUser.username,
       discriminator: discordUser.discriminator,
       avatar: discordUser.avatar,
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      tokenExpiresAt: Date.now() + (tokenData.expires_in * 1000),
       updatedAt: new Date()
     };
 
+    // Guardamos/actualizamos usuario en MongoDB
     await usersCollection.updateOne(
       { discordId: discordUser.id },
       { $set: user },
       { upsert: true }
     );
 
+    // Guardamos sesión
     req.session.userId = discordUser.id;
     req.session.save(err => {
       if (err) {
@@ -191,10 +211,42 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
       res.redirect("https://valorant-10-mans-frontend.onrender.com");
     });
   } catch (err) {
-    console.error("Error en callback Discord:", err);
+    console.error("Error en Discord callback:", err);
     res.status(500).json({ error: "Error en login Discord" });
   }
 });
+
+// --- Middleware para refrescar token automáticamente
+async function requireAuthDiscord(req, res, next) {
+  if (!req.session.userId) return res.status(401).json({ error: "No autorizado" });
+
+  const user = await usersCollection.findOne({ discordId: req.session.userId });
+  if (!user) return res.status(401).json({ error: "Usuario no encontrado" });
+
+  // Si el token expiró, refrescamos
+  if (Date.now() > user.tokenExpiresAt) {
+    try {
+      const tokenData = await refreshDiscordToken(user);
+      await usersCollection.updateOne(
+        { discordId: user.discordId },
+        {
+          $set: {
+            accessToken: tokenData.access_token,
+            refreshToken: tokenData.refresh_token,
+            tokenExpiresAt: Date.now() + (tokenData.expires_in * 1000)
+          }
+        }
+      );
+      user.accessToken = tokenData.access_token;
+    } catch (err) {
+      console.error("Error refrescando token:", err);
+      return res.status(401).json({ error: "Token expirado, vuelve a loguearte" });
+    }
+  }
+
+  req.user = user; // guardamos info del usuario para los endpoints
+  next();
+}
 
 // --- Users endpoints
 apiRouter.get("/users/me", requireAuth, async (req, res) => {
