@@ -302,38 +302,45 @@ async function joinGlobalQueue(userId) {
 
   const queue = queueDoc.players;
 
-  // Crear partida automáticamente si hay 10 jugadores
-  if (queue.length >= 10) {
-    const playersForMatch = queue.slice(0, 10);
+  // Crear partida automáticamente si hay al menos 2 jugadores
+if (queue.length >= 2) {
+  const maxPlayers = Math.min(queue.length, 10); // máximo 10 jugadores
+  const playersForMatch = queue.slice(0, maxPlayers);
 
-    await customMatchesCollection.updateOne(
-      { _id: "globalQueue" },
-      { $pull: { players: { $in: playersForMatch } } }
-    );
+  // Sacar jugadores de la cola
+  await customMatchesCollection.updateOne(
+    { _id: "globalQueue" },
+    { $pull: { players: { $in: playersForMatch } } }
+  );
 
-    const map = MAPS[Math.floor(Math.random() * MAPS.length)];
-    const shuffled = [...playersForMatch].sort(() => 0.5 - Math.random());
-    const teamA = shuffled.slice(0, 5);
-    const teamB = shuffled.slice(5);
+  // Elegir mapa aleatorio
+  const map = MAPS[Math.floor(Math.random() * MAPS.length)];
 
-    const leaderId = playersForMatch[Math.floor(Math.random() * playersForMatch.length)];
-    const sideA = SIDES[Math.floor(Math.random() * SIDES.length)];
-    const sideB = sideA === "Attacker" ? "Defender" : "Attacker";
+  // Mezclar jugadores y dividir en equipos
+  const shuffled = [...playersForMatch].sort(() => 0.5 - Math.random());
+  const mid = Math.ceil(shuffled.length / 2);
+  const teamA = shuffled.slice(0, mid);
+  const teamB = shuffled.slice(mid);
 
-    const newMatch = {
-      players: playersForMatch,
-      teamA,
-      teamB,
-      map,
-      leaderId,
-      sides: { teamA: sideA, teamB: sideB },
-      status: "in_progress",
-      createdAt: new Date()
-    };
+  // Elegir líder y lados
+  const leaderId = playersForMatch[Math.floor(Math.random() * playersForMatch.length)];
+  const sideA = SIDES[Math.floor(Math.random() * SIDES.length)];
+  const sideB = sideA === "Attacker" ? "Defender" : "Attacker";
 
-    await customMatchesCollection.insertOne(newMatch);
-    return newMatch;
-  }
+  const newMatch = {
+    players: playersForMatch,
+    teamA,
+    teamB,
+    map,
+    leaderId,
+    sides: { teamA: sideA, teamB: sideB },
+    status: "in_progress",
+    createdAt: new Date()
+  };
+
+  await customMatchesCollection.insertOne(newMatch);
+  return newMatch;
+}
 
   return null; // aún no hay suficientes jugadores
 }
