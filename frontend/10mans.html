@@ -879,7 +879,7 @@ async function checkAuthStatus() {
 }
 
 function loginWithDiscord() {
-    window.location.href = `${API_BASE}/auth/discord`;
+    window.location.href = `${API_BASE}/api/auth/discord`;
 }
 
 function showLoginInterface() {
@@ -892,7 +892,9 @@ function showLoginInterface() {
 function showUserInterface() {
     document.getElementById('loginSection').style.display = 'none';
     document.getElementById('userCard').style.display = 'block';
-    document.getElementById('userAvatar').src = currentUser.avatar || '/placeholder.svg';
+    document.getElementById('userAvatar').src = currentUser.avatar
+    ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`
+    : '/placeholder.svg';
     document.getElementById('userName').textContent = currentUser.username || 'Usuario';
 
     const bgElement = document.getElementById('userCardBg');
@@ -1089,7 +1091,7 @@ function renderTeam(containerId, players) {
         }
         card.innerHTML=`
         <div class="player-card-content">
-            <img class="player-avatar-small" src="${p.avatar||'/placeholder.svg'}">
+            <img class="player-avatar-small" src="${p.avatar ? `https://cdn.discordapp.com/avatars/${p.id}/${p.avatar}.png` : '/placeholder.svg'}">
             <div class="player-info">
                 <div class="player-name-small">${p.username}</div>
                 <div class="player-riot-id">${p.riotId||'Sin Riot ID'}</div>
