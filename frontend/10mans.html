@@ -893,8 +893,8 @@ function showUserInterface() {
     document.getElementById('loginSection').style.display = 'none';
     document.getElementById('userCard').style.display = 'block';
     document.getElementById('userAvatar').src = currentUser.avatar
-    ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`
-    : '/placeholder.svg';
+  ? `https://cdn.discordapp.com/avatars/${currentUser.discordId}/${currentUser.avatar}.png`
+  : '/placeholder.svg';
     document.getElementById('userName').textContent = currentUser.username || 'Usuario';
 
     const bgElement = document.getElementById('userCardBg');
