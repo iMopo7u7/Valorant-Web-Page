@@ -775,11 +775,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupTabs();
     setupEventListeners();
     await fetchCurrentUser();
-    updateQueueStatus();          // <--- llama aquí
+    updateQueueStatus();
     await updateQueueAndMatches();
-    setInterval(() => {
-        updateQueueAndMatches();
-        updateQueueStatus();      // <--- y aquí periódicamente
+    setInterval(async () => {
+        if (currentUser) {
+            await updateQueueAndMatches();
+            updateQueueStatus();
+        }
     }, 10000);
 });
 
@@ -819,6 +821,7 @@ function setupEventListeners() {
         } else {
             await joinQueue();
         }
+        updateQueueButton();
     });
 
     document.getElementById('riot-id-form')?.addEventListener('submit', async e => {
@@ -909,7 +912,7 @@ async function joinQueue() {
         const data = await res.json();
         if (data.match) alert("Partida iniciada automáticamente");
         inQueue = true;
-        updateQueueAndMatches();
+        await updateQueueAndMatches();
     } catch (err) {
         console.error(err);
         alert(err.message || "Error al unirse a la cola");
@@ -923,7 +926,7 @@ async function leaveQueue() {
         const data = await res.json();
         alert(data.message);
         inQueue = false;
-        updateQueueAndMatches();
+        await updateQueueAndMatches();
     } catch (err) {
         console.error(err);
         alert(err.message || "Error al salir de la partida");
@@ -937,7 +940,7 @@ async function leaveGlobalQueue() {
         const data = await res.json();
         alert(data.message);
         inQueue = false;
-        updateQueueAndMatches();
+        await updateQueueAndMatches();
     } catch (err) {
         console.error(err);
         alert(err.message || "Error al salir de la cola global");
@@ -946,7 +949,7 @@ async function leaveGlobalQueue() {
 
 async function fetchMyMatch() {
     try {
-        const res = await fetch(`${API_BASE}/api/queue/my-match`, { credentials: "include" });
+        const res = await fetch(`${API_BASE}/queue/my-match`, { credentials: "include" });
         if (!res.ok) throw new Error("Error obteniendo partida del usuario");
         const data = await res.json();
 
@@ -987,16 +990,30 @@ function renderMyMatch(match) {
     console.log("Tu partida:", match);
 }
 
+async function fetchActiveMatches() {
+    try {
+        const res = await fetch(`${API_BASE}/queue/active`, { credentials: "include" });
+        if (!res.ok) throw new Error("Error obteniendo partidas activas");
+        const matches = await res.json();
+        activeMatches = matches;
+        return matches;
+    } catch (err) {
+        console.error(err);
+        return [];
+    }
+}
+
 async function updateQueueAndMatches() {
     const matches = await fetchActiveMatches();
     const queueStatusEl = document.getElementById('queue-status');
+
     const userMatch = matches.find(m => m.players?.includes(currentUser?.discordId));
     inQueue = !!userMatch;
 
-    if (inQueue) {
-        queueStatusEl.textContent = "Estás en una partida o cola activa";
-    } else {
-        queueStatusEl.textContent = "No estás en ninguna cola";
+    if (queueStatusEl) {
+        queueStatusEl.textContent = inQueue
+            ? "Estás en una partida o cola activa"
+            : "No estás en ninguna cola";
     }
 
     const matchesContainer = document.getElementById('matches-container');
@@ -1013,8 +1030,13 @@ async function updateQueueAndMatches() {
         `;
         matchesContainer.appendChild(div);
     });
+
+    updateQueueButton();
 }
-    
+
+// ------------------------
+// --- Estado de la cola
+// ------------------------
 function updateQueueStatus() {
     const now = new Date();
     const openHour = 0;   // hora de apertura
@@ -1030,6 +1052,30 @@ function updateQueueStatus() {
     }
 
     updateQueueButton();
+}
+
+// ------------------------
+// --- Actualizar botón Play
+// ------------------------
+function updateQueueButton() {
+    const playBtn = document.getElementById('play-btn');
+    if (!playBtn) return;
+    if (!currentUser) {
+        playBtn.disabled = true;
+        playBtn.textContent = "Inicia sesión primero";
+    } else if (!currentUser.riotId) {
+        playBtn.disabled = true;
+        playBtn.textContent = "Registra tu Riot ID";
+    } else if (!isQueueOpen) {
+        playBtn.disabled = true;
+        playBtn.textContent = "Cola cerrada";
+    } else if (inQueue) {
+        playBtn.disabled = false;
+        playBtn.textContent = "Salir de la cola";
+    } else {
+        playBtn.disabled = false;
+        playBtn.textContent = "Unirse a la cola";
+    }
 }
 </script>
 
