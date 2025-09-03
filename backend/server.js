@@ -306,7 +306,7 @@ apiRouter.post("/users/update-riot", requireAuthDiscord, async (req, res) => {
 // --- Queue / Custom Matches
 apiRouter.get("/queue/active", async (req, res) => {
   try {
-    const matches = await customMatchesCollection.find({ status: { $in: ["waiting","in_progress"] } }).toArray();
+    const matches = await customMatchesCollection.find({ status: "in_progress" }).toArray();
     res.json(matches);
   } catch (err) {
     console.error("Error en /queue/active:", err);
@@ -314,66 +314,57 @@ apiRouter.get("/queue/active", async (req, res) => {
   }
 });
 
-const TEST_PLAYER_COUNT = 10; // Cambiar a 10 para producción
 const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze"];
+
+async function joinGlobalQueue(userId) {
+  // Añadir jugador a la cola global
+  const result = await customMatchesCollection.findOneAndUpdate(
+    { _id: "globalQueue" },
+    { $addToSet: { players: userId } }, // evita duplicados
+    { returnDocument: "after", upsert: true }
+  );
+
+  const queue = result.value.players;
+
+  // Si hay al menos 10 jugadores, sacar 10 y crear partida
+  if (queue.length >= 10) {
+    const playersForMatch = queue.slice(0, 10);
+
+    await customMatchesCollection.updateOne(
+      { _id: "globalQueue" },
+      { $pull: { players: { $in: playersForMatch } } }
+    );
+
+    const map = MAPS[Math.floor(Math.random() * MAPS.length)];
+    const shuffled = [...playersForMatch].sort(() => 0.5 - Math.random());
+    const teamA = shuffled.slice(0, 5);
+    const teamB = shuffled.slice(5);
+
+    const newMatch = {
+      players: playersForMatch,
+      teamA,
+      teamB,
+      map,
+      status: "in_progress",
+      createdAt: new Date()
+    };
+
+    await customMatchesCollection.insertOne(newMatch);
+    return newMatch;
+  }
+
+  return null;
+}
 
 apiRouter.post("/queue/join", requireAuthDiscord, async (req, res) => {
   try {
-    const { matchId } = req.body;
+    const newMatch = await joinGlobalQueue(req.session.userId);
 
-    let match;
-
-    if (matchId) {
-      // Intentar unirse a la partida específica si se proporcionó matchId
-      match = await customMatchesCollection.findOne({ _id: new ObjectId(matchId) });
-      if (!match) return res.status(404).json({ error: "Partida no encontrada" });
-    } else {
-      // Buscar la primera partida pendiente (waiting)
-      match = await customMatchesCollection.findOne({ status: "waiting" });
+    if (newMatch) {
+      return res.json({ success: true, match: newMatch, message: "Partida iniciada automáticamente" });
     }
 
-    if (!match) {
-      // Si no hay partida pendiente, crear una nueva
-      const newMatch = {
-        players: [req.session.userId],
-        status: "waiting",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      const insertRes = await customMatchesCollection.insertOne(newMatch);
-      match = await customMatchesCollection.findOne({ _id: insertRes.insertedId });
-      return res.json({ success: true, match, message: "Nueva partida creada y te uniste" });
-    }
-
-    // Agregar jugador a la partida (evita duplicados)
-    await customMatchesCollection.updateOne(
-      { _id: match._id },
-      { $addToSet: { players: req.session.userId }, $set: { updatedAt: new Date() } }
-    );
-
-    // Obtener la partida actualizada
-    match = await customMatchesCollection.findOne({ _id: match._id });
-
-    // Revisar si hay suficientes jugadores para iniciar
-    if (match.players.length >= TEST_PLAYER_COUNT && match.status === "waiting") {
-      const map = MAPS[Math.floor(Math.random() * MAPS.length)];
-      const shuffled = [...match.players].sort(() => 0.5 - Math.random());
-      const teamA = shuffled.slice(0, Math.floor(shuffled.length / 2));
-      const teamB = shuffled.slice(Math.floor(shuffled.length / 2));
-      const leaderId = match.players[Math.floor(Math.random() * match.players.length)];
-
-      await customMatchesCollection.updateOne(
-        { _id: match._id },
-        { $set: { map, teamA, teamB, leaderId, status: "in_progress", updatedAt: new Date() } }
-      );
-
-      match = await customMatchesCollection.findOne({ _id: match._id });
-      return res.json({ success: true, match, message: "Partida iniciada automáticamente" });
-    }
-
-    // Si no hay suficientes jugadores, solo devolver la partida actual
-    res.json({ success: true, match, message: "Jugador agregado a la cola" });
-
+    res.json({ success: true, message: "Jugador agregado a la cola" });
   } catch (err) {
     console.error("Error en /queue/join:", err);
     res.status(500).json({ error: "Error del servidor" });
