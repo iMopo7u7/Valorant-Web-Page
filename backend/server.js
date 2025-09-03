@@ -328,11 +328,11 @@ apiRouter.post("/queue/join", requireAuthDiscord, async (req, res) => {
     // 1️⃣ Agregar jugador a la cola global de forma atómica
     const queueDoc = await customQueueCollection.findOneAndUpdate(
       { _id: "global_queue" },
-      { $addToSet: { queue: userId } },
+      { $setOnInsert: { queue: [] }, $addToSet: { queue: userId } },
       { upsert: true, returnDocument: "after" }
     );
 
-    const queue = queueDoc.value.queue;
+    const queue = queueDoc.value?.queue || [];
 
     // 2️⃣ Revisar si hay suficientes jugadores para crear partida
     if (queue.length >= TEST_PLAYER_COUNT) {
