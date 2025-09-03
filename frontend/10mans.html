@@ -835,454 +835,305 @@
         </div>
     </div>
 
-    <script>
-        // API Configuration
-        const API_BASE = 'https://valorant-10-mans.onrender.com';
-        
-        // Global State
-        let currentUser = null;
-        let isInQueue = false;
-        let queueStartTime = null;
-        let queueTimer = null;
-        let currentMatch = null;
-        let selectedBackground = 'default';
+<script>
+const API_BASE = 'https://valorant-10-mans.onrender.com'; 
 
-        // Predefined backgrounds
-        const backgrounds = {
-            default: 'linear-gradient(135deg, hsl(350 85% 55% / 0.2), hsl(195 85% 55% / 0.1))',
-            valorant1: 'url("https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400") center/cover',
-            valorant2: 'url("https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400") center/cover',
-            valorant3: 'url("https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400") center/cover'
-        };
+// Estado global
+let currentUser = null;
+let isInQueue = false;
+let queueStartTime = null;
+let queueTimer = null;
+let currentMatch = null;
+let selectedBackground = 'default';
 
-        // Sample maps
-        const maps = ['Ascent', 'Bind', 'Haven', 'Split', 'Icebox', 'Breeze', 'Fracture', 'Pearl', 'Lotus', 'Sunset'];
+// Fondos predeterminados
+const backgrounds = {
+    default: 'linear-gradient(135deg, hsl(350 85% 55% / 0.2), hsl(195 85% 55% / 0.1))',
+    valorant1: 'url("https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400") center/cover',
+    valorant2: 'url("https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400") center/cover',
+    valorant3: 'url("https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400") center/cover'
+};
 
-        // Initialize app
-        document.addEventListener('DOMContentLoaded', function() {
-            checkAuthStatus();
-            setupBackgroundSelection();
-            startPeriodicUpdates();
-        });
+// Maps posibles
+const maps = ['Ascent', 'Bind', 'Haven', 'Split', 'Icebox', 'Breeze', 'Fracture', 'Pearl', 'Lotus', 'Sunset'];
 
-        // Auth Functions
-        async function checkAuthStatus() {
-            try {  
-                const response = await fetch(`${API_BASE}/api/users/me`, {
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    currentUser = await response.json();
-                    showUserInterface();
-                    await checkQueueStatus();
-                } else {
-                    showLoginInterface();
-                }
-            } catch (error) {
-                console.error('Error checking auth status:', error);
-                showLoginInterface();
-            }
+// Inicializar
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuthStatus();
+    setupBackgroundSelection();
+    startPeriodicUpdates();
+});
+
+// =========================
+// Autenticación
+// =========================
+async function checkAuthStatus() {
+    try {
+        const res = await fetch(`${API_BASE}/api/users/me`, { credentials: 'include' });
+        if (res.ok) {
+            currentUser = await res.json();
+            showUserInterface();
+            await checkQueueStatus();
+        } else showLoginInterface();
+    } catch (e) { console.error(e); showLoginInterface(); }
+}
+
+function loginWithDiscord() {
+    window.location.href = `${API_BASE}/auth/discord`;
+}
+
+function showLoginInterface() {
+    document.getElementById('loginSection').style.display = 'block';
+    document.getElementById('userCard').style.display = 'none';
+    document.getElementById('lobbyContainer').classList.remove('active');
+    document.getElementById('leaderPanel').classList.remove('active');
+}
+
+function showUserInterface() {
+    document.getElementById('loginSection').style.display = 'none';
+    document.getElementById('userCard').style.display = 'block';
+    document.getElementById('userAvatar').src = currentUser.avatar || '/placeholder.svg';
+    document.getElementById('userName').textContent = currentUser.username || 'Usuario';
+
+    const bgElement = document.getElementById('userCardBg');
+    if (currentUser.cardBackground) {
+        if (currentUser.cardBackground.startsWith('http')) {
+            bgElement.style.background = `url("${currentUser.cardBackground}") center/cover`;
+        } else {
+            bgElement.style.background = backgrounds[currentUser.cardBackground] || backgrounds.default;
         }
+    }
+    updateUserStatus();
+}
 
-        function loginWithDiscord() {
-            // Redirect to Discord OAuth
-            window.location.href = `${API_BASE}/auth/discord`;
-        }
+function updateUserStatus() {
+    const statusElement = document.getElementById('userStatus');
+    if (!currentUser.riotId) {
+        statusElement.textContent = '⚠️ Registra tu Riot ID para jugar';
+        statusElement.style.color = 'hsl(45 85% 55%)';
+    } else if (isInQueue) {
+        statusElement.textContent = '🔄 En cola...';
+        statusElement.style.color = 'hsl(195 85% 55%)';
+    } else {
+        statusElement.textContent = 'Listo para jugar';
+        statusElement.style.color = 'hsl(var(--muted-foreground))';
+    }
+}
 
-        function showLoginInterface() {
-            document.getElementById('loginSection').style.display = 'block';
-            document.getElementById('userCard').style.display = 'none';
-            document.getElementById('lobbyContainer').classList.remove('active');
-            document.getElementById('leaderPanel').classList.remove('active');
-        }
+// =========================
+// Cola
+// =========================
+async function toggleQueue() {
+    if (!currentUser.riotId) {
+        const riotId = prompt('Ingresa tu Riot ID:');
+        if (riotId) await updateRiotId(riotId);
+        return;
+    }
+    if (isInQueue) await leaveQueue();
+    else await joinQueue();
+}
 
-        function showUserInterface() {
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('userCard').style.display = 'block';
-            
-            // Update user info
-            document.getElementById('userAvatar').src = currentUser.avatar || '/placeholder.svg';
-            document.getElementById('userName').textContent = currentUser.username || 'Usuario';
-            
-            // Apply user's custom background
-            if (currentUser.cardBackground) {
-                const bgElement = document.getElementById('userCardBg');
-                if (currentUser.cardBackground.startsWith('http')) {
-                    bgElement.style.background = `url("${currentUser.cardBackground}") center/cover`;
-                } else {
-                    bgElement.style.background = backgrounds[currentUser.cardBackground] || backgrounds.default;
-                }
-            }
-
+async function joinQueue() {
+    try {
+        const res = await fetch(`${API_BASE}/api/queue/join`, { method: 'POST', credentials: 'include' });
+        if (res.ok) {
+            isInQueue = true;
+            queueStartTime = Date.now();
+            updatePlayButton();
+            startQueueTimer();
             updateUserStatus();
         }
+    } catch (e) { console.error(e); }
+}
 
-        function updateUserStatus() {
-            const statusElement = document.getElementById('userStatus');
-            if (!currentUser.riotId) {
-                statusElement.textContent = '⚠️ Registra tu Riot ID para jugar';
-                statusElement.style.color = 'hsl(45 85% 55%)';
-            } else if (isInQueue) {
-                statusElement.textContent = '🔄 En cola...';
-                statusElement.style.color = 'hsl(195 85% 55%)';
-            } else {
-                statusElement.textContent = 'Listo para jugar';
-                statusElement.style.color = 'hsl(var(--muted-foreground))';
-            }
+async function leaveQueue() {
+    try {
+        const res = await fetch(`${API_BASE}/api/queue/leave-global`, { method: 'POST', credentials: 'include' });
+        if (res.ok) {
+            isInQueue = false;
+            queueStartTime = null;
+            updatePlayButton();
+            stopQueueTimer();
+            updateUserStatus();
         }
+    } catch (e) { console.error(e); }
+}
 
-        // Queue Functions
-        async function toggleQueue() {
-            if (!currentUser.riotId) {
-                const riotId = prompt('Ingresa tu Riot ID (nombre#tag):');
-                if (riotId && riotId.includes('#')) {
-                    await updateRiotId(riotId);
-                    return;
-                }
-                alert('Debes registrar un Riot ID válido para jugar');
-                return;
-            }
+async function checkQueueStatus() {
+    try {
+        const res = await fetch(`${API_BASE}/api/queue/my-match`, { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
 
-            if (isInQueue) {
-                await leaveQueue();
-            } else {
-                await joinQueue();
-            }
+        if (data.match) {
+            currentMatch = data.match;
+            showLobby(data.match);
+        } else if (data.inQueueGlobal) {
+            isInQueue = true;
+            if (!queueStartTime) queueStartTime = Date.now() - (data.queueTime || 0);
+            updatePlayButton();
+            startQueueTimer();
+            updateUserStatus();
+        } else {
+            isInQueue = false;
+            currentMatch = null;
+            hideLobby();
+            updatePlayButton();
+            stopQueueTimer();
+            updateUserStatus();
         }
+    } catch (e) { console.error(e); }
+}
 
-        async function joinQueue() {
-            try {
-                const response = await fetch(`${API_BASE}/api/queue/join`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
+function updatePlayButton() {
+    const btn = document.getElementById('playButton');
+    btn.textContent = isInQueue ? '❌ SALIR DE COLA' : '🎮 PLAY';
+    btn.disabled = !currentUser.riotId;
+}
 
-                if (response.ok) {
-                    isInQueue = true;
-                    queueStartTime = Date.now();
-                    updatePlayButton();
-                    startQueueTimer();
-                    updateUserStatus();
-                }
-            } catch (error) {
-                console.error('Error joining queue:', error);
-            }
+function startQueueTimer() {
+    const timerEl = document.getElementById('queueTimer');
+    const timerValue = document.getElementById('timerValue');
+    timerEl.style.display = 'block';
+    queueTimer = setInterval(() => {
+        if (!queueStartTime) return;
+        const elapsed = Math.floor((Date.now() - queueStartTime)/1000);
+        const min = Math.floor(elapsed/60).toString().padStart(2,'0');
+        const sec = (elapsed%60).toString().padStart(2,'0');
+        timerValue.textContent = `${min}:${sec}`;
+    }, 1000);
+}
+
+function stopQueueTimer() {
+    const timerEl = document.getElementById('queueTimer');
+    timerEl.style.display = 'none';
+    if (queueTimer) { clearInterval(queueTimer); queueTimer=null; }
+}
+
+// =========================
+// Fondo de tarjeta
+// =========================
+function setupBackgroundSelection() {
+    const bgOptions = document.querySelectorAll('.bg-option');
+    bgOptions.forEach(opt => {
+        opt.addEventListener('click', () => {
+            bgOptions.forEach(o=>o.classList.remove('selected'));
+            opt.classList.add('selected');
+            selectedBackground = opt.dataset.bg;
+        });
+    });
+}
+
+function openBackgroundModal() { document.getElementById('backgroundModal').classList.add('active'); }
+function closeBackgroundModal() { document.getElementById('backgroundModal').classList.remove('active'); }
+
+async function saveBackground() {
+    const url = document.getElementById('customBgUrl').value;
+    const bg = url || selectedBackground;
+    try {
+        const res = await fetch(`${API_BASE}/api/users/update-card-background`, {
+            method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({background:bg})
+        });
+        if (res.ok) {
+            currentUser.cardBackground = bg;
+            const bgEl = document.getElementById('userCardBg');
+            if (bg.startsWith('http')) bgEl.style.background = `url("${bg}") center/cover`;
+            else bgEl.style.background = backgrounds[bg] || backgrounds.default;
+            closeBackgroundModal();
         }
+    } catch(e){console.error(e);}
+}
 
-        async function leaveQueue() {
-            try {
-                const response = await fetch(`${API_BASE}/api/queue/leave-global`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
+async function updateRiotId(riotId) {
+    try {
+        const res = await fetch(`${API_BASE}/api/users/update-riot`, {
+            method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({riotId})
+        });
+        if (res.ok) { currentUser.riotId = riotId; updateUserStatus(); updatePlayButton(); }
+    } catch(e){console.error(e);}
+}
 
-                if (response.ok) {
-                    isInQueue = false;
-                    queueStartTime = null;
-                    updatePlayButton();
-                    stopQueueTimer();
-                    updateUserStatus();
-                }
-            } catch (error) {
-                console.error('Error leaving queue:', error);
-            }
+// =========================
+// Lobby
+// =========================
+function showLobby(match) {
+    document.getElementById('userCard').style.display='none';
+    document.getElementById('lobbyContainer').classList.add('active');
+    if(match.leader && match.leader.id===currentUser.id) document.getElementById('leaderPanel').classList.add('active');
+
+    document.getElementById('lobbyMap').textContent = match.map || getRandomMap();
+    document.getElementById('lobbyLeader').textContent = match.leader?.username || 'Desconocido';
+    renderTeam('teamAPlayers', match.teamA||[]);
+    renderTeam('teamBPlayers', match.teamB||[]);
+}
+
+function hideLobby() {
+    document.getElementById('userCard').style.display='block';
+    document.getElementById('lobbyContainer').classList.remove('active');
+    document.getElementById('leaderPanel').classList.remove('active');
+}
+
+function renderTeam(containerId, players) {
+    const cont = document.getElementById(containerId);
+    cont.innerHTML = '';
+    players.forEach(p=>{
+        const card = document.createElement('div');
+        card.className='player-card';
+        if(p.cardBackground){
+            const bg = p.cardBackground.startsWith('http')?`url("${p.cardBackground}") center/cover`:(backgrounds[p.cardBackground]||'');
+            card.style.setProperty('--player-bg', bg);
+            card.style.backgroundImage=bg;
+            card.style.backgroundSize='cover';
+            card.style.backgroundPosition='center';
+            card.style.opacity='0.8';
         }
+        card.innerHTML=`
+        <div class="player-card-content">
+            <img class="player-avatar-small" src="${p.avatar||'/placeholder.svg'}">
+            <div class="player-info">
+                <div class="player-name-small">${p.username}</div>
+                <div class="player-riot-id">${p.riotId||'Sin Riot ID'}</div>
+            </div>
+            ${currentMatch?.leader?.id===p.id?'<div class="leader-badge">👑 LÍDER</div>':''}
+        </div>`;
+        cont.appendChild(card);
+    });
+}
 
-        async function checkQueueStatus() {
-            try {
-                const response = await fetch(`${API_BASE}/api/queue/my-match`, {
-                    credentials: 'include'
-                });
+function getRandomMap() { return maps[Math.floor(Math.random()*maps.length)]; }
 
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    if (data.match) {
-                        currentMatch = data.match;
-                        showLobby(data.match);
-                    } else if (data.inQueue) {
-                        isInQueue = true;
-                        if (!queueStartTime) {
-                            queueStartTime = Date.now() - (data.queueTime || 0);
-                        }
-                        updatePlayButton();
-                        startQueueTimer();
-                        updateUserStatus();
-                    } else {
-                        isInQueue = false;
-                        currentMatch = null;
-                        hideLobby();
-                        updatePlayButton();
-                        stopQueueTimer();
-                        updateUserStatus();
-                    }
-                }
-            } catch (error) {
-                console.error('Error checking queue status:', error);
-            }
-        }
+// =========================
+// Líder
+// =========================
+async function submitRoomCode() {
+    const val = document.getElementById('roomCodeInput').value.trim();
+    if(!val){ alert('Ingresa código'); return; }
+    try { 
+        await fetch(`${API_BASE}/api/match/submit-room`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({roomCode:val}) });
+        alert('Código enviado');
+        document.getElementById('roomCodeInput').value='';
+    } catch(e){console.error(e);}
+}
 
-        function updatePlayButton() {
-            const playButton = document.getElementById('playButton');
-            const playButtonText = isInQueue ? '❌ SALIR DE COLA' : '🎮 PLAY';
-            playButton.textContent = playButtonText;
-            playButton.disabled = !currentUser.riotId;
-        }
+async function submitTrackerUrl() {
+    const val = document.getElementById('trackerUrlInput').value.trim();
+    if(!val){ alert('Ingresa tracker'); return; }
+    try { 
+        await fetch(`${API_BASE}/api/match/submit-tracker`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({trackerUrl:val}) });
+        alert('Tracker enviado');
+        document.getElementById('trackerUrlInput').value='';
+    } catch(e){console.error(e);}
+}
 
-        function startQueueTimer() {
-            const timerElement = document.getElementById('queueTimer');
-            const timerValue = document.getElementById('timerValue');
-            
-            timerElement.style.display = 'block';
-            
-            queueTimer = setInterval(() => {
-                if (queueStartTime) {
-                    const elapsed = Math.floor((Date.now() - queueStartTime) / 1000);
-                    const minutes = Math.floor(elapsed / 60);
-                    const seconds = elapsed % 60;
-                    timerValue.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                }
-            }, 1000);
-        }
+// =========================
+// Actualizaciones periódicas
+// =========================
+function startPeriodicUpdates() {
+    setInterval(async()=>{
+        if(currentUser) await checkQueueStatus();
+    },10000);
+}
+</script>
 
-        function stopQueueTimer() {
-            const timerElement = document.getElementById('queueTimer');
-            timerElement.style.display = 'none';
-            
-            if (queueTimer) {
-                clearInterval(queueTimer);
-                queueTimer = null;
-            }
-        }
-
-        // Background Functions
-        function setupBackgroundSelection() {
-            const bgOptions = document.querySelectorAll('.bg-option');
-            bgOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    bgOptions.forEach(opt => opt.classList.remove('selected'));
-                    option.classList.add('selected');
-                    selectedBackground = option.dataset.bg;
-                });
-            });
-        }
-
-        function openBackgroundModal() {
-            document.getElementById('backgroundModal').classList.add('active');
-        }
-
-        function closeBackgroundModal() {
-            document.getElementById('backgroundModal').classList.remove('active');
-        }
-
-        async function saveBackground() {
-            const customUrl = document.getElementById('customBgUrl').value;
-            const bgToSave = customUrl || selectedBackground;
-
-            try {
-                const response = await fetch(`${API_BASE}/api/users/update-card-background`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ background: bgToSave })
-                });
-
-                if (response.ok) {
-                    currentUser.cardBackground = bgToSave;
-                    
-                    // Update the user card background
-                    const bgElement = document.getElementById('userCardBg');
-                    if (bgToSave.startsWith('http')) {
-                        bgElement.style.background = `url("${bgToSave}") center/cover`;
-                    } else {
-                        bgElement.style.background = backgrounds[bgToSave] || backgrounds.default;
-                    }
-                    
-                    closeBackgroundModal();
-                }
-            } catch (error) {
-                console.error('Error saving background:', error);
-            }
-        }
-
-        async function updateRiotId(riotId) {
-            try {
-                const response = await fetch(`${API_BASE}/api/users/update-riot`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ riotId })
-                });
-
-                if (response.ok) {
-                    currentUser.riotId = riotId;
-                    updateUserStatus();
-                    updatePlayButton();
-                }
-            } catch (error) {
-                console.error('Error updating Riot ID:', error);
-            }
-        }
-
-        // Lobby Functions
-        function showLobby(match) {
-            document.getElementById('userCard').style.display = 'none';
-            document.getElementById('lobbyContainer').classList.add('active');
-            
-            // Show leader panel if current user is leader
-            if (match.leader && match.leader.id === currentUser.id) {
-                document.getElementById('leaderPanel').classList.add('active');
-                document.getElementById('assignedMap').textContent = match.map || getRandomMap();
-            }
-            
-            // Update lobby info
-            document.getElementById('lobbyMap').textContent = match.map || getRandomMap();
-            document.getElementById('lobbyLeader').textContent = match.leader ? match.leader.username : 'Desconocido';
-            
-            // Render teams
-            renderTeam('teamAPlayers', match.teamA || [], 'A');
-            renderTeam('teamBPlayers', match.teamB || [], 'B');
-        }
-
-        function hideLobby() {
-            document.getElementById('userCard').style.display = 'block';
-            document.getElementById('lobbyContainer').classList.remove('active');
-            document.getElementById('leaderPanel').classList.remove('active');
-        }
-
-        function renderTeam(containerId, players, teamLetter) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            
-            players.forEach(player => {
-                const playerCard = document.createElement('div');
-                playerCard.className = 'player-card';
-                
-                // Set background if player has custom background
-                if (player.cardBackground) {
-                    const bgStyle = player.cardBackground.startsWith('http') 
-                        ? `url("${player.cardBackground}") center/cover`
-                        : backgrounds[player.cardBackground] || '';
-                    
-                    playerCard.style.setProperty('--player-bg', bgStyle);
-                    playerCard.style.setProperty('background-image', bgStyle);
-                    playerCard.style.backgroundSize = 'cover';
-                    playerCard.style.backgroundPosition = 'center';
-                    playerCard.style.opacity = '0.8';
-                }
-                
-                playerCard.innerHTML = `
-                    <div class="player-card-content">
-                        <img class="player-avatar-small" src="${player.avatar || '/placeholder.svg'}" alt="${player.username}">
-                        <div class="player-info">
-                            <div class="player-name-small">${player.username}</div>
-                            <div class="player-riot-id">${player.riotId || 'Sin Riot ID'}</div>
-                        </div>
-                        ${currentMatch && currentMatch.leader && currentMatch.leader.id === player.id ? '<div class="leader-badge">👑 LÍDER</div>' : ''}
-                    </div>
-                `;
-                
-                container.appendChild(playerCard);
-            });
-        }
-
-        function getRandomMap() {
-            return maps[Math.floor(Math.random() * maps.length)];
-        }
-
-        // Leader Functions
-        async function submitRoomCode() {
-            const roomCode = document.getElementById('roomCodeInput').value.trim();
-            if (!roomCode) {
-                alert('Por favor ingresa el código de la sala');
-                return;
-            }
-
-            try {
-                // Here you would call your backend API to submit the room code
-                console.log('Room code submitted:', roomCode);
-                alert('Código de sala enviado correctamente');
-                document.getElementById('roomCodeInput').value = '';
-            } catch (error) {
-                console.error('Error submitting room code:', error);
-            }
-        }
-
-        async function submitTrackerUrl() {
-            const trackerUrl = document.getElementById('trackerUrlInput').value.trim();
-            if (!trackerUrl) {
-                alert('Por favor ingresa la URL del tracker');
-                return;
-            }
-
-            try {
-                // Here you would call your backend API to submit the tracker URL
-                console.log('Tracker URL submitted:', trackerUrl);
-                alert('Tracker URL enviado correctamente');
-                document.getElementById('trackerUrlInput').value = '';
-            } catch (error) {
-                console.error('Error submitting tracker URL:', error);
-            }
-        }
-
-        // Periodic Updates
-        function startPeriodicUpdates() {
-            setInterval(async () => {
-                if (currentUser) {
-                    await checkQueueStatus();
-                }
-            }, 10000); // Update every 10 seconds
-        }
-
-        // Mock data for development (remove when connecting to real backend)
-        function initMockData() {
-            // Simulate logged in user
-            currentUser = {
-                id: '123456789',
-                username: 'ProPlayer',
-                avatar: 'https://cdn.discordapp.com/avatars/123456789/avatar.png',
-                riotId: 'ProPlayer#0420',
-                cardBackground: 'default'
-            };
-            
-            showUserInterface();
-            
-            // Simulate match found after 30 seconds for testing
-            setTimeout(() => {
-                const mockMatch = {
-                    id: 'match_123',
-                    map: 'Ascent',
-                    leader: currentUser,
-                    teamA: [
-                        { id: '1', username: 'Player1', avatar: '/placeholder.svg', riotId: 'Player1#0001', cardBackground: 'valorant1' },
-                        { id: '2', username: 'Player2', avatar: '/placeholder.svg', riotId: 'Player2#0002' },
-                        { id: '3', username: 'Player3', avatar: '/placeholder.svg', riotId: 'Player3#0003' },
-                        { id: '4', username: 'Player4', avatar: '/placeholder.svg', riotId: 'Player4#0004' },
-                        currentUser
-                    ],
-                    teamB: [
-                        { id: '6', username: 'Player6', avatar: '/placeholder.svg', riotId: 'Player6#0006' },
-                        { id: '7', username: 'Player7', avatar: '/placeholder.svg', riotId: 'Player7#0007' },
-                        { id: '8', username: 'Player8', avatar: '/placeholder.svg', riotId: 'Player8#0008' },
-                        { id: '9', username: 'Player9', avatar: '/placeholder.svg', riotId: 'Player9#0009' },
-                        { id: '10', username: 'Player10', avatar: '/placeholder.svg', riotId: 'Player10#0010' }
-                    ]
-                };
-                
-                currentMatch = mockMatch;
-                isInQueue = false;
-                stopQueueTimer();
-                showLobby(mockMatch);
-            }, 5000); // Show lobby after 5 seconds for demo
-        }
-
-        // Uncomment the next line for development/testing with mock data
-        // initMockData();
-    </script>
 </body>
 </html>
