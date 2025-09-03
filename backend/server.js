@@ -73,7 +73,7 @@ if (!process.env.MONGODB_URI) {
 }
 
 let db, playersCollection, matchesCollection, eventsCollection;
-let usersCollection, customMatchesCollection;
+let usersCollection, customMatchesCollection, customQueueCollection;
 
 async function connectDB() {
   try {
@@ -84,6 +84,7 @@ async function connectDB() {
     matchesCollection = db.collection("matches");
     usersCollection = db.collection("users");
     customMatchesCollection = db.collection("customMatches");
+    customQueueCollection = db.collection("customQueue");
 
     console.log("✅ MongoDB conectado");
   } catch (err) {
