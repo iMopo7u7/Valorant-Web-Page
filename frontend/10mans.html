@@ -1000,6 +1000,22 @@ async function leaveGlobalQueue() {
 // ------------------------
 // --- Botón Cola
 // ------------------------
+function updateQueueStatus() {
+    const now = new Date();
+    const openHour = 0, closeHour = 23;
+    const queueStatus = document.getElementById('queue-status');
+
+    isQueueOpen = now.getHours() >= openHour && now.getHours() < closeHour;
+
+    if (queueStatus) {
+        queueStatus.innerHTML = isQueueOpen
+            ? '<span class="text-success">✅ COLA ABIERTA</span>'
+            : `⏰ COLA CERRADA - Abre en: ${openHour}h`;
+    }
+
+    updateQueueButton();
+}
+    
 function updateQueueButton() {
     const playBtn = document.getElementById('play-btn');
     const riotWarning = document.getElementById('riot-id-warning');
