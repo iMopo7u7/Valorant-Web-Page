@@ -944,18 +944,47 @@ async function leaveGlobalQueue() {
     }
 }
 
-async function fetchActiveMatches() {
+async function fetchMyMatch() {
     try {
-        const res = await fetch(`${API_BASE}/queue/active`, { credentials: "include" });
-        if (!res.ok) throw new Error("Error obteniendo partidas activas");
-        const matches = await res.json();
-        activeMatches = matches;
-        return matches;
+        const res = await fetch(`${API_BASE}/api/queue/my-match`, { credentials: "include" });
+        if (!res.ok) throw new Error("Error obteniendo partida del usuario");
+        const data = await res.json();
+
+        inQueue = data.inQueueGlobal || !!data.match;
+        renderMyMatch(data.match);
+        updateUserDisplay();
     } catch (err) {
         console.error(err);
-        activeMatches = [];
-        return [];
+        alert("Error obteniendo tu partida o cola");
     }
+}
+
+function renderMyMatch(match) {
+    const leaderSection = document.getElementById('leader-section');
+
+    if (!match) {
+        leaderSection?.classList.add('hidden');
+        return;
+    }
+
+    leaderSection?.classList.remove('hidden');
+    
+    const isLeader = currentUser.discordId === match.leaderId;
+
+    // Room Code
+    const roomInput = document.getElementById('room-code-input');
+    roomInput.value = match.roomCode || '';
+    roomInput.disabled = !!match.roomCode;
+    roomInput.parentElement.style.display = isLeader ? 'flex' : 'none';
+
+    // Tracker URL
+    const trackerInput = document.getElementById('tracker-url-input');
+    trackerInput.value = match.trackerUrl || '';
+    trackerInput.disabled = !!match.trackerUrl;
+    trackerInput.parentElement.style.display = isLeader ? 'flex' : 'none';
+
+    // Aquí también puedes mostrar teams y sides
+    console.log("Tu partida:", match);
 }
 
 async function updateQueueAndMatches() {
