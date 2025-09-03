@@ -251,16 +251,14 @@ apiRouter.post("/users/update-riot", requireAuthDiscord, async (req, res) => {
 const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze"];
 const SIDES = ["Attacker", "Defender"];
 
+// Función para unir jugador a la cola global
 async function joinGlobalQueue(userId) {
-  // Intentar obtener la cola global
   let queueDoc = await customMatchesCollection.findOne({ _id: "globalQueue" });
 
-  // Si no existe, crearla con el usuario
   if (!queueDoc) {
     await customMatchesCollection.insertOne({ _id: "globalQueue", players: [userId] });
     queueDoc = { _id: "globalQueue", players: [userId] };
   } else {
-    // Agregar usuario si no está ya
     if (!queueDoc.players.includes(userId)) {
       await customMatchesCollection.updateOne(
         { _id: "globalQueue" },
@@ -272,27 +270,24 @@ async function joinGlobalQueue(userId) {
 
   const queue = queueDoc.players;
 
-  // Si hay suficientes jugadores para iniciar partida
+  // Crear partida automáticamente si hay 10 jugadores
   if (queue.length >= 10) {
     const playersForMatch = queue.slice(0, 10);
-    // Sacar estos jugadores de la cola global
+
     await customMatchesCollection.updateOne(
       { _id: "globalQueue" },
       { $pull: { players: { $in: playersForMatch } } }
     );
 
-    // Elegir mapa aleatorio y formar equipos
     const map = MAPS[Math.floor(Math.random() * MAPS.length)];
     const shuffled = [...playersForMatch].sort(() => 0.5 - Math.random());
     const teamA = shuffled.slice(0, 5);
     const teamB = shuffled.slice(5);
 
-    // Elegir líder y lados
     const leaderId = playersForMatch[Math.floor(Math.random() * playersForMatch.length)];
     const sideA = SIDES[Math.floor(Math.random() * SIDES.length)];
     const sideB = sideA === "Attacker" ? "Defender" : "Attacker";
 
-    // Crear nueva partida
     const newMatch = {
       players: playersForMatch,
       teamA,
@@ -308,29 +303,38 @@ async function joinGlobalQueue(userId) {
     return newMatch;
   }
 
-  return null; // No se alcanzó el número mínimo de jugadores
+  return null; // aún no hay suficientes jugadores
 }
 
+// Endpoint para unirse a la cola global
 apiRouter.post("/queue/join", requireAuthDiscord, async (req, res) => {
   try {
     const userId = req.session.userId;
-    const existingMatch = await customMatchesCollection.findOne({ status: { $in: ["waiting", "in_progress"] }, players: userId });
-    if (existingMatch) return res.status(400).json({ error: "Ya estás en una partida activa." });
+
+    // Revisar si ya está en la cola global
+    const queueDoc = await customMatchesCollection.findOne({ _id: "globalQueue", players: userId });
+    if (queueDoc) return res.status(400).json({ error: "Ya estás en la cola global." });
 
     const newMatch = await joinGlobalQueue(userId);
     if (newMatch) return res.json({ success: true, match: newMatch, message: "Partida iniciada automáticamente" });
-    res.json({ success: true, message: "Jugador agregado a la cola" });
+
+    res.json({ success: true, message: "Jugador agregado a la cola global" });
   } catch (err) {
     console.error("Error en /queue/join:", err);
     res.status(500).json({ error: "Error del servidor" });
   }
 });
 
+// Endpoint para salir de la cola global
 apiRouter.post("/queue/leave-global", requireAuthDiscord, async (req, res) => {
   try {
     const userId = req.session.userId;
-    const result = await customMatchesCollection.updateOne({ _id: "globalQueue" }, { $pull: { players: userId } });
+    const result = await customMatchesCollection.updateOne(
+      { _id: "globalQueue" },
+      { $pull: { players: userId } }
+    );
     if (result.modifiedCount === 0) return res.status(404).json({ error: "No estabas en la cola global" });
+
     res.json({ success: true, message: "Has salido de la cola global" });
   } catch (err) {
     console.error("Error en /queue/leave-global:", err);
@@ -338,40 +342,21 @@ apiRouter.post("/queue/leave-global", requireAuthDiscord, async (req, res) => {
   }
 });
 
-apiRouter.post("/queue/leave", requireAuthDiscord, async (req, res) => {
-  try {
-    const userId = req.session.userId;
-    const match = await customMatchesCollection.findOne({ status: { $in: ["waiting", "in_progress"] }, players: userId });
-    if (!match) return res.status(404).json({ error: "No estás en ninguna partida activa" });
-    if (match.status === "in_progress") return res.status(403).json({ error: "No puedes salir de una partida en progreso" });
-
-    await customMatchesCollection.updateOne({ _id: match._id }, { $pull: { players: userId }, $set: { updatedAt: new Date() } });
-    const updatedMatch = await customMatchesCollection.findOne({ _id: match._id });
-    if (!updatedMatch.players || updatedMatch.players.length === 0) await customMatchesCollection.deleteOne({ _id: match._id });
-
-    res.json({ success: true, message: "Has salido de la partida" });
-  } catch (err) {
-    console.error("Error en /queue/leave:", err);
-    res.status(500).json({ error: "Error del servidor" });
-  }
-});
-
-// Obtener la partida del usuario (si existe)
+// Endpoint para obtener el estado del usuario
 apiRouter.get("/queue/my-match", requireAuthDiscord, async (req, res) => {
   try {
     const userId = req.session.userId;
 
-    // Buscar partida donde esté el jugador
+    // Verificar si el usuario ya está en alguna partida in_progress
     const match = await customMatchesCollection.findOne({
-      status: { $in: ["waiting", "in_progress"] },
+      status: "in_progress",
       players: userId
     });
 
     if (!match) {
-      // Verificar si está en la cola global
+      // Revisar si está en la cola global
       const globalQueue = await customMatchesCollection.findOne({ _id: "globalQueue", players: userId });
-      if (globalQueue) return res.json({ inQueueGlobal: true });
-      return res.json({ inQueueGlobal: false, match: null });
+      return res.json({ inQueueGlobal: !!globalQueue, match: match || null });
     }
 
     res.json({ match });
