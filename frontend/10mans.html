@@ -775,8 +775,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupTabs();
     setupEventListeners();
     await fetchCurrentUser();
+    updateQueueStatus();          // <--- llama aquí
     await updateQueueAndMatches();
-    setInterval(updateQueueAndMatches, 10000);
+    setInterval(() => {
+        updateQueueAndMatches();
+        updateQueueStatus();      // <--- y aquí periódicamente
+    }, 10000);
 });
 
 // ------------------------
@@ -980,6 +984,23 @@ async function updateQueueAndMatches() {
         `;
         matchesContainer.appendChild(div);
     });
+}
+    
+function updateQueueStatus() {
+    const now = new Date();
+    const openHour = 0;   // hora de apertura
+    const closeHour = 23; // hora de cierre
+    const queueStatus = document.getElementById('queue-status');
+
+    isQueueOpen = now.getHours() >= openHour && now.getHours() < closeHour;
+
+    if (queueStatus) {
+        queueStatus.innerHTML = isQueueOpen
+            ? '<span class="text-success">✅ COLA ABIERTA</span>'
+            : `⏰ COLA CERRADA - Abre en: ${openHour}h`;
+    }
+
+    updateQueueButton();
 }
 </script>
 
