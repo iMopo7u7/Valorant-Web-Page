@@ -15,7 +15,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ==========================
-// CORS - Configuración mejorada
+// CORS - Configuración
 // ==========================
 const allowedOrigins = [
   "https://valorant-10-mans-frontend.onrender.com",
@@ -23,8 +23,6 @@ const allowedOrigins = [
 ];
 
 app.set('trust proxy', 1);
-
-// Middleware CORS mejorado
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -33,10 +31,7 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   }
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
 
@@ -72,8 +67,7 @@ if (!process.env.MONGODB_URI) {
   process.exit(1);
 }
 
-let db, playersCollection, matchesCollection, eventsCollection;
-let usersCollection, customMatchesCollection;
+let db, playersCollection, matchesCollection, usersCollection, customMatchesCollection;
 
 async function connectDB() {
   try {
@@ -84,7 +78,6 @@ async function connectDB() {
     matchesCollection = db.collection("matches");
     usersCollection = db.collection("users");
     customMatchesCollection = db.collection("customMatches");
-
     console.log("✅ MongoDB conectado");
   } catch (err) {
     console.error("❌ Error conectando a MongoDB:", err);
@@ -93,7 +86,7 @@ async function connectDB() {
 }
 
 // ==========================
-// Middleware Auth Discord
+// Middlewares Auth
 // ==========================
 function requireAuth(req, res, next) {
   if (req.session?.userId) next();
@@ -106,11 +99,10 @@ function requireAdmin(req, res, next) {
 }
 
 // ==========================
-// Queue & Discord Endpoints
+// Discord OAuth
 // ==========================
 const apiRouter = express.Router();
 
-// --- Discord OAuth login
 apiRouter.get("/auth/discord", (req, res) => {
   const redirectUri = process.env.DISCORD_REDIRECT_URI;
   const clientId = process.env.DISCORD_CLIENT_ID;
@@ -119,7 +111,6 @@ apiRouter.get("/auth/discord", (req, res) => {
   res.redirect(discordUrl);
 });
 
-// --- Función para pedir token con retry y control de rate limit
 async function fetchDiscordToken(params, retries = 3) {
   try {
     const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
@@ -137,14 +128,10 @@ async function fetchDiscordToken(params, retries = 3) {
     }
 
     if (!tokenRes.ok) throw new Error(`Discord token error: ${tokenRes.status}`);
-
     return await tokenRes.json();
-  } catch (err) {
-    throw err;
-  }
+  } catch (err) { throw err; }
 }
 
-// --- Función para refrescar token si expiró
 async function refreshDiscordToken(user) {
   const params = new URLSearchParams();
   params.append("client_id", process.env.DISCORD_CLIENT_ID);
@@ -152,12 +139,9 @@ async function refreshDiscordToken(user) {
   params.append("grant_type", "refresh_token");
   params.append("refresh_token", user.refreshToken);
   params.append("redirect_uri", process.env.DISCORD_REDIRECT_URI);
-
-  const tokenData = await fetchDiscordToken(params);
-  return tokenData;
+  return await fetchDiscordToken(params);
 }
 
-// --- Callback OAuth
 apiRouter.get("/auth/discord/callback", async (req, res) => {
   const code = req.query.code;
   try {
@@ -170,10 +154,8 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
     params.append("code", code);
     params.append("redirect_uri", process.env.DISCORD_REDIRECT_URI);
 
-    // Pedimos token
     const tokenData = await fetchDiscordToken(params);
 
-    // Obtenemos info del usuario
     const userRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` }
     });
@@ -193,20 +175,10 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
       updatedAt: new Date()
     };
 
-    // Guardamos/actualizamos usuario en MongoDB
-    await usersCollection.updateOne(
-      { discordId: discordUser.id },
-      { $set: user },
-      { upsert: true }
-    );
-
-    // Guardamos sesión
+    await usersCollection.updateOne({ discordId: discordUser.id }, { $set: user }, { upsert: true });
     req.session.userId = discordUser.id;
     req.session.save(err => {
-      if (err) {
-        console.error("Error guardando sesión:", err);
-        return res.status(500).send("Error en login");
-      }
+      if (err) return res.status(500).send("Error en login");
       res.redirect("https://valorant-10-mans-frontend.onrender.com");
     });
   } catch (err) {
@@ -215,26 +187,18 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
   }
 });
 
-// --- Middleware para refrescar token automáticamente
 async function requireAuthDiscord(req, res, next) {
   if (!req.session.userId) return res.status(401).json({ error: "No autorizado" });
 
   const user = await usersCollection.findOne({ discordId: req.session.userId });
   if (!user) return res.status(401).json({ error: "Usuario no encontrado" });
 
-  // Si el token expiró, refrescamos
   if (Date.now() > user.tokenExpiresAt) {
     try {
       const tokenData = await refreshDiscordToken(user);
       await usersCollection.updateOne(
         { discordId: user.discordId },
-        {
-          $set: {
-            accessToken: tokenData.access_token,
-            refreshToken: tokenData.refresh_token,
-            tokenExpiresAt: Date.now() + (tokenData.expires_in * 1000)
-          }
-        }
+        { $set: { accessToken: tokenData.access_token, refreshToken: tokenData.refresh_token, tokenExpiresAt: Date.now() + (tokenData.expires_in * 1000) } }
       );
       user.accessToken = tokenData.access_token;
     } catch (err) {
@@ -243,17 +207,17 @@ async function requireAuthDiscord(req, res, next) {
     }
   }
 
-  req.user = user; // guardamos info del usuario para los endpoints
+  req.user = user;
   next();
 }
 
-// --- Users endpoints
+// ==========================
+// Users endpoints
+// ==========================
 apiRouter.get("/users/me", requireAuth, async (req, res) => {
   try {
     const user = await usersCollection.findOne({ discordId: req.session.userId });
-    if (!user) {
-      return res.status(404).json({ error: "Usuario no encontrado" });
-    }
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
     res.json(user);
   } catch (err) {
     console.error("Error en /users/me:", err);
@@ -265,134 +229,64 @@ apiRouter.post("/users/update-riot", requireAuthDiscord, async (req, res) => {
   try {
     const { riotId } = req.body;
     const userId = req.session.userId;
+    if (!riotId) return res.status(400).json({ error: "Debes enviar un Riot ID" });
 
-    if (!riotId) {
-      return res.status(400).json({ error: "Debes enviar un Riot ID" });
-    }
-
-    // Buscar al usuario
     const user = await usersCollection.findOne({ discordId: userId });
-    if (!user) {
-      return res.status(404).json({ error: "Usuario no encontrado" });
-    }
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
 
-    // Caso 1: nunca tuvo Riot ID
-    if (!user.riotId) {
-      await usersCollection.updateOne(
-        { discordId: userId },
-        { $set: { riotId, riotIdChanged: false, updatedAt: new Date() } }
-      );
-      return res.json({ success: true, riotId });
-    }
+    if (!user.riotId) await usersCollection.updateOne({ discordId: userId }, { $set: { riotId, riotIdChanged: false, updatedAt: new Date() } });
+    else if (!user.riotIdChanged) await usersCollection.updateOne({ discordId: userId }, { $set: { riotId, riotIdChanged: true, updatedAt: new Date() } });
+    else return res.status(403).json({ error: "Ya no puedes cambiar tu Riot ID" });
 
-    // Caso 2: ya tenía Riot ID pero aún no lo cambió nunca
-    if (user.riotId && !user.riotIdChanged) {
-      await usersCollection.updateOne(
-        { discordId: userId },
-        { $set: { riotId, riotIdChanged: true, updatedAt: new Date() } }
-      );
-      return res.json({ success: true, riotId });
-    }
-
-    // Caso 3: ya lo cambió una vez → bloquear
-    return res.status(403).json({ error: "Ya no puedes cambiar tu Riot ID" });
-
+    res.json({ success: true, riotId });
   } catch (err) {
     console.error("Error en /users/update-riot:", err);
     res.status(500).json({ error: "Error del servidor" });
   }
 });
 
-// -----------------------------
-// --- Queue / Custom Matches
-// -----------------------------
-apiRouter.get("/queue/active", async (req, res) => {
-  try {
-    const matches = await customMatchesCollection.find({ status: { $in: ["waiting", "in_progress"] } }).toArray();
-    res.json(matches);
-  } catch (err) {
-    console.error("Error en /queue/active:", err);
-    res.status(500).json({ error: "Error del servidor" });
-  }
-});
-
+// ==========================
+// Queue & Matches
+// ==========================
 const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze"];
 const SIDES = ["Attacker", "Defender"];
 
 async function joinGlobalQueue(userId) {
-  // Concurrencia: findOneAndUpdate atomico
   const result = await customMatchesCollection.findOneAndUpdate(
     { _id: "globalQueue" },
-    { $addToSet: { players: userId } }, // evita duplicados
+    { $addToSet: { players: userId } },
     { returnDocument: "after", upsert: true }
   );
 
   const queue = result.value.players;
-
-  // Si hay al menos 10 jugadores, crear partida
   if (queue.length >= 10) {
     const playersForMatch = queue.slice(0, 10);
-
-    // Remover esos jugadores de la cola global atomico
-    await customMatchesCollection.updateOne(
-      { _id: "globalQueue" },
-      { $pull: { players: { $in: playersForMatch } } }
-    );
+    await customMatchesCollection.updateOne({ _id: "globalQueue" }, { $pull: { players: { $in: playersForMatch } } });
 
     const map = MAPS[Math.floor(Math.random() * MAPS.length)];
-
-    // Shuffle jugadores
     const shuffled = [...playersForMatch].sort(() => 0.5 - Math.random());
     const teamA = shuffled.slice(0, 5);
     const teamB = shuffled.slice(5);
 
-    // Elegir líder random entre los 10
     const leaderId = playersForMatch[Math.floor(Math.random() * playersForMatch.length)];
-
-    // Elegir bando random
     const sideA = SIDES[Math.floor(Math.random() * SIDES.length)];
     const sideB = sideA === "Attacker" ? "Defender" : "Attacker";
 
-    const newMatch = {
-      players: playersForMatch,
-      teamA,
-      teamB,
-      map,
-      leaderId,
-      sides: { teamA: sideA, teamB: sideB },
-      status: "in_progress",
-      createdAt: new Date()
-    };
-
+    const newMatch = { players: playersForMatch, teamA, teamB, map, leaderId, sides: { teamA: sideA, teamB: sideB }, status: "in_progress", createdAt: new Date() };
     await customMatchesCollection.insertOne(newMatch);
     return newMatch;
   }
-
   return null;
 }
 
-// -----------------------------
-// --- Unirse a la cola global
-// -----------------------------
 apiRouter.post("/queue/join", requireAuthDiscord, async (req, res) => {
   try {
     const userId = req.session.userId;
-
-    // Verificar que no esté en otra partida activa
-    const existingMatch = await customMatchesCollection.findOne({
-      status: { $in: ["waiting", "in_progress"] },
-      players: userId
-    });
-    if (existingMatch) {
-      return res.status(400).json({ error: "Ya estás en una partida activa." });
-    }
+    const existingMatch = await customMatchesCollection.findOne({ status: { $in: ["waiting", "in_progress"] }, players: userId });
+    if (existingMatch) return res.status(400).json({ error: "Ya estás en una partida activa." });
 
     const newMatch = await joinGlobalQueue(userId);
-
-    if (newMatch) {
-      return res.json({ success: true, match: newMatch, message: "Partida iniciada automáticamente" });
-    }
-
+    if (newMatch) return res.json({ success: true, match: newMatch, message: "Partida iniciada automáticamente" });
     res.json({ success: true, message: "Jugador agregado a la cola" });
   } catch (err) {
     console.error("Error en /queue/join:", err);
@@ -400,22 +294,11 @@ apiRouter.post("/queue/join", requireAuthDiscord, async (req, res) => {
   }
 });
 
-// -----------------------------
-// --- Salir de la cola global
-// -----------------------------
 apiRouter.post("/queue/leave-global", requireAuthDiscord, async (req, res) => {
   try {
     const userId = req.session.userId;
-
-    const result = await customMatchesCollection.updateOne(
-      { _id: "globalQueue" },
-      { $pull: { players: userId } }
-    );
-
-    if (result.modifiedCount === 0) {
-      return res.status(404).json({ error: "No estabas en la cola global" });
-    }
-
+    const result = await customMatchesCollection.updateOne({ _id: "globalQueue" }, { $pull: { players: userId } });
+    if (result.modifiedCount === 0) return res.status(404).json({ error: "No estabas en la cola global" });
     res.json({ success: true, message: "Has salido de la cola global" });
   } catch (err) {
     console.error("Error en /queue/leave-global:", err);
@@ -423,63 +306,16 @@ apiRouter.post("/queue/leave-global", requireAuthDiscord, async (req, res) => {
   }
 });
 
-// -----------------------------
-// --- Subir código de sala
-// -----------------------------
-apiRouter.post("/queue/submit-room-code", requireAuthDiscord, async (req, res) => {
-  try {
-    const { matchId, roomCode } = req.body;
-
-    // Validar formato de room code: 6 caracteres alfanuméricos mayúsculas
-    if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
-      return res.status(400).json({ error: "Código de sala inválido. Debe tener 6 caracteres alfanuméricos en mayúsculas." });
-    }
-
-    const result = await customMatchesCollection.updateOne(
-      { _id: new ObjectId(matchId), leaderId: req.session.userId },
-      { $set: { roomCode, updatedAt: new Date() } }
-    );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ error: "Partida no encontrada o no eres el líder" });
-    }
-
-    res.json({ success: true, roomCode });
-  } catch (err) {
-    console.error("Error en /queue/submit-room-code:", err);
-    res.status(500).json({ error: "Error del servidor" });
-  }
-});
-
-// -----------------------------
-// --- Salir de la partida
-// -----------------------------
 apiRouter.post("/queue/leave", requireAuthDiscord, async (req, res) => {
   try {
     const userId = req.session.userId;
+    const match = await customMatchesCollection.findOne({ status: { $in: ["waiting", "in_progress"] }, players: userId });
+    if (!match) return res.status(404).json({ error: "No estás en ninguna partida activa" });
+    if (match.status === "in_progress") return res.status(403).json({ error: "No puedes salir de una partida en progreso" });
 
-    const match = await customMatchesCollection.findOne({
-      status: { $in: ["waiting", "in_progress"] },
-      players: userId
-    });
-
-    if (!match) {
-      return res.status(404).json({ error: "No estás en ninguna partida activa" });
-    }
-
-    if (match.status === "in_progress") {
-      return res.status(403).json({ error: "No puedes salir de una partida en progreso" });
-    }
-
-    await customMatchesCollection.updateOne(
-      { _id: match._id },
-      { $pull: { players: userId }, $set: { updatedAt: new Date() } }
-    );
-
+    await customMatchesCollection.updateOne({ _id: match._id }, { $pull: { players: userId }, $set: { updatedAt: new Date() } });
     const updatedMatch = await customMatchesCollection.findOne({ _id: match._id });
-    if (!updatedMatch.players || updatedMatch.players.length === 0) {
-      await customMatchesCollection.deleteOne({ _id: match._id });
-    }
+    if (!updatedMatch.players || updatedMatch.players.length === 0) await customMatchesCollection.deleteOne({ _id: match._id });
 
     res.json({ success: true, message: "Has salido de la partida" });
   } catch (err) {
@@ -488,36 +324,8 @@ apiRouter.post("/queue/leave", requireAuthDiscord, async (req, res) => {
   }
 });
 
-// -----------------------------
-// --- Subir tracker y finalizar partida
-// -----------------------------
-apiRouter.post("/queue/submit-tracker", requireAuthDiscord, async (req, res) => {
-  try {
-    const { matchId, trackerUrl } = req.body;
-
-    const trackerRegex = /^https:\/\/tracker\.gg\/valorant\/match\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-    if (!trackerRegex.test(trackerUrl)) {
-      return res.status(400).json({ error: "URL de tracker inválida. Debe tener formato correcto de tracker.gg." });
-    }
-
-    const result = await customMatchesCollection.updateOne(
-      { _id: new ObjectId(matchId), leaderId: req.session.userId },
-      { $set: { trackerUrl, status: "completed", updatedAt: new Date() } }
-    );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ error: "Partida no encontrada o no eres el líder" });
-    }
-
-    res.json({ success: true, trackerUrl, status: "completed" });
-  } catch (err) {
-    console.error("Error en /queue/submit-tracker:", err);
-    res.status(500).json({ error: "Error del servidor" });
-  }
-});
-
 // ==========================
-// Montar router
+// Mount API Router
 // ==========================
 app.use("/api", apiRouter);
 
