@@ -748,6 +748,11 @@
                     <button class="change-bg-btn" onclick="openBackgroundModal()">
                         🎨 Cambiar fondo
                     </button>
+                    <div class="riot-id-section">
+                        <label for="riotIdInput">Riot ID:</label>
+                        <input type="text" id="riotIdInput" placeholder="Ej: Player#LAN" disabled>
+                        <button id="riotIdBtn" onclick="handleRiotIdChange()">Guardar</button>
+                    </div>
                 </div>
             </div>
 
@@ -890,22 +895,71 @@ function showLoginInterface() {
 }
 
 function showUserInterface() {
-    document.getElementById('loginSection').style.display = 'none';
-    document.getElementById('userCard').style.display = 'block';
-    document.getElementById('userAvatar').src = currentUser.avatar
-  ? `https://cdn.discordapp.com/avatars/${currentUser.discordId}/${currentUser.avatar}.png`
-  : '/placeholder.svg';
-    document.getElementById('userName').textContent = currentUser.username || 'Usuario';
+  document.getElementById('loginSection').style.display = 'none';
+  document.getElementById('userCard').style.display = 'block';
+  document.getElementById('userAvatar').src = currentUser.avatar
+    ? `https://cdn.discordapp.com/avatars/${currentUser.discordId}/${currentUser.avatar}.png`
+    : '/placeholder.svg';
+  document.getElementById('userName').textContent = currentUser.username || 'Usuario';
 
-    const bgElement = document.getElementById('userCardBg');
-    if (currentUser.cardBackground) {
-        if (currentUser.cardBackground.startsWith('http')) {
-            bgElement.style.background = `url("${currentUser.cardBackground}") center/cover`;
-        } else {
-            bgElement.style.background = backgrounds[currentUser.cardBackground] || backgrounds.default;
-        }
+  // Riot ID UI
+  const riotInput = document.getElementById('riotIdInput');
+  const riotBtn = document.getElementById('riotIdBtn');
+  riotInput.value = currentUser.riotId || '';
+  
+  if (!currentUser.riotId) {
+    riotInput.disabled = false; // puede escribir por primera vez
+    riotBtn.style.display = 'inline-block';
+  } else if (!currentUser.riotIdChanged) {
+    riotInput.disabled = false; // puede cambiarlo una vez
+    riotBtn.style.display = 'inline-block';
+  } else {
+    riotInput.disabled = true; // ya no puede cambiar
+    riotBtn.style.display = 'none';
+  }
+
+  // Fondo
+  const bgElement = document.getElementById('userCardBg');
+  if (currentUser.cardBackground) {
+    if (currentUser.cardBackground.startsWith('http')) {
+      bgElement.style.background = `url("${currentUser.cardBackground}") center/cover`;
+    } else {
+      bgElement.style.background = backgrounds[currentUser.cardBackground] || backgrounds.default;
     }
-    updateUserStatus();
+  }
+
+  updateUserStatus();
+}
+
+async function handleRiotIdChange() {
+  const riotId = document.getElementById('riotIdInput').value.trim();
+  if (!riotId) {
+    alert("Ingresa un Riot ID válido");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/users/update-riot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ riotId })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      currentUser.riotId = riotId;
+      if (!currentUser.riotIdChanged) {
+        currentUser.riotIdChanged = true; // después de usar el cambio
+      }
+      showUserInterface();
+    } else {
+      alert(data.error || "Error al actualizar Riot ID");
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Error de conexión con el servidor");
+  }
 }
 
 function updateUserStatus() {
