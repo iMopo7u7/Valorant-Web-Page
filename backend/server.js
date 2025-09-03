@@ -324,6 +324,31 @@ apiRouter.post("/queue/leave", requireAuthDiscord, async (req, res) => {
   }
 });
 
+// Obtener la partida del usuario (si existe)
+apiRouter.get("/queue/my-match", requireAuthDiscord, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+
+    // Buscar partida donde esté el jugador
+    const match = await customMatchesCollection.findOne({
+      status: { $in: ["waiting", "in_progress"] },
+      players: userId
+    });
+
+    if (!match) {
+      // Verificar si está en la cola global
+      const globalQueue = await customMatchesCollection.findOne({ _id: "globalQueue", players: userId });
+      if (globalQueue) return res.json({ inQueueGlobal: true });
+      return res.json({ inQueueGlobal: false, match: null });
+    }
+
+    res.json({ match });
+  } catch (err) {
+    console.error("Error en /queue/my-match:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
 // ==========================
 // Mount API Router
 // ==========================
