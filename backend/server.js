@@ -306,7 +306,7 @@ apiRouter.post("/users/update-riot", requireAuthDiscord, async (req, res) => {
 // --- Queue / Custom Matches
 apiRouter.get("/queue/active", async (req, res) => {
   try {
-    const matches = await customMatchesCollection.find({ status: { $in: ["waiting","in_progress"] } }).toArray();
+    const matches = await customMatchesCollection.find({ status: { $in: ["in_progress"] } }).toArray();
     res.json(matches);
   } catch (err) {
     console.error("Error en /queue/active:", err);
@@ -317,62 +317,65 @@ apiRouter.get("/queue/active", async (req, res) => {
 const TEST_PLAYER_COUNT = 10; // Cambiar a 10 para producción
 const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze"];
 
+// -----------------------------
+// --- Nueva cola global
+// -----------------------------
 apiRouter.post("/queue/join", requireAuthDiscord, async (req, res) => {
   try {
-    const { matchId } = req.body;
+    const userId = req.session.userId;
 
-    let match;
+    // 1️⃣ Agregar jugador a la cola global de forma atómica
+    const queueDoc = await customQueueCollection.findOneAndUpdate(
+      { _id: "global_queue" },
+      { $addToSet: { queue: userId } },
+      { upsert: true, returnDocument: "after" }
+    );
 
-    if (matchId) {
-      // Intentar unirse a la partida específica si se proporcionó matchId
-      match = await customMatchesCollection.findOne({ _id: new ObjectId(matchId) });
-      if (!match) return res.status(404).json({ error: "Partida no encontrada" });
-    } else {
-      // Buscar la primera partida pendiente (waiting)
-      match = await customMatchesCollection.findOne({ status: "waiting" });
-    }
+    const queue = queueDoc.value.queue;
 
-    if (!match) {
-      // Si no hay partida pendiente, crear una nueva
+    // 2️⃣ Revisar si hay suficientes jugadores para crear partida
+    if (queue.length >= TEST_PLAYER_COUNT) {
+      const playersForMatch = queue.slice(0, TEST_PLAYER_COUNT);
+
+      // Mezclar jugadores y crear equipos
+      const shuffled = [...playersForMatch].sort(() => 0.5 - Math.random());
+      const teamA = shuffled.slice(0, TEST_PLAYER_COUNT / 2);
+      const teamB = shuffled.slice(TEST_PLAYER_COUNT / 2);
+      const map = MAPS[Math.floor(Math.random() * MAPS.length)];
+      const leaderId = playersForMatch[Math.floor(Math.random() * playersForMatch.length)];
+
       const newMatch = {
-        players: [req.session.userId],
-        status: "waiting",
+        players: playersForMatch,
+        teamA,
+        teamB,
+        leaderId,
+        map,
+        status: "in_progress",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      const insertRes = await customMatchesCollection.insertOne(newMatch);
-      match = await customMatchesCollection.findOne({ _id: insertRes.insertedId });
-      return res.json({ success: true, match, message: "Nueva partida creada y te uniste" });
-    }
 
-    // Agregar jugador a la partida (evita duplicados)
-    await customMatchesCollection.updateOne(
-      { _id: match._id },
-      { $addToSet: { players: req.session.userId }, $set: { updatedAt: new Date() } }
-    );
+      await customMatchesCollection.insertOne(newMatch);
 
-    // Obtener la partida actualizada
-    match = await customMatchesCollection.findOne({ _id: match._id });
-
-    // Revisar si hay suficientes jugadores para iniciar
-    if (match.players.length >= TEST_PLAYER_COUNT && match.status === "waiting") {
-      const map = MAPS[Math.floor(Math.random() * MAPS.length)];
-      const shuffled = [...match.players].sort(() => 0.5 - Math.random());
-      const teamA = shuffled.slice(0, Math.floor(shuffled.length / 2));
-      const teamB = shuffled.slice(Math.floor(shuffled.length / 2));
-      const leaderId = match.players[Math.floor(Math.random() * match.players.length)];
-
-      await customMatchesCollection.updateOne(
-        { _id: match._id },
-        { $set: { map, teamA, teamB, leaderId, status: "in_progress", updatedAt: new Date() } }
+      // 3️⃣ Eliminar jugadores de la cola global
+      await customQueueCollection.updateOne(
+        { _id: "global_queue" },
+        { $pullAll: { queue: playersForMatch } }
       );
 
-      match = await customMatchesCollection.findOne({ _id: match._id });
-      return res.json({ success: true, match, message: "Partida iniciada automáticamente" });
+      return res.json({
+        success: true,
+        match: newMatch,
+        message: "Partida creada automáticamente",
+      });
     }
 
-    // Si no hay suficientes jugadores, solo devolver la partida actual
-    res.json({ success: true, match, message: "Jugador agregado a la cola" });
+    // Si no hay suficientes jugadores, solo devolver la longitud de la cola
+    res.json({
+      success: true,
+      queueLength: queue.length,
+      message: "Jugador agregado a la cola",
+    });
 
   } catch (err) {
     console.error("Error en /queue/join:", err);
@@ -415,14 +418,20 @@ apiRouter.post("/queue/leave", requireAuthDiscord, async (req, res) => {
   try {
     const userId = req.session.userId;
 
-    // Buscar partida donde el usuario esté y que no esté completada
+    // 1️⃣ Quitar jugador de la cola global
+    await customQueueCollection.updateOne(
+      { _id: "global_queue" },
+      { $pull: { queue: userId } }
+    );
+
+    // 2️⃣ Buscar partida donde el usuario esté y que no esté completada
     const match = await customMatchesCollection.findOne({
       status: { $in: ["waiting", "in_progress"] },
       players: userId
     });
 
     if (!match) {
-      return res.status(404).json({ error: "No estás en ninguna partida activa" });
+      return res.json({ success: true, message: "Has salido de la cola" });
     }
 
     // Si la partida ya empezó, no permitir salir (solo waiting)
@@ -442,7 +451,7 @@ apiRouter.post("/queue/leave", requireAuthDiscord, async (req, res) => {
       await customMatchesCollection.deleteOne({ _id: match._id });
     }
 
-    res.json({ success: true, message: "Has salido de la cola" });
+    res.json({ success: true, message: "Has salido de la cola o partida" });
   } catch (err) {
     console.error("Error en /queue/leave:", err);
     res.status(500).json({ error: "Error del servidor" });
