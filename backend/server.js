@@ -303,10 +303,12 @@ apiRouter.post("/users/update-riot", requireAuthDiscord, async (req, res) => {
   }
 });
 
+// -----------------------------
 // --- Queue / Custom Matches
+// -----------------------------
 apiRouter.get("/queue/active", async (req, res) => {
   try {
-    const matches = await customMatchesCollection.find({ status: "in_progress" }).toArray();
+    const matches = await customMatchesCollection.find({ status: { $in: ["waiting", "in_progress"] } }).toArray();
     res.json(matches);
   } catch (err) {
     console.error("Error en /queue/active:", err);
@@ -315,9 +317,10 @@ apiRouter.get("/queue/active", async (req, res) => {
 });
 
 const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze"];
+const SIDES = ["Attacker", "Defender"];
 
 async function joinGlobalQueue(userId) {
-  // Añadir jugador a la cola global
+  // Concurrencia: findOneAndUpdate atomico
   const result = await customMatchesCollection.findOneAndUpdate(
     { _id: "globalQueue" },
     { $addToSet: { players: userId } }, // evita duplicados
@@ -326,25 +329,37 @@ async function joinGlobalQueue(userId) {
 
   const queue = result.value.players;
 
-  // Si hay al menos 10 jugadores, sacar 10 y crear partida
+  // Si hay al menos 10 jugadores, crear partida
   if (queue.length >= 10) {
     const playersForMatch = queue.slice(0, 10);
 
+    // Remover esos jugadores de la cola global atomico
     await customMatchesCollection.updateOne(
       { _id: "globalQueue" },
       { $pull: { players: { $in: playersForMatch } } }
     );
 
     const map = MAPS[Math.floor(Math.random() * MAPS.length)];
+
+    // Shuffle jugadores
     const shuffled = [...playersForMatch].sort(() => 0.5 - Math.random());
     const teamA = shuffled.slice(0, 5);
     const teamB = shuffled.slice(5);
+
+    // Elegir líder random entre los 10
+    const leaderId = playersForMatch[Math.floor(Math.random() * playersForMatch.length)];
+
+    // Elegir bando random
+    const sideA = SIDES[Math.floor(Math.random() * SIDES.length)];
+    const sideB = sideA === "Attacker" ? "Defender" : "Attacker";
 
     const newMatch = {
       players: playersForMatch,
       teamA,
       teamB,
       map,
+      leaderId,
+      sides: { teamA: sideA, teamB: sideB },
       status: "in_progress",
       createdAt: new Date()
     };
@@ -356,9 +371,23 @@ async function joinGlobalQueue(userId) {
   return null;
 }
 
+// -----------------------------
+// --- Unirse a la cola global
+// -----------------------------
 apiRouter.post("/queue/join", requireAuthDiscord, async (req, res) => {
   try {
-    const newMatch = await joinGlobalQueue(req.session.userId);
+    const userId = req.session.userId;
+
+    // Verificar que no esté en otra partida activa
+    const existingMatch = await customMatchesCollection.findOne({
+      status: { $in: ["waiting", "in_progress"] },
+      players: userId
+    });
+    if (existingMatch) {
+      return res.status(400).json({ error: "Ya estás en una partida activa." });
+    }
+
+    const newMatch = await joinGlobalQueue(userId);
 
     if (newMatch) {
       return res.json({ success: true, match: newMatch, message: "Partida iniciada automáticamente" });
@@ -372,15 +401,38 @@ apiRouter.post("/queue/join", requireAuthDiscord, async (req, res) => {
 });
 
 // -----------------------------
+// --- Salir de la cola global
+// -----------------------------
+apiRouter.post("/queue/leave-global", requireAuthDiscord, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+
+    const result = await customMatchesCollection.updateOne(
+      { _id: "globalQueue" },
+      { $pull: { players: userId } }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ error: "No estabas en la cola global" });
+    }
+
+    res.json({ success: true, message: "Has salido de la cola global" });
+  } catch (err) {
+    console.error("Error en /queue/leave-global:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+// -----------------------------
 // --- Subir código de sala
 // -----------------------------
 apiRouter.post("/queue/submit-room-code", requireAuthDiscord, async (req, res) => {
   try {
     const { matchId, roomCode } = req.body;
 
-    // Validar formato de room code (ejemplo: 5 letras mayúsculas)
-    if (!/^[A-Z]{5}$/.test(roomCode)) {
-      return res.status(400).json({ error: "Código de sala inválido. Debe tener 5 letras mayúsculas." });
+    // Validar formato de room code: 6 caracteres alfanuméricos mayúsculas
+    if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
+      return res.status(400).json({ error: "Código de sala inválido. Debe tener 6 caracteres alfanuméricos en mayúsculas." });
     }
 
     const result = await customMatchesCollection.updateOne(
@@ -400,13 +452,12 @@ apiRouter.post("/queue/submit-room-code", requireAuthDiscord, async (req, res) =
 });
 
 // -----------------------------
-// --- Salir de la cola / partida
+// --- Salir de la partida
 // -----------------------------
 apiRouter.post("/queue/leave", requireAuthDiscord, async (req, res) => {
   try {
     const userId = req.session.userId;
 
-    // Buscar partida donde el usuario esté y que no esté completada
     const match = await customMatchesCollection.findOne({
       status: { $in: ["waiting", "in_progress"] },
       players: userId
@@ -416,24 +467,21 @@ apiRouter.post("/queue/leave", requireAuthDiscord, async (req, res) => {
       return res.status(404).json({ error: "No estás en ninguna partida activa" });
     }
 
-    // Si la partida ya empezó, no permitir salir (solo waiting)
     if (match.status === "in_progress") {
       return res.status(403).json({ error: "No puedes salir de una partida en progreso" });
     }
 
-    // Remover al usuario del array players
     await customMatchesCollection.updateOne(
       { _id: match._id },
       { $pull: { players: userId }, $set: { updatedAt: new Date() } }
     );
 
-    // Si no queda ningún jugador, eliminar la partida
     const updatedMatch = await customMatchesCollection.findOne({ _id: match._id });
     if (!updatedMatch.players || updatedMatch.players.length === 0) {
       await customMatchesCollection.deleteOne({ _id: match._id });
     }
 
-    res.json({ success: true, message: "Has salido de la cola" });
+    res.json({ success: true, message: "Has salido de la partida" });
   } catch (err) {
     console.error("Error en /queue/leave:", err);
     res.status(500).json({ error: "Error del servidor" });
@@ -447,7 +495,6 @@ apiRouter.post("/queue/submit-tracker", requireAuthDiscord, async (req, res) => 
   try {
     const { matchId, trackerUrl } = req.body;
 
-    // Validar URL de tracker (formato UUID de tracker.gg)
     const trackerRegex = /^https:\/\/tracker\.gg\/valorant\/match\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
     if (!trackerRegex.test(trackerUrl)) {
       return res.status(400).json({ error: "URL de tracker inválida. Debe tener formato correcto de tracker.gg." });
@@ -470,7 +517,7 @@ apiRouter.post("/queue/submit-tracker", requireAuthDiscord, async (req, res) => 
 });
 
 // ==========================
-// Montar el router de API
+// Montar router
 // ==========================
 app.use("/api", apiRouter);
 
