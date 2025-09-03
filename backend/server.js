@@ -229,14 +229,46 @@ apiRouter.post("/users/update-riot", requireAuthDiscord, async (req, res) => {
   try {
     const { riotId } = req.body;
     const userId = req.session.userId;
-    if (!riotId) return res.status(400).json({ error: "Debes enviar un Riot ID" });
+
+    if (!riotId) {
+      return res.status(400).json({ error: "Debes enviar un Riot ID" });
+    }
 
     const user = await usersCollection.findOne({ discordId: userId });
-    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
 
-    if (!user.riotId) await usersCollection.updateOne({ discordId: userId }, { $set: { riotId, riotIdChanged: false, updatedAt: new Date() } });
-    else if (!user.riotIdChanged) await usersCollection.updateOne({ discordId: userId }, { $set: { riotId, riotIdChanged: true, updatedAt: new Date() } });
-    else return res.status(403).json({ error: "Ya no puedes cambiar tu Riot ID" });
+    // Caso 1: Usuario nuevo (nunca ha puesto Riot ID)
+    if (!user.riotId) {
+      await usersCollection.updateOne(
+        { discordId: userId },
+        {
+          $set: {
+            riotId,
+            riotIdChanged: false, // indica que todavía puede hacer un cambio
+            updatedAt: new Date(),
+          },
+        }
+      );
+    }
+    // Caso 2: Ya tenía Riot ID pero no ha usado su único cambio
+    else if (user.riotId && !user.riotIdChanged) {
+      await usersCollection.updateOne(
+        { discordId: userId },
+        {
+          $set: {
+            riotId,
+            riotIdChanged: true, // ya hizo el único cambio
+            updatedAt: new Date(),
+          },
+        }
+      );
+    }
+    // Caso 3: Ya hizo su único cambio → prohibido
+    else {
+      return res.status(403).json({ error: "Ya no puedes cambiar tu Riot ID" });
+    }
 
     res.json({ success: true, riotId });
   } catch (err) {
