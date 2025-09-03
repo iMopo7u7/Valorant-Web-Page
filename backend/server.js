@@ -15,7 +15,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ==========================
-// CORS
+// CORS - Configuración mejorada
 // ==========================
 const allowedOrigins = [
   "https://valorant-10-mans-frontend.onrender.com",
@@ -24,6 +24,7 @@ const allowedOrigins = [
 
 app.set('trust proxy', 1);
 
+// Middleware CORS mejorado
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -33,7 +34,9 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   }
   
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
   next();
 });
 
@@ -69,7 +72,8 @@ if (!process.env.MONGODB_URI) {
   process.exit(1);
 }
 
-let db, playersCollection, matchesCollection, usersCollection, customMatchesCollection, queueCollection;
+let db, playersCollection, matchesCollection, eventsCollection;
+let usersCollection, customMatchesCollection;
 
 async function connectDB() {
   try {
@@ -80,7 +84,6 @@ async function connectDB() {
     matchesCollection = db.collection("matches");
     usersCollection = db.collection("users");
     customMatchesCollection = db.collection("customMatches");
-    queueCollection = db.collection("globalQueue");
 
     console.log("✅ MongoDB conectado");
   } catch (err) {
@@ -90,7 +93,7 @@ async function connectDB() {
 }
 
 // ==========================
-// Middlewares Auth
+// Middleware Auth Discord
 // ==========================
 function requireAuth(req, res, next) {
   if (req.session?.userId) next();
@@ -103,13 +106,385 @@ function requireAdmin(req, res, next) {
 }
 
 // ==========================
-// Variables globales
+// Queue & Discord Endpoints
 // ==========================
-const TEST_PLAYER_COUNT = 10;
+const apiRouter = express.Router();
+
+// --- Discord OAuth login
+apiRouter.get("/auth/discord", (req, res) => {
+  const redirectUri = process.env.DISCORD_REDIRECT_URI;
+  const clientId = process.env.DISCORD_CLIENT_ID;
+  const scope = "identify";
+  const discordUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}`;
+  res.redirect(discordUrl);
+});
+
+// --- Función para pedir token con retry y control de rate limit
+async function fetchDiscordToken(params, retries = 3) {
+  try {
+    const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params
+    });
+
+    if (tokenRes.status === 429) {
+      const retryAfter = parseFloat(tokenRes.headers.get("retry-after") || "1");
+      console.warn(`Rate limit hit, retrying after ${retryAfter}s`);
+      await new Promise(r => setTimeout(r, retryAfter * 1000));
+      if (retries > 0) return fetchDiscordToken(params, retries - 1);
+      throw new Error("Too many requests to Discord API");
+    }
+
+    if (!tokenRes.ok) throw new Error(`Discord token error: ${tokenRes.status}`);
+
+    return await tokenRes.json();
+  } catch (err) {
+    throw err;
+  }
+}
+
+// --- Función para refrescar token si expiró
+async function refreshDiscordToken(user) {
+  const params = new URLSearchParams();
+  params.append("client_id", process.env.DISCORD_CLIENT_ID);
+  params.append("client_secret", process.env.DISCORD_CLIENT_SECRET);
+  params.append("grant_type", "refresh_token");
+  params.append("refresh_token", user.refreshToken);
+  params.append("redirect_uri", process.env.DISCORD_REDIRECT_URI);
+
+  const tokenData = await fetchDiscordToken(params);
+  return tokenData;
+}
+
+// --- Callback OAuth
+apiRouter.get("/auth/discord/callback", async (req, res) => {
+  const code = req.query.code;
+  try {
+    if (!code) return res.status(400).json({ error: "No se recibió código de Discord" });
+
+    const params = new URLSearchParams();
+    params.append("client_id", process.env.DISCORD_CLIENT_ID);
+    params.append("client_secret", process.env.DISCORD_CLIENT_SECRET);
+    params.append("grant_type", "authorization_code");
+    params.append("code", code);
+    params.append("redirect_uri", process.env.DISCORD_REDIRECT_URI);
+
+    // Pedimos token
+    const tokenData = await fetchDiscordToken(params);
+
+    // Obtenemos info del usuario
+    const userRes = await fetch("https://discord.com/api/users/@me", {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` }
+    });
+
+    if (!userRes.ok) throw new Error(`Discord user fetch failed: ${userRes.status}`);
+
+    const discordUser = await userRes.json();
+
+    const user = {
+      discordId: discordUser.id,
+      username: discordUser.username,
+      discriminator: discordUser.discriminator,
+      avatar: discordUser.avatar,
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      tokenExpiresAt: Date.now() + (tokenData.expires_in * 1000),
+      updatedAt: new Date()
+    };
+
+    // Guardamos/actualizamos usuario en MongoDB
+    await usersCollection.updateOne(
+      { discordId: discordUser.id },
+      { $set: user },
+      { upsert: true }
+    );
+
+    // Guardamos sesión
+    req.session.userId = discordUser.id;
+    req.session.save(err => {
+      if (err) {
+        console.error("Error guardando sesión:", err);
+        return res.status(500).send("Error en login");
+      }
+      res.redirect("https://valorant-10-mans-frontend.onrender.com");
+    });
+  } catch (err) {
+    console.error("Error en Discord callback:", err);
+    res.status(500).json({ error: "Error en login Discord" });
+  }
+});
+
+// --- Middleware para refrescar token automáticamente
+async function requireAuthDiscord(req, res, next) {
+  if (!req.session.userId) return res.status(401).json({ error: "No autorizado" });
+
+  const user = await usersCollection.findOne({ discordId: req.session.userId });
+  if (!user) return res.status(401).json({ error: "Usuario no encontrado" });
+
+  // Si el token expiró, refrescamos
+  if (Date.now() > user.tokenExpiresAt) {
+    try {
+      const tokenData = await refreshDiscordToken(user);
+      await usersCollection.updateOne(
+        { discordId: user.discordId },
+        {
+          $set: {
+            accessToken: tokenData.access_token,
+            refreshToken: tokenData.refresh_token,
+            tokenExpiresAt: Date.now() + (tokenData.expires_in * 1000)
+          }
+        }
+      );
+      user.accessToken = tokenData.access_token;
+    } catch (err) {
+      console.error("Error refrescando token:", err);
+      return res.status(401).json({ error: "Token expirado, vuelve a loguearte" });
+    }
+  }
+
+  req.user = user; // guardamos info del usuario para los endpoints
+  next();
+}
+
+// --- Users endpoints
+apiRouter.get("/users/me", requireAuth, async (req, res) => {
+  try {
+    const user = await usersCollection.findOne({ discordId: req.session.userId });
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    res.json(user);
+  } catch (err) {
+    console.error("Error en /users/me:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+apiRouter.post("/users/update-riot", requireAuthDiscord, async (req, res) => {
+  try {
+    const { riotId } = req.body;
+    const userId = req.session.userId;
+
+    if (!riotId) {
+      return res.status(400).json({ error: "Debes enviar un Riot ID" });
+    }
+
+    // Buscar al usuario
+    const user = await usersCollection.findOne({ discordId: userId });
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Caso 1: nunca tuvo Riot ID
+    if (!user.riotId) {
+      await usersCollection.updateOne(
+        { discordId: userId },
+        { $set: { riotId, riotIdChanged: false, updatedAt: new Date() } }
+      );
+      return res.json({ success: true, riotId });
+    }
+
+    // Caso 2: ya tenía Riot ID pero aún no lo cambió nunca
+    if (user.riotId && !user.riotIdChanged) {
+      await usersCollection.updateOne(
+        { discordId: userId },
+        { $set: { riotId, riotIdChanged: true, updatedAt: new Date() } }
+      );
+      return res.json({ success: true, riotId });
+    }
+
+    // Caso 3: ya lo cambió una vez → bloquear
+    return res.status(403).json({ error: "Ya no puedes cambiar tu Riot ID" });
+
+  } catch (err) {
+    console.error("Error en /users/update-riot:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+// --- Queue / Custom Matches
+apiRouter.get("/queue/active", async (req, res) => {
+  try {
+    const matches = await customMatchesCollection.find({ status: { $in: ["waiting","in_progress"] } }).toArray();
+    res.json(matches);
+  } catch (err) {
+    console.error("Error en /queue/active:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+const TEST_PLAYER_COUNT = 10; // Cambiar a 10 para producción
 const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze"];
 
+apiRouter.post("/queue/join", requireAuthDiscord, async (req, res) => {
+  try {
+    const { matchId } = req.body;
+
+    let match;
+
+    if (matchId) {
+      // Intentar unirse a la partida específica si se proporcionó matchId
+      match = await customMatchesCollection.findOne({ _id: new ObjectId(matchId) });
+      if (!match) return res.status(404).json({ error: "Partida no encontrada" });
+    } else {
+      // Buscar la primera partida pendiente (waiting)
+      match = await customMatchesCollection.findOne({ status: "waiting" });
+    }
+
+    if (!match) {
+      // Si no hay partida pendiente, crear una nueva
+      const newMatch = {
+        players: [req.session.userId],
+        status: "waiting",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const insertRes = await customMatchesCollection.insertOne(newMatch);
+      match = await customMatchesCollection.findOne({ _id: insertRes.insertedId });
+      return res.json({ success: true, match, message: "Nueva partida creada y te uniste" });
+    }
+
+    // Agregar jugador a la partida (evita duplicados)
+    await customMatchesCollection.updateOne(
+      { _id: match._id },
+      { $addToSet: { players: req.session.userId }, $set: { updatedAt: new Date() } }
+    );
+
+    // Obtener la partida actualizada
+    match = await customMatchesCollection.findOne({ _id: match._id });
+
+    // Revisar si hay suficientes jugadores para iniciar
+    if (match.players.length >= TEST_PLAYER_COUNT && match.status === "waiting") {
+      const map = MAPS[Math.floor(Math.random() * MAPS.length)];
+      const shuffled = [...match.players].sort(() => 0.5 - Math.random());
+      const teamA = shuffled.slice(0, Math.floor(shuffled.length / 2));
+      const teamB = shuffled.slice(Math.floor(shuffled.length / 2));
+      const leaderId = match.players[Math.floor(Math.random() * match.players.length)];
+
+      await customMatchesCollection.updateOne(
+        { _id: match._id },
+        { $set: { map, teamA, teamB, leaderId, status: "in_progress", updatedAt: new Date() } }
+      );
+
+      match = await customMatchesCollection.findOne({ _id: match._id });
+      return res.json({ success: true, match, message: "Partida iniciada automáticamente" });
+    }
+
+    // Si no hay suficientes jugadores, solo devolver la partida actual
+    res.json({ success: true, match, message: "Jugador agregado a la cola" });
+
+  } catch (err) {
+    console.error("Error en /queue/join:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+// -----------------------------
+// --- Subir código de sala
+// -----------------------------
+apiRouter.post("/queue/submit-room-code", requireAuthDiscord, async (req, res) => {
+  try {
+    const { matchId, roomCode } = req.body;
+
+    // Validar formato de room code (ejemplo: 5 letras mayúsculas)
+    if (!/^[A-Z]{5}$/.test(roomCode)) {
+      return res.status(400).json({ error: "Código de sala inválido. Debe tener 5 letras mayúsculas." });
+    }
+
+    const result = await customMatchesCollection.updateOne(
+      { _id: new ObjectId(matchId), leaderId: req.session.userId },
+      { $set: { roomCode, updatedAt: new Date() } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Partida no encontrada o no eres el líder" });
+    }
+
+    res.json({ success: true, roomCode });
+  } catch (err) {
+    console.error("Error en /queue/submit-room-code:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+// -----------------------------
+// --- Salir de la cola / partida
+// -----------------------------
+apiRouter.post("/queue/leave", requireAuthDiscord, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+
+    // Buscar partida donde el usuario esté y que no esté completada
+    const match = await customMatchesCollection.findOne({
+      status: { $in: ["waiting", "in_progress"] },
+      players: userId
+    });
+
+    if (!match) {
+      return res.status(404).json({ error: "No estás en ninguna partida activa" });
+    }
+
+    // Si la partida ya empezó, no permitir salir (solo waiting)
+    if (match.status === "in_progress") {
+      return res.status(403).json({ error: "No puedes salir de una partida en progreso" });
+    }
+
+    // Remover al usuario del array players
+    await customMatchesCollection.updateOne(
+      { _id: match._id },
+      { $pull: { players: userId }, $set: { updatedAt: new Date() } }
+    );
+
+    // Si no queda ningún jugador, eliminar la partida
+    const updatedMatch = await customMatchesCollection.findOne({ _id: match._id });
+    if (!updatedMatch.players || updatedMatch.players.length === 0) {
+      await customMatchesCollection.deleteOne({ _id: match._id });
+    }
+
+    res.json({ success: true, message: "Has salido de la cola" });
+  } catch (err) {
+    console.error("Error en /queue/leave:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+// -----------------------------
+// --- Subir tracker y finalizar partida
+// -----------------------------
+apiRouter.post("/queue/submit-tracker", requireAuthDiscord, async (req, res) => {
+  try {
+    const { matchId, trackerUrl } = req.body;
+
+    // Validar URL de tracker (formato UUID de tracker.gg)
+    const trackerRegex = /^https:\/\/tracker\.gg\/valorant\/match\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    if (!trackerRegex.test(trackerUrl)) {
+      return res.status(400).json({ error: "URL de tracker inválida. Debe tener formato correcto de tracker.gg." });
+    }
+
+    const result = await customMatchesCollection.updateOne(
+      { _id: new ObjectId(matchId), leaderId: req.session.userId },
+      { $set: { trackerUrl, status: "completed", updatedAt: new Date() } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Partida no encontrada o no eres el líder" });
+    }
+
+    res.json({ success: true, trackerUrl, status: "completed" });
+  } catch (err) {
+    console.error("Error en /queue/submit-tracker:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
 // ==========================
-// Función de score
+// Montar el router de API
+// ==========================
+app.use("/api", apiRouter);
+
+// ==========================
+// Función de cálculo de score por partida ajustada por rol
 // ==========================
 function calculateMatchScore(playerStats, playerTeam, teamStats, didWin) {
   const duelistas = ["Jett", "Reyna", "Phoenix", "Raze", "Yoru", "Neon", "Iso", "Waylay"];
@@ -170,239 +545,49 @@ function calculateMatchScore(playerStats, playerTeam, teamStats, didWin) {
 }
 
 // ==========================
-// API Router
+// Login / Admin
 // ==========================
-const apiRouter = express.Router();
+const ADMIN_USER = process.env.ADMIN_USER || "admin";
+const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
 
-// --------------------------
-// Queue / Join (global queue)
-// --------------------------
-apiRouter.post("/queue/join", requireAuth, async (req, res) => {
-  try {
-    // Atómico: agregar jugador a la cola global
-    const updatedQueue = await queueCollection.findOneAndUpdate(
-      { _id: "globalQueue" },
-      { $addToSet: { players: req.session.userId } },
-      { returnDocument: "after", upsert: true }
-    );
-
-    const queuePlayers = updatedQueue.value.players;
-
-    // Revisar si hay suficientes jugadores para iniciar partida
-    if (queuePlayers.length >= TEST_PLAYER_COUNT) {
-      const matchPlayers = queuePlayers.slice(0, TEST_PLAYER_COUNT);
-
-      // Crear equipos aleatorios
-      const shuffled = [...matchPlayers].sort(() => 0.5 - Math.random());
-      const teamA = shuffled.slice(0, 5);
-      const teamB = shuffled.slice(5, 10);
-      const map = MAPS[Math.floor(Math.random() * MAPS.length)];
-      const leaderId = matchPlayers[Math.floor(Math.random() * matchPlayers.length)];
-
-      // Crear partida
-      const newMatch = {
-        players: matchPlayers,
-        teamA,
-        teamB,
-        leaderId,
-        map,
-        status: "in_progress",
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      await customMatchesCollection.insertOne(newMatch);
-
-      // Remover jugadores de la cola global
-      await queueCollection.updateOne(
-        { _id: "globalQueue" },
-        { $pull: { players: { $in: matchPlayers } } }
-      );
-
-      return res.json({ success: true, match: newMatch, message: "Partida creada automáticamente" });
-    }
-
-    res.json({ success: true, queueLength: queuePlayers.length, message: "Jugador agregado a la cola" });
-
-  } catch (err) {
-    console.error("Error en /queue/join:", err);
-    res.status(500).json({ error: "Error del servidor" });
-  }
-});
-
-// --------------------------
-// Queue / Leave
-// --------------------------
-apiRouter.post("/queue/leave", requireAuth, async (req, res) => {
-  try {
-    await queueCollection.updateOne(
-      { _id: "globalQueue" },
-      { $pull: { players: req.session.userId } }
-    );
-    res.json({ success: true, message: "Jugador removido de la cola" });
-  } catch (err) {
-    console.error("Error en /queue/leave:", err);
-    res.status(500).json({ error: "Error del servidor" });
-  }
-});
-
-// --------------------------
-// Queue / Active Matches
-// --------------------------
-apiRouter.get("/queue/active", requireAuth, async (req, res) => {
-  try {
-    const matches = await customMatchesCollection.find({ status: { $in: ["waiting", "in_progress"] } }).toArray();
-    res.json({ success: true, matches });
-  } catch (err) {
-    console.error("Error en /queue/active:", err);
-    res.status(500).json({ error: "Error del servidor" });
-  }
-});
-
-// --------------------------
-// Submit Match Result
-// --------------------------
-apiRouter.post("/match/submit", requireAuth, async (req, res) => {
-  try {
-    const { matchId, playerStats, winnerTeam } = req.body;
-    if (!matchId || !playerStats || !winnerTeam) return res.status(400).json({ error: "Datos incompletos" });
-
-    const match = await customMatchesCollection.findOne({ _id: new ObjectId(matchId) });
-    if (!match) return res.status(404).json({ error: "Partida no encontrada" });
-
-    // Calcular scores de cada jugador
-    const teamStatsA = match.teamA.map(pid => playerStats.find(p => p.userId === pid));
-    const teamStatsB = match.teamB.map(pid => playerStats.find(p => p.userId === pid));
-
-    const results = playerStats.map(ps => {
-      const team = match.teamA.includes(ps.userId) ? "A" : "B";
-      const didWin = (team === winnerTeam);
-      return {
-        userId: ps.userId,
-        totalScore: calculateMatchScore(ps, team, team === "A" ? teamStatsA : teamStatsB, didWin).totalScore
-      };
-    });
-
-    // Actualizar partida
-    await customMatchesCollection.updateOne(
-      { _id: new ObjectId(matchId) },
-      { $set: { status: "completed", winnerTeam, results, updatedAt: new Date() } }
-    );
-
-    res.json({ success: true, message: "Resultado registrado", results });
-  } catch (err) {
-    console.error("Error en /match/submit:", err);
-    res.status(500).json({ error: "Error del servidor" });
-  }
-});
-
-// --------------------------
-// Leaderboard
-// --------------------------
-apiRouter.get("/leaderboard", async (req, res) => {
-  try {
-    const completedMatches = await customMatchesCollection.find({ status: "completed" }).toArray();
-
-    const leaderboardMap = {};
-
-    completedMatches.forEach(match => {
-      match.results.forEach(r => {
-        if (!leaderboardMap[r.userId]) leaderboardMap[r.userId] = 0;
-        leaderboardMap[r.userId] += r.totalScore;
-      });
-    });
-
-    const leaderboard = Object.entries(leaderboardMap)
-      .map(([userId, score]) => ({ userId, score }))
-      .sort((a, b) => b.score - a.score);
-
-    res.json({ success: true, leaderboard });
-  } catch (err) {
-    console.error("Error en /leaderboard:", err);
-    res.status(500).json({ error: "Error del servidor" });
-  }
-});
-
-// --------------------------
-// Discord OAuth Login
-// --------------------------
-apiRouter.get("/auth/discord", (req, res) => {
-  const clientId = process.env.DISCORD_CLIENT_ID;
-  const redirectUri = encodeURIComponent(process.env.DISCORD_REDIRECT_URI);
-  const scope = encodeURIComponent("identify");
-  res.redirect(`https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`);
-});
-
-apiRouter.get("/auth/discord/callback", async (req, res) => {
-  try {
-    const code = req.query.code;
-    if (!code) return res.status(400).json({ error: "No se recibió código" });
-
-    // Intercambiar code por token
-    const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: process.env.DISCORD_CLIENT_ID,
-        client_secret: process.env.DISCORD_CLIENT_SECRET,
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: process.env.DISCORD_REDIRECT_URI
-      })
-    });
-    const tokenData = await tokenResponse.json();
-    if (!tokenData.access_token) return res.status(400).json({ error: "Token no recibido" });
-
-    // Obtener info de usuario
-    const userResponse = await fetch("https://discord.com/api/users/@me", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` }
-    });
-    const discordUser = await userResponse.json();
-
-    // Guardar/Actualizar usuario en DB
-    const user = await usersCollection.findOneAndUpdate(
-      { discordId: discordUser.id },
-      { $set: { username: discordUser.username, discriminator: discordUser.discriminator } },
-      { upsert: true, returnDocument: "after" }
-    );
-
-    req.session.userId = user.value._id.toString();
-    req.session.isAdmin = false; // O lógica para admin
-    res.redirect("/"); // Redirige al frontend
-  } catch (err) {
-    console.error("Error en /auth/discord/callback:", err);
-    res.status(500).json({ error: "Error autenticando Discord" });
-  }
-});
-
-// --------------------------
-// Admin Login / Logout
-// --------------------------
 app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-  if (username === process.env.ADMIN_USER && password === process.env.ADMIN_PASS) {
-    req.session.isAdmin = true;
-    res.json({ success: true });
-  } else {
-    res.status(401).json({ error: "Usuario o contraseña incorrectos" });
+  try {
+    const { username, password } = req.body;
+    if (username === ADMIN_USER && password === ADMIN_PASS) {
+      req.session.isAdmin = true;
+      res.json({ success: true });
+    } else {
+      res.status(401).json({ error: "Usuario o contraseña incorrectos" });
+    }
+  } catch (err) {
+    console.error("Error en /login:", err);
+    res.status(500).json({ error: "Error del servidor" });
   }
 });
 
-app.post("/logout", (req, res) => {
-  req.session.destroy(err => {
-    if (err) return res.status(500).json({ error: "Error cerrando sesión" });
-    res.clearCookie('connect.sid');
-    res.json({ success: true, message: "Sesión cerrada" });
-  });
+app.get("/login.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "private/login.html"));
 });
 
 app.get("/check-session", (req, res) => {
   res.json({ loggedIn: !!req.session.isAdmin });
 });
 
-// --------------------------
-// CRUD Jugadores
-// --------------------------
+app.get("/admin.html", requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, "private/admin.html"));
+});
+
+app.post("/logout", (req, res) => {
+  req.session.destroy(err => {
+    if(err) return res.status(500).json({ error: "Error cerrando sesión" });
+    res.clearCookie('connect.sid');
+    res.json({ message: "Sesión cerrada" });
+  });
+});
+
+// ==========================
+// CRUD Players
+// ==========================
 app.post("/players", requireAdmin, async (req, res) => {
   try {
     const { name, tag, badges = [], social = {}, avatarURL } = req.body;
@@ -434,7 +619,7 @@ app.post("/players", requireAdmin, async (req, res) => {
     };
 
     await playersCollection.insertOne(newPlayer);
-    res.json({ success: true, message: "Jugador añadido exitosamente" });
+    res.json({ message: "Jugador añadido exitosamente" });
   } catch (err) {
     console.error("Error en POST /players:", err);
     res.status(500).json({ error: "Error al añadir jugador" });
@@ -444,59 +629,118 @@ app.post("/players", requireAdmin, async (req, res) => {
 app.get("/players", requireAdmin, async (req, res) => {
   try {
     const players = await playersCollection.find().toArray();
-    res.json({ success: true, players });
+
+    const playersWithPercentages = players.map(p => {
+      const matches = p.matchesPlayed || 1;
+      return {
+        ...p,
+        hsPercent: p.totalKills ? Math.round((p.totalHeadshotKills / p.totalKills) * 100) : 0,
+        KASTPercent: matches ? Math.round(p.totalKAST / matches) : 0
+      };
+    });
+
+    res.json(playersWithPercentages);
   } catch (err) {
     console.error("Error en GET /players:", err);
     res.status(500).json({ error: "Error al obtener jugadores" });
   }
 });
 
-app.put("/players/:id", requireAdmin, async (req, res) => {
+app.put("/players", requireAdmin, async (req, res) => {
   try {
-    const { id } = req.params;
-    const updates = req.body;
-    const result = await playersCollection.updateOne({ _id: new ObjectId(id) }, { $set: updates });
-    if (result.matchedCount === 0) return res.status(404).json({ error: "Jugador no encontrado" });
-    res.json({ success: true, message: "Jugador actualizado" });
+    const { oldName, oldTag, newName, newTag, social, avatarURL } = req.body;
+    const result = await playersCollection.updateOne(
+      { name: oldName, tag: oldTag },
+      { $set: { name: newName, tag: newTag, social, avatarURL } }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Jugador no encontrado" });
+    }
+    
+    res.json({ message: "Jugador actualizado" });
   } catch (err) {
-    console.error("Error en PUT /players/:id:", err);
+    console.error("Error en PUT /players:", err);
     res.status(500).json({ error: "Error actualizando jugador" });
   }
 });
 
-app.delete("/players/:id", requireAdmin, async (req, res) => {
+app.delete("/players", requireAdmin, async (req, res) => {
   try {
-    const { id } = req.params;
-    const result = await playersCollection.deleteOne({ _id: new ObjectId(id) });
-    if (result.deletedCount === 0) return res.status(404).json({ error: "Jugador no encontrado" });
-    res.json({ success: true, message: "Jugador eliminado" });
+    const { name, tag } = req.body;
+    const result = await playersCollection.deleteOne({ name, tag });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Jugador no encontrado" });
+    }
+    
+    res.json({ message: "Jugador eliminado" });
   } catch (err) {
-    console.error("Error en DELETE /players/:id:", err);
+    console.error("Error en DELETE /players:", err);
     res.status(500).json({ error: "Error eliminando jugador" });
   }
 });
 
-// --------------------------
-// CRUD Partidas (Admin)
-// --------------------------
+// ==========================
+// CRUD Matches
+// ==========================
 app.post("/matches", requireAdmin, async (req, res) => {
   try {
-    const { match, winnerTeam, score, map } = req.body;
-    if (!match || !Array.isArray(match)) return res.status(400).json({ error: "Formato inválido" });
+    const { match, winnerTeam, score: matchScore, map } = req.body;
+    if (!Array.isArray(match) || match.length === 0) return res.status(400).json({ error: "Formato inválido" });
 
-    const newMatch = { match, winnerTeam, score, map, date: new Date() };
+    const newMatch = { match, winnerTeam, score: matchScore, map, date: new Date() };
     await matchesCollection.insertOne(newMatch);
-    res.json({ success: true, message: "Partida añadida exitosamente" });
+
+    const teamA = match.slice(0, 5);
+    const teamB = match.slice(5, 10);
+
+    for (let i = 0; i < match.length; i++) {
+      const p = match[i];
+      const playerTeam = i < 5 ? "A" : "B";
+      const teamStats = playerTeam === "A" ? teamA : teamB;
+      const didWin = playerTeam === winnerTeam;
+      
+      const { totalScore } = calculateMatchScore(p, playerTeam, teamStats, didWin);
+      const currentPlayer = await playersCollection.findOne({ name: p.name, tag: p.tag });
+      const newTotalScore = Math.max((currentPlayer?.score || 0) + totalScore, 0);
+      const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
+
+      await playersCollection.updateOne(
+        { name: p.name, tag: p.tag },
+        {
+          $inc: {
+            totalKills: p.kills,
+            totalDeaths: p.deaths,
+            totalAssists: p.assists,
+            totalACS: p.ACS,
+            totalDDDelta: p.DDDelta,
+            totalADR: p.ADR,
+            totalHeadshotKills: headshotsThisMatch,
+            totalKAST: p.KAST,
+            totalFK: p.FK,
+            totalFD: p.FD,
+            totalMK: p.MK,
+            matchesPlayed: 1,
+            wins: didWin ? 1 : 0
+          },
+          $set: { score: newTotalScore }
+        },
+        { upsert: true }
+      );
+    }
+
+    res.json({ message: "Partida añadida exitosamente" });
   } catch (err) {
     console.error("Error en POST /matches:", err);
     res.status(500).json({ error: "Error al añadir partida" });
   }
 });
 
-app.get("/matches", requireAdmin, async (req, res) => {
+app.get("/matches", async (req, res) => {
   try {
     const matches = await matchesCollection.find().sort({ date: -1 }).toArray();
-    res.json({ success: true, matches });
+    res.json(matches);
   } catch (err) {
     console.error("Error en GET /matches:", err);
     res.status(500).json({ error: "Error obteniendo partidas" });
@@ -506,10 +750,18 @@ app.get("/matches", requireAdmin, async (req, res) => {
 app.put("/matches/:id", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
-    const result = await matchesCollection.updateOne({ _id: new ObjectId(id) }, { $set: updates });
-    if (result.matchedCount === 0) return res.status(404).json({ error: "Partida no encontrada" });
-    res.json({ success: true, message: "Partida actualizada" });
+    const { map, score, winnerTeam } = req.body;
+    
+    const result = await matchesCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { map, score, winnerTeam } }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Partida no encontrada" });
+    }
+    
+    res.json({ message: "Partida actualizada" });
   } catch (err) {
     console.error("Error en PUT /matches/:id:", err);
     res.status(500).json({ error: "Error actualizando partida" });
@@ -519,51 +771,144 @@ app.put("/matches/:id", requireAdmin, async (req, res) => {
 app.delete("/matches/:id", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await matchesCollection.deleteOne({ _id: new ObjectId(id) });
-    if (result.deletedCount === 0) return res.status(404).json({ error: "Partida no encontrada" });
-    res.json({ success: true, message: "Partida eliminada" });
+    const matchToDelete = await matchesCollection.findOne({ _id: new ObjectId(id) });
+    if (!matchToDelete) return res.status(404).json({ error: "Partida no encontrada" });
+
+    await matchesCollection.deleteOne({ _id: new ObjectId(id) });
+
+    // Resetear stats de todos los jugadores
+    await playersCollection.updateMany({}, {
+      $set: {
+        totalKills: 0,
+        totalDeaths: 0,
+        totalAssists: 0,
+        totalACS: 0,
+        totalDDDelta: 0,
+        totalADR: 0,
+        totalHeadshotKills: 0,
+        totalKAST: 0,
+        totalFK: 0,
+        totalFD: 0,
+        totalMK: 0,
+        matchesPlayed: 0,
+        wins: 0,
+        score: 0
+      }
+    });
+
+    // Recalcular todas las partidas restantes
+    const allMatches = await matchesCollection.find().toArray();
+    for (const match of allMatches) {
+      const teamA = match.match.slice(0, 5);
+      const teamB = match.match.slice(5, 10);
+
+      for (let i = 0; i < match.match.length; i++) {
+        const p = match.match[i];
+        const playerTeam = i < 5 ? "A" : "B";
+        const teamStats = playerTeam === "A" ? teamA : teamB;
+        const didWin = playerTeam === match.winnerTeam;
+        
+        const { totalScore } = calculateMatchScore(p, playerTeam, teamStats, didWin);
+        const headshotsThisMatch = Math.round((p.hsPercent / 100) * p.kills);
+
+        await playersCollection.updateOne(
+          { name: p.name, tag: p.tag },
+          {
+            $inc: {
+              totalKills: p.kills,
+              totalDeaths: p.deaths,
+              totalAssists: p.assists,
+              totalACS: p.ACS,
+              totalDDDelta: p.DDDelta,
+              totalADR: p.ADR,
+              totalHeadshotKills: headshotsThisMatch,
+              totalKAST: p.KAST,
+              totalFK: p.FK,
+              totalFD: p.FD,
+              totalMK: p.MK,
+              matchesPlayed: 1,
+              wins: didWin ? 1 : 0,
+              score: totalScore
+            }
+          },
+          { upsert: true }
+        );
+      }
+    }
+
+    res.json({ message: "✅ Partida eliminada y estadísticas recalculadas correctamente" });
   } catch (err) {
-    console.error("Error en DELETE /matches/:id:", err);
+    console.error("❌ Error en DELETE /matches/:id:", err);
     res.status(500).json({ error: "Error eliminando partida" });
   }
 });
 
-// --------------------------
-// Estadísticas y contadores
-// --------------------------
-app.get("/players-count", async (req, res) => {
+// ==========================
+// Leaderboard
+// ==========================
+app.get("/leaderboard", async (req, res) => {
   try {
-    const count = await playersCollection.countDocuments();
-    res.json({ success: true, count });
+    const players = await playersCollection.find().toArray();
+
+    const formattedPlayers = players.map(p => {
+      const matches = p.matchesPlayed || 1;
+
+      return {
+        ...p,
+        avgACS: matches ? (p.totalACS / matches) : 0,
+        avgFK: matches ? (p.totalFK / matches) : 0,
+        avgADR: matches ? (p.totalADR / matches) : 0,
+        avgDDDelta: matches ? (p.totalDDDelta / matches) : 0,
+        avgKAST: matches ? (p.totalKAST / matches) : 0,
+        hsPercent: p.totalKills ? (p.totalHeadshotKills / p.totalKills * 100) : 0
+      };
+    });
+
+    formattedPlayers.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    res.json(formattedPlayers);
   } catch (err) {
-    console.error("Error en GET /players-count:", err);
-    res.status(500).json({ error: "Error al obtener total de jugadores" });
+    console.error("Error en GET /leaderboard:", err);
+    res.status(500).json({ error: "Error generando leaderboard" });
   }
 });
 
+// ==========================
+// Endpoints adicionales
+// ==========================
 app.get("/matches-count", async (req, res) => {
   try {
     const count = await matchesCollection.countDocuments();
-    res.json({ success: true, count });
+    res.json({ count });
   } catch (err) {
     console.error("Error en GET /matches-count:", err);
     res.status(500).json({ error: "Error al obtener total de partidas" });
   }
 });
 
+app.get("/players-count", async (req, res) => {
+  try {
+    const count = await playersCollection.countDocuments();
+    res.json({ count });
+  } catch (err) {
+    console.error("Error en GET /players-count:", err);
+    res.status(500).json({ error: "Error al obtener total de jugadores" });
+  }
+});
+
 app.get("/last-match", async (req, res) => {
   try {
     const lastMatch = await matchesCollection.find().sort({ date: -1 }).limit(1).toArray();
-    res.json({ success: true, lastMatch: lastMatch[0] || null });
+    res.json(lastMatch[0] || null);
   } catch (err) {
     console.error("Error en GET /last-match:", err);
     res.status(500).json({ error: "Error al obtener última partida" });
   }
 });
 
-// --------------------------
-// Manejo global de errores y 404
-// --------------------------
+// ==========================
+// Manejo de errores global
+// ==========================
 app.use((err, req, res, next) => {
   console.error("Error no manejado:", err);
   res.status(500).json({ error: "Error interno del servidor" });
@@ -573,18 +918,12 @@ app.use((req, res) => {
   res.status(404).json({ error: "Endpoint no encontrado" });
 });
 
-// --------------------------
-// Montar API Router
-// --------------------------
-app.use("/api", apiRouter);
-
-// --------------------------
-// Iniciar servidor y conexión a MongoDB
-// --------------------------
+// ==========================
+// Servidor
+// ==========================
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 }).catch(err => {
   console.error("❌ Error iniciando servidor:", err);
   process.exit(1);
 });
-
