@@ -338,6 +338,68 @@ async function joinGlobalQueue(userId) {
   return null; // aún no hay suficientes jugadores
 }
 
+apiRouter.post("/match/submit-room", requireAuthDiscord, async (req, res) => {
+  try {
+    const { roomCode } = req.body;
+    const userId = req.session.userId;
+
+    if (!roomCode) {
+      return res.status(400).json({ error: "Debes enviar un roomCode" });
+    }
+
+    // Buscar la partida donde el usuario sea líder
+    const match = await customMatchesCollection.findOne({
+      status: "in_progress",
+      leaderId: userId
+    });
+
+    if (!match) {
+      return res.status(404).json({ error: "No se encontró partida activa para asignar roomCode" });
+    }
+
+    await customMatchesCollection.updateOne(
+      { _id: match._id },
+      { $set: { roomCode } }
+    );
+
+    res.json({ success: true, roomCode });
+  } catch (err) {
+    console.error("Error en /match/submit-room:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+apiRouter.post("/match/submit-tracker", requireAuthDiscord, async (req, res) => {
+  try {
+    const { trackerUrl } = req.body;
+    const userId = req.session.userId;
+
+    if (!trackerUrl) {
+      return res.status(400).json({ error: "Debes enviar un trackerUrl" });
+    }
+
+    // Buscar la partida donde el usuario sea líder
+    const match = await customMatchesCollection.findOne({
+      status: "in_progress",
+      leaderId: userId
+    });
+
+    if (!match) {
+      return res.status(404).json({ error: "No se encontró partida activa para asignar trackerUrl" });
+    }
+
+    await customMatchesCollection.updateOne(
+      { _id: match._id },
+      { $set: { trackerUrl } }
+    );
+
+    res.json({ success: true, trackerUrl });
+  } catch (err) {
+    console.error("Error en /match/submit-tracker:", err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
 // Endpoint para unirse a la cola global
 apiRouter.post("/queue/join", requireAuthDiscord, async (req, res) => {
   try {
