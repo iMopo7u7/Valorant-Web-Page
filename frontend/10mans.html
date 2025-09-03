@@ -687,7 +687,7 @@
                                         </div>
                                         <div class="flex gap-2">
                                             <input id="room-code-input" class="input"
-                                                placeholder="Código de la sala (ej: VALORANT123)" style="flex: 1;">
+                                                placeholder="Código de la sala (ej: VALOR123)" style="flex: 1;">
                                             <button id="submit-room-code" class="btn btn-outline">Enviar</button>
                                         </div>
                                     </div>
@@ -762,7 +762,7 @@
     </main>
 
 <script>
-const API_BASE = "https://valorant-10-mans.onrender.com";
+const API_BASE = "https://valorant-10-mans.onrender.com/api";
 let currentUser = null;
 let isQueueOpen = false;
 let activeMatches = [];
@@ -800,7 +800,7 @@ function setupTabs() {
 // ------------------------
 function setupEventListeners() {
     document.getElementById('discord-login-btn')?.addEventListener('click', () =>
-        window.location.href = `${API_BASE}/api/auth/discord`
+        window.location.href = `${API_BASE.replace("/api","")}/auth/discord`
     );
 
     document.getElementById('play-btn')?.addEventListener('click', async () => {
@@ -809,8 +809,7 @@ function setupEventListeners() {
         if (!isQueueOpen) return alert("La cola está cerrada");
 
         if (inQueue) {
-            // Si está en partida: leaveQueue, si solo en cola global: leaveGlobalQueue
-            const match = activeMatches.find(m => m.players?.some(p => p.discordId === currentUser.discordId));
+            const match = activeMatches.find(m => m.players?.includes(currentUser.discordId));
             if (match) await leaveQueue();
             else await leaveGlobalQueue();
         } else {
@@ -849,7 +848,7 @@ function setupEventListeners() {
 // ------------------------
 async function fetchCurrentUser() {
     try {
-        const res = await fetch(`${API_BASE}/api/users/me`, { credentials: "include" });
+        const res = await fetch(`${API_BASE}/users/me`, { credentials: "include" });
         if (!res.ok) { currentUser = null; updateUserDisplay(); return; }
         currentUser = await res.json();
     } catch (err) {
@@ -861,7 +860,7 @@ async function fetchCurrentUser() {
 
 async function updateRiotId(riotId) {
     try {
-        const res = await fetch(`${API_BASE}/api/users/update-riot`, {
+        const res = await fetch(`${API_BASE}/users/update-riot`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -880,266 +879,107 @@ async function updateRiotId(riotId) {
 function updateUserDisplay() {
     const loggedOut = document.getElementById('logged-out-state');
     const loggedIn = document.getElementById('logged-in-state');
-    const riotWarning = document.getElementById('riot-id-warning');
-    const leaderSection = document.getElementById('leader-section');
-
+    const loginBtn = document.getElementById('discord-login-btn');
     if (currentUser) {
-        loggedOut?.classList.add('hidden');
-        loggedIn?.classList.remove('hidden');
-        document.getElementById('user-avatar').src = currentUser.avatar
-            ? `https://cdn.discordapp.com/avatars/${currentUser.discordId}/${currentUser.avatar}.png`
-            : '/default-avatar.png';
-        document.getElementById('user-name').textContent = currentUser.username;
+        loggedOut.classList.add('hidden');
+        loggedIn.classList.remove('hidden');
+        loginBtn.classList.add('hidden');
+        document.getElementById('user-name').textContent = `${currentUser.username}#${currentUser.discriminator}`;
+        document.getElementById('user-avatar').src = `https://cdn.discordapp.com/avatars/${currentUser.discordId}/${currentUser.avatar}.png`;
         document.getElementById('user-riot-id').textContent = currentUser.riotId || "No registrado";
-        document.getElementById('riot-id-form')?.classList.toggle('hidden', !!currentUser.riotId);
-
-        leaderSection?.classList.toggle('hidden', !activeMatches.some(m => m.leaderId === currentUser.discordId));
+        document.getElementById('riot-id-form').classList.toggle('hidden', !!currentUser.riotId);
     } else {
-        loggedOut?.classList.remove('hidden');
-        loggedIn?.classList.add('hidden');
-        riotWarning?.classList.add('hidden');
-        leaderSection?.classList.add('hidden');
+        loggedOut.classList.remove('hidden');
+        loggedIn.classList.add('hidden');
+        loginBtn.classList.remove('hidden');
     }
-
-    updateQueueButton();
 }
 
 // ------------------------
 // --- Cola y Partidas
 // ------------------------
-async function updateQueueAndMatches() {
-    await fetchActiveMatches();
-    updateQueueStatus();
-}
-
-async function fetchActiveMatches() {
-    try {
-        const res = await fetch(`${API_BASE}/api/queue/active`, { credentials: "include" });
-        if (!res.ok) throw new Error("Error cargando partidas");
-        activeMatches = await res.json();
-
-        // Verificar si el usuario está en partida
-        const inMatch = activeMatches.some(m => m.players?.some(p => p.discordId === currentUser?.discordId));
-
-        // Verificar si el usuario está en la cola global
-        const queueRes = await fetch(`${API_BASE}/api/queue/active`, { credentials: "include" });
-        const queueData = await queueRes.json();
-        const globalQueue = queueData._id === "globalQueue" && queueData.players?.includes(currentUser?.discordId);
-
-        inQueue = inMatch || globalQueue;
-
-        renderMatches(activeMatches);
-        updateUserDisplay();
-    } catch (err) {
-        console.error(err);
-    }
-}
-
 async function joinQueue() {
     try {
-        const res = await fetch(`${API_BASE}/api/queue/join`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include"
-        });
-        if (!res.ok) throw new Error("Error al unirse a la cola");
-
+        const res = await fetch(`${API_BASE}/queue/join`, { method: "POST", credentials: "include" });
+        if (!res.ok) throw new Error("Error uniendo a la cola");
         const data = await res.json();
-        const updatedMatch = data.match || null;
-
-        if (updatedMatch) {
-            const idx = activeMatches.findIndex(m => m._id === updatedMatch._id);
-            if (idx >= 0) activeMatches[idx] = updatedMatch;
-            else activeMatches.push(updatedMatch);
-
-            inQueue = true;
-            renderMatches(activeMatches);
-
-            if (updatedMatch.status === 'in_progress') {
-                alert(`¡Partida iniciada automáticamente! Mapa: ${updatedMatch.map}`);
-            }
-        } else {
-            inQueue = true;
-            alert("Jugador agregado a la cola global, esperando partida...");
-        }
-        updateQueueButton();
+        if (data.match) alert("Partida iniciada automáticamente");
+        inQueue = true;
+        updateQueueAndMatches();
     } catch (err) {
         console.error(err);
-        alert("Error al unirse a la cola");
+        alert(err.message || "Error al unirse a la cola");
     }
 }
 
 async function leaveQueue() {
     try {
-        const res = await fetch(`${API_BASE}/api/queue/leave`, { method: "POST", credentials: "include" });
-        if (!res.ok) throw new Error("Error al salir de la partida");
-
+        const res = await fetch(`${API_BASE}/queue/leave`, { method: "POST", credentials: "include" });
+        if (!res.ok) throw new Error("Error saliendo de la partida");
+        const data = await res.json();
+        alert(data.message);
         inQueue = false;
-        updateQueueButton();
-        await fetchActiveMatches();
+        updateQueueAndMatches();
     } catch (err) {
         console.error(err);
-        alert("Error al salir de la partida");
+        alert(err.message || "Error al salir de la partida");
     }
 }
 
 async function leaveGlobalQueue() {
     try {
-        const res = await fetch(`${API_BASE}/api/queue/leave-global`, { method: "POST", credentials: "include" });
-        if (!res.ok) throw new Error("Error al salir de la cola global");
-
+        const res = await fetch(`${API_BASE}/queue/leave-global`, { method: "POST", credentials: "include" });
+        if (!res.ok) throw new Error("Error saliendo de la cola global");
+        const data = await res.json();
+        alert(data.message);
         inQueue = false;
-        updateQueueButton();
-        alert("Has salido de la cola global");
+        updateQueueAndMatches();
     } catch (err) {
         console.error(err);
-        alert("Error al salir de la cola global");
+        alert(err.message || "Error al salir de la cola global");
     }
 }
 
-// ------------------------
-// --- Botón Cola
-// ------------------------
-function updateQueueStatus() {
-    const now = new Date();
-    const openHour = 0, closeHour = 23;
-    const queueStatus = document.getElementById('queue-status');
-
-    isQueueOpen = now.getHours() >= openHour && now.getHours() < closeHour;
-
-    if (queueStatus) {
-        queueStatus.innerHTML = isQueueOpen
-            ? '<span class="text-success">✅ COLA ABIERTA</span>'
-            : `⏰ COLA CERRADA - Abre en: ${openHour}h`;
+async function fetchActiveMatches() {
+    try {
+        const res = await fetch(`${API_BASE}/queue/active`, { credentials: "include" });
+        if (!res.ok) throw new Error("Error obteniendo partidas activas");
+        const matches = await res.json();
+        activeMatches = matches;
+        return matches;
+    } catch (err) {
+        console.error(err);
+        activeMatches = [];
+        return [];
     }
-
-    updateQueueButton();
 }
-    
-function updateQueueButton() {
-    const playBtn = document.getElementById('play-btn');
-    const riotWarning = document.getElementById('riot-id-warning');
-    if (!playBtn) return;
 
-    const canPlay = isQueueOpen && currentUser?.riotId;
+async function updateQueueAndMatches() {
+    const matches = await fetchActiveMatches();
+    const queueStatusEl = document.getElementById('queue-status');
+    const userMatch = matches.find(m => m.players?.includes(currentUser?.discordId));
+    inQueue = !!userMatch;
 
     if (inQueue) {
-        playBtn.textContent = "⌛ Esperando partida... (Clic para salir)";
-        playBtn.disabled = false;
-    } else if (!isQueueOpen) {
-        playBtn.textContent = "⏰ COLA CERRADA";
-        playBtn.disabled = true;
-    } else if (!currentUser?.riotId) {
-        playBtn.textContent = "⚔️ UNIRSE A LA COLA";
-        playBtn.disabled = true;
-        riotWarning?.classList.remove('hidden');
+        queueStatusEl.textContent = "Estás en una partida o cola activa";
     } else {
-        playBtn.textContent = "⚔️ UNIRSE A LA COLA";
-        playBtn.disabled = false;
-    }
-}
-
-// ------------------------
-// --- Render Partidas
-// ------------------------
-function renderMatches(matches) {
-    const container = document.getElementById('matches-container');
-    if (!container) return;
-
-    if (!matches.length) {
-        container.innerHTML = `<div class="card"><div class="card-content text-center"><p class="text-muted">No hay partidas activas</p></div></div>`;
-        return;
+        queueStatusEl.textContent = "No estás en ninguna cola";
     }
 
-    container.innerHTML = matches.map(m => {
-        const playersCount = m.players?.length || 0;
-        const isLeader = currentUser?.discordId === m.leaderId;
-        return `
-<div class="card match-card">
-  <div class="card-content">
-    <div class="flex justify-between items-center mb-3">
-      <span class="badge badge-${m.status === 'waiting' ? 'warning' : 'success'}">${m.status.toUpperCase()}</span>
-      <span class="text-sm text-muted">${playersCount}/10 jugadores</span>
-    </div>
-    <div class="flex justify-between items-center mb-4">
-      <div>
-        <h4 class="font-bold">${m.map || 'Mapa aleatorio'}</h4>
-        <p class="text-sm text-muted">Líder: ${isLeader ? 'Tú' : 'Otro jugador'}</p>
-      </div>
-    </div>
-  </div>
-</div>`;
-    }).join('');
-
-    renderLeaderInputs(matches.find(m => m.leaderId === currentUser?.discordId));
-}
-
-// ------------------------
-// --- Inputs Líder
-// ------------------------
-function renderLeaderInputs(match) {
-    const isLeader = !!match;
-    const roomWrapper = document.getElementById('room-code-input')?.parentElement;
-    const trackerWrapper = document.getElementById('tracker-url-input')?.parentElement;
-
-    if (!roomWrapper || !trackerWrapper) return;
-
-    roomWrapper.style.display = isLeader ? 'flex' : 'none';
-    trackerWrapper.style.display = isLeader ? 'flex' : 'none';
-    document.getElementById('submit-room-code').style.display = isLeader ? 'block' : 'none';
-    document.getElementById('submit-tracker').style.display = isLeader ? 'block' : 'none';
-
-    if (!isLeader) return;
-
-    const roomInput = document.getElementById('room-code-input');
-    roomInput.value = match.roomCode || '';
-    roomInput.disabled = !!match.roomCode;
-
-    const trackerInput = document.getElementById('tracker-url-input');
-    trackerInput.value = match.trackerUrl || '';
-    trackerInput.disabled = !!match.trackerUrl;
-}
-
-// ------------------------
-// --- Room & Tracker
-// ------------------------
-async function updateRoomCode(matchId, roomCode) {
-    if (!/^[A-Z0-9]{6}$/.test(roomCode)) return alert("Código inválido. Debe tener 6 caracteres alfanuméricos mayúsculas.");
-
-    try {
-        const res = await fetch(`${API_BASE}/api/queue/submit-room-code`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ matchId, roomCode })
-        });
-        if (!res.ok) throw new Error("Error al actualizar código de sala");
-        alert("Código de sala actualizado correctamente");
-        await fetchActiveMatches();
-    } catch (err) {
-        console.error(err);
-        alert("Error al actualizar código de sala");
-    }
-}
-
-async function updateTrackerUrl(matchId, trackerUrl) {
-    const regex = /^https:\/\/tracker\.gg\/valorant\/match\/[0-9a-fA-F\-]{36}$/;
-    if (!regex.test(trackerUrl)) return alert("URL de tracker inválida");
-
-    try {
-        const res = await fetch(`${API_BASE}/api/queue/submit-tracker`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ matchId, trackerUrl })
-        });
-        if (!res.ok) throw new Error("Error al subir tracker");
-        alert("Tracker subido correctamente. Partida finalizada.");
-        await fetchActiveMatches();
-    } catch (err) {
-        console.error(err);
-        alert("Error al subir tracker URL");
-    }
+    const matchesContainer = document.getElementById('matches-container');
+    matchesContainer.innerHTML = "";
+    matches.forEach(match => {
+        const div = document.createElement('div');
+        div.className = "card mb-3";
+        div.innerHTML = `
+            <div class="card-content">
+                <p><strong>Mapa:</strong> ${match.map || "Pendiente"}</p>
+                <p><strong>Players:</strong> ${match.players?.length || 0}/10</p>
+                <p><strong>Líder:</strong> ${match.leaderId}</p>
+            </div>
+        `;
+        matchesContainer.appendChild(div);
+    });
 }
 </script>
 
