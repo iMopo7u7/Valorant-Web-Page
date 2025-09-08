@@ -745,10 +745,6 @@
                         Tiempo en cola: <span id="timerValue">00:00</span>
                     </div>
                     
-                    <button class="change-bg-btn" onclick="openBackgroundModal()">
-                        🎨 Cambiar fondo
-                    </button>
-                    
                     <div class="riot-id-section">
                         
                         <label for="riotIdInput">Riot ID:</label>
@@ -824,24 +820,6 @@
         </div>
     </main>
 
-    <!-- Background Modal -->
-    <div id="backgroundModal" class="bg-modal">
-        <div class="bg-modal-content">
-            <h3>🎨 Cambiar fondo de tarjeta</h3>
-            <div class="bg-options">
-                <div class="bg-option" data-bg="default" style="background: linear-gradient(135deg, hsl(350 85% 55% / 0.2), hsl(195 85% 55% / 0.1));"></div>
-                <div class="bg-option" data-bg="valorant1" style="background: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400') center/cover;"></div>
-                <div class="bg-option" data-bg="valorant2" style="background: url('https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400') center/cover;"></div>
-                <div class="bg-option" data-bg="valorant3" style="background: url('https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400') center/cover;"></div>
-            </div>
-            <input type="url" class="custom-url-input" id="customBgUrl" placeholder="O ingresa una URL personalizada...">
-            <div class="modal-buttons">
-                <button class="modal-btn secondary" onclick="closeBackgroundModal()">Cancelar</button>
-                <button class="modal-btn primary" onclick="saveBackground()">Guardar</button>
-            </div>
-        </div>
-    </div>
-
 <script>
 const API_BASE = 'https://valorant-10-mans.onrender.com'; 
 
@@ -851,15 +829,6 @@ let isInQueue = false;
 let queueStartTime = null;
 let queueTimer = null;
 let currentMatch = null;
-let selectedBackground = 'default';
-
-// Fondos predeterminados
-const backgrounds = {
-    default: 'linear-gradient(135deg, hsl(350 85% 55% / 0.2), hsl(195 85% 55% / 0.1))',
-    valorant1: 'url("https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400") center/cover',
-    valorant2: 'url("https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400") center/cover',
-    valorant3: 'url("https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400") center/cover'
-};
 
 // Maps posibles
 const maps = ['Ascent', 'Bind', 'Haven', 'Split', 'Icebox', 'Breeze', 'Fracture', 'Pearl', 'Lotus', 'Sunset'];
@@ -867,7 +836,6 @@ const maps = ['Ascent', 'Bind', 'Haven', 'Split', 'Icebox', 'Breeze', 'Fracture'
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
     checkAuthStatus();
-    setupBackgroundSelection();
     startPeriodicUpdates();
 });
 
