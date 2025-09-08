@@ -1013,11 +1013,12 @@ function showLobby(match) {
     document.getElementById('userCard').style.display='none';
     document.getElementById('lobbyContainer').classList.add('active');
 
-    // Comparación segura como string
+    const leaderPanel = document.getElementById('leaderPanel');
+
     if(match.leader && String(match.leader.id) === String(currentUser.id)) {
-        document.getElementById('leaderPanel').classList.add('active');
+        leaderPanel.style.display = 'block'; // 👈 fuerza que se muestre
     } else {
-        document.getElementById('leaderPanel').classList.remove('active');
+        leaderPanel.style.display = 'none';  // 👈 se oculta si no es líder
     }
 
     document.getElementById('lobbyMap').textContent = match.map || getRandomMap();
