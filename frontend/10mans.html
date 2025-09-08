@@ -731,7 +731,6 @@
 
             <!-- User Card (shown when logged in) -->
             <div id="userCard" class="user-card" style="display: none;">
-                <div class="user-card-bg" id="userCardBg"></div>
                 <div class="user-card-content">
                     <img id="userAvatar" class="user-avatar" src="" alt="User Avatar">
                     <h2 id="userName" class="user-name"></h2>
@@ -746,7 +745,6 @@
                     </div>
                     
                     <div class="riot-id-section">
-                        
                         <label for="riotIdInput">Riot ID:</label>
                         <input type="text" id="riotIdInput" placeholder="Ej: Player#LAN" disabled>
                         <button id="riotIdBtn" onclick="handleRiotIdChange()">Guardar</button>
@@ -823,17 +821,14 @@
 <script>
 const API_BASE = 'https://valorant-10-mans.onrender.com'; 
 
-// Estado global
 let currentUser = null;
 let isInQueue = false;
 let queueStartTime = null;
 let queueTimer = null;
 let currentMatch = null;
 
-// Maps posibles
 const maps = ['Ascent', 'Bind', 'Haven', 'Split', 'Icebox', 'Breeze', 'Fracture', 'Pearl', 'Lotus', 'Sunset'];
 
-// Inicializar
 document.addEventListener('DOMContentLoaded', () => {
     checkAuthStatus();
     startPeriodicUpdates();
@@ -872,30 +867,19 @@ function showUserInterface() {
     : '/placeholder.svg';
   document.getElementById('userName').textContent = currentUser.username || 'Usuario';
 
-  // Riot ID UI
   const riotInput = document.getElementById('riotIdInput');
   const riotBtn = document.getElementById('riotIdBtn');
   riotInput.value = currentUser.riotId || '';
   
   if (!currentUser.riotId) {
-    riotInput.disabled = false; // puede escribir por primera vez
+    riotInput.disabled = false;
     riotBtn.style.display = 'inline-block';
   } else if (!currentUser.riotIdChanged) {
-    riotInput.disabled = false; // puede cambiarlo una vez
+    riotInput.disabled = false;
     riotBtn.style.display = 'inline-block';
   } else {
-    riotInput.disabled = true; // ya no puede cambiar
+    riotInput.disabled = true;
     riotBtn.style.display = 'none';
-  }
-
-  // Fondo
-  const bgElement = document.getElementById('userCardBg');
-  if (currentUser.cardBackground) {
-    if (currentUser.cardBackground.startsWith('http')) {
-      bgElement.style.background = `url("${currentUser.cardBackground}") center/cover`;
-    } else {
-      bgElement.style.background = backgrounds[currentUser.cardBackground] || backgrounds.default;
-    }
   }
 
   updateUserStatus();
@@ -919,17 +903,10 @@ async function handleRiotIdChange() {
     const data = await res.json();
     if (res.ok) {
       currentUser.riotId = riotId;
-      if (!currentUser.riotIdChanged) {
-        currentUser.riotIdChanged = true; // después de usar el cambio
-      }
+      if (!currentUser.riotIdChanged) currentUser.riotIdChanged = true;
       showUserInterface();
-    } else {
-      alert(data.error || "Error al actualizar Riot ID");
-    }
-  } catch (e) {
-    console.error(e);
-    alert("Error de conexión con el servidor");
-  }
+    } else alert(data.error || "Error al actualizar Riot ID");
+  } catch (e) { console.error(e); alert("Error de conexión con el servidor"); }
 }
 
 function updateUserStatus() {
@@ -1037,49 +1014,6 @@ function stopQueueTimer() {
 }
 
 // =========================
-// Fondo de tarjeta
-// =========================
-function setupBackgroundSelection() {
-    const bgOptions = document.querySelectorAll('.bg-option');
-    bgOptions.forEach(opt => {
-        opt.addEventListener('click', () => {
-            bgOptions.forEach(o=>o.classList.remove('selected'));
-            opt.classList.add('selected');
-            selectedBackground = opt.dataset.bg;
-        });
-    });
-}
-
-function openBackgroundModal() { document.getElementById('backgroundModal').classList.add('active'); }
-function closeBackgroundModal() { document.getElementById('backgroundModal').classList.remove('active'); }
-
-async function saveBackground() {
-    const url = document.getElementById('customBgUrl').value;
-    const bg = url || selectedBackground;
-    try {
-        const res = await fetch(`${API_BASE}/api/users/update-card-background`, {
-            method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({background:bg})
-        });
-        if (res.ok) {
-            currentUser.cardBackground = bg;
-            const bgEl = document.getElementById('userCardBg');
-            if (bg.startsWith('http')) bgEl.style.background = `url("${bg}") center/cover`;
-            else bgEl.style.background = backgrounds[bg] || backgrounds.default;
-            closeBackgroundModal();
-        }
-    } catch(e){console.error(e);}
-}
-
-async function updateRiotId(riotId) {
-    try {
-        const res = await fetch(`${API_BASE}/api/users/update-riot`, {
-            method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({riotId})
-        });
-        if (res.ok) { currentUser.riotId = riotId; updateUserStatus(); updatePlayButton(); }
-    } catch(e){console.error(e);}
-}
-
-// =========================
 // Lobby
 // =========================
 function showLobby(match) {
@@ -1105,14 +1039,6 @@ function renderTeam(containerId, players) {
     players.forEach(p=>{
         const card = document.createElement('div');
         card.className='player-card';
-        if(p.cardBackground){
-            const bg = p.cardBackground.startsWith('http')?`url("${p.cardBackground}") center/cover`:(backgrounds[p.cardBackground]||'');
-            card.style.setProperty('--player-bg', bg);
-            card.style.backgroundImage=bg;
-            card.style.backgroundSize='cover';
-            card.style.backgroundPosition='center';
-            card.style.opacity='0.8';
-        }
         card.innerHTML=`
         <div class="player-card-content">
             <img class="player-avatar-small" src="${p.avatar ? `https://cdn.discordapp.com/avatars/${p.id}/${p.avatar}.png` : '/placeholder.svg'}">
@@ -1158,6 +1084,15 @@ function startPeriodicUpdates() {
     setInterval(async()=>{
         if(currentUser) await checkQueueStatus();
     },10000);
+}
+
+async function updateRiotId(riotId) {
+    try {
+        const res = await fetch(`${API_BASE}/api/users/update-riot`, {
+            method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({riotId})
+        });
+        if (res.ok) { currentUser.riotId = riotId; updateUserStatus(); updatePlayButton(); }
+    } catch(e){console.error(e);}
 }
 </script>
 
