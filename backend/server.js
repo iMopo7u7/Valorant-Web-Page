@@ -283,8 +283,9 @@ apiRouter.post("/users/update-riot", requireAuthDiscord, async (req, res) => {
 const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze"];
 const SIDES = ["Attacker", "Defender"];
 
-// Función para unir jugador a la cola global
+// Función para unir jugador a la cola global y crear partida automáticamente
 async function joinGlobalQueue(userId) {
+  // Obtener o crear documento de cola global
   let queueDoc = await customMatchesCollection.findOne({ _id: "globalQueue" });
 
   if (!queueDoc) {
@@ -302,47 +303,76 @@ async function joinGlobalQueue(userId) {
 
   const queue = queueDoc.players;
 
-  // Crear partida automáticamente si hay al menos 2 jugadores
-if (queue.length >= 2) {
-  const maxPlayers = Math.min(queue.length, 10); // máximo 10 jugadores
-  const playersForMatch = queue.slice(0, maxPlayers);
+  // Crear partida si hay al menos 2 jugadores
+  if (queue.length >= 2) {
+    const maxPlayers = Math.min(queue.length, 10); // máximo 10 jugadores
+    const playersForMatch = queue.slice(0, maxPlayers);
 
-  // Sacar jugadores de la cola
-  await customMatchesCollection.updateOne(
-    { _id: "globalQueue" },
-    { $pull: { players: { $in: playersForMatch } } }
-  );
+    // Sacar jugadores de la cola
+    await customMatchesCollection.updateOne(
+      { _id: "globalQueue" },
+      { $pull: { players: { $in: playersForMatch } } }
+    );
 
-  // Elegir mapa aleatorio
-  const map = MAPS[Math.floor(Math.random() * MAPS.length)];
+    // Elegir mapa aleatorio
+    const map = MAPS[Math.floor(Math.random() * MAPS.length)];
 
-  // Mezclar jugadores y dividir en equipos
-  const shuffled = [...playersForMatch].sort(() => 0.5 - Math.random());
-  const mid = Math.ceil(shuffled.length / 2);
-  const teamA = shuffled.slice(0, mid);
-  const teamB = shuffled.slice(mid);
+    // Mezclar jugadores y dividir en equipos
+    const shuffled = [...playersForMatch].sort(() => 0.5 - Math.random());
+    const mid = Math.ceil(shuffled.length / 2);
+    const teamAIds = shuffled.slice(0, mid);
+    const teamBIds = shuffled.slice(mid);
 
-  // Elegir líder y lados
-  const leaderId = playersForMatch[Math.floor(Math.random() * playersForMatch.length)];
-  const sideA = SIDES[Math.floor(Math.random() * SIDES.length)];
-  const sideB = sideA === "Attacker" ? "Defender" : "Attacker";
+    // Obtener objetos completos de usuario
+    const fetchUsers = async (ids) => {
+      const users = await usersCollection.find({ discordId: { $in: ids } }).toArray();
+      return ids.map(id => {
+        const user = users.find(u => u.discordId === id);
+        return {
+          id: user.discordId,
+          username: user.username,
+          avatar: user.avatar,
+          riotId: user.riotId || null,
+          cardBackground: user.cardBackground || null
+        };
+      });
+    };
 
-  const newMatch = {
-    players: playersForMatch,
-    teamA,
-    teamB,
-    map,
-    leaderId,
-    sides: { teamA: sideA, teamB: sideB },
-    status: "in_progress",
-    createdAt: new Date()
-  };
+    const teamA = await fetchUsers(teamAIds);
+    const teamB = await fetchUsers(teamBIds);
 
-  await customMatchesCollection.insertOne(newMatch);
-  return newMatch;
-}
+    // Elegir líder aleatorio
+    const leaderId = playersForMatch[Math.floor(Math.random() * playersForMatch.length)];
+    const leaderUser = await usersCollection.findOne({ discordId: leaderId });
+    const leader = {
+      id: leaderUser.discordId,
+      username: leaderUser.username,
+      avatar: leaderUser.avatar,
+      riotId: leaderUser.riotId || null,
+      cardBackground: leaderUser.cardBackground || null
+    };
 
-  return null; // aún no hay suficientes jugadores
+    // Asignar lados
+    const sideA = SIDES[Math.floor(Math.random() * SIDES.length)];
+    const sideB = sideA === "Attacker" ? "Defender" : "Attacker";
+
+    const newMatch = {
+      players: playersForMatch,
+      teamA,
+      teamB,
+      map,
+      leader,
+      sides: { teamA: sideA, teamB: sideB },
+      status: "in_progress",
+      createdAt: new Date()
+    };
+
+    await customMatchesCollection.insertOne(newMatch);
+
+    return newMatch; // Devuelve partida lista para frontend
+  }
+
+  return null; // No hay suficientes jugadores para crear partida
 }
 
 apiRouter.post("/match/submit-room", requireAuthDiscord, async (req, res) => {
