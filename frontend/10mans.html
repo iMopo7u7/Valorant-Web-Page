@@ -871,10 +871,7 @@ function showUserInterface() {
   const riotBtn = document.getElementById('riotIdBtn');
   riotInput.value = currentUser.riotId || '';
   
-  if (!currentUser.riotId) {
-    riotInput.disabled = false;
-    riotBtn.style.display = 'inline-block';
-  } else if (!currentUser.riotIdChanged) {
+  if (!currentUser.riotId || !currentUser.riotIdChanged) {
     riotInput.disabled = false;
     riotBtn.style.display = 'inline-block';
   } else {
@@ -887,10 +884,7 @@ function showUserInterface() {
 
 async function handleRiotIdChange() {
   const riotId = document.getElementById('riotIdInput').value.trim();
-  if (!riotId) {
-    alert("Ingresa un Riot ID válido");
-    return;
-  }
+  if (!riotId) { alert("Ingresa un Riot ID válido"); return; }
 
   try {
     const res = await fetch(`${API_BASE}/api/users/update-riot`, {
@@ -899,7 +893,6 @@ async function handleRiotIdChange() {
       credentials: 'include',
       body: JSON.stringify({ riotId })
     });
-
     const data = await res.json();
     if (res.ok) {
       currentUser.riotId = riotId;
@@ -1019,7 +1012,13 @@ function stopQueueTimer() {
 function showLobby(match) {
     document.getElementById('userCard').style.display='none';
     document.getElementById('lobbyContainer').classList.add('active');
-    if(match.leader && match.leader.id===currentUser.id) document.getElementById('leaderPanel').classList.add('active');
+
+    // Comparación segura como string
+    if(match.leader && String(match.leader.id) === String(currentUser.id)) {
+        document.getElementById('leaderPanel').classList.add('active');
+    } else {
+        document.getElementById('leaderPanel').classList.remove('active');
+    }
 
     document.getElementById('lobbyMap').textContent = match.map || getRandomMap();
     document.getElementById('lobbyLeader').textContent = match.leader?.username || 'Desconocido';
@@ -1061,7 +1060,12 @@ async function submitRoomCode() {
     const val = document.getElementById('roomCodeInput').value.trim();
     if(!val){ alert('Ingresa código'); return; }
     try { 
-        await fetch(`${API_BASE}/api/match/submit-room`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({roomCode:val}) });
+        await fetch(`${API_BASE}/api/match/submit-room`, {
+            method:'POST', 
+            headers:{'Content-Type':'application/json'}, 
+            credentials:'include', 
+            body:JSON.stringify({roomCode:val}) 
+        });
         alert('Código enviado');
         document.getElementById('roomCodeInput').value='';
     } catch(e){console.error(e);}
@@ -1071,7 +1075,12 @@ async function submitTrackerUrl() {
     const val = document.getElementById('trackerUrlInput').value.trim();
     if(!val){ alert('Ingresa tracker'); return; }
     try { 
-        await fetch(`${API_BASE}/api/match/submit-tracker`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({trackerUrl:val}) });
+        await fetch(`${API_BASE}/api/match/submit-tracker`, {
+            method:'POST', 
+            headers:{'Content-Type':'application/json'}, 
+            credentials:'include', 
+            body:JSON.stringify({trackerUrl:val}) 
+        });
         alert('Tracker enviado');
         document.getElementById('trackerUrlInput').value='';
     } catch(e){console.error(e);}
