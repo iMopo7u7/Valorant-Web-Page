@@ -375,6 +375,7 @@ async function joinGlobalQueue(userId) {
   return null; // No hay suficientes jugadores para crear partida
 }
 
+// Endpoint para enviar el código de la sala
 apiRouter.post("/match/submit-room", requireAuthDiscord, async (req, res) => {
   try {
     const { roomCode } = req.body;
@@ -387,7 +388,7 @@ apiRouter.post("/match/submit-room", requireAuthDiscord, async (req, res) => {
     // Buscar la partida donde el usuario sea líder
     const match = await customMatchesCollection.findOne({
       status: "in_progress",
-      leaderId: userId
+      "leader.id": userId   // <-- Cambio importante aquí
     });
 
     if (!match) {
@@ -406,6 +407,7 @@ apiRouter.post("/match/submit-room", requireAuthDiscord, async (req, res) => {
   }
 });
 
+// Endpoint para subir el Tracker
 apiRouter.post("/match/submit-tracker", requireAuthDiscord, async (req, res) => {
   try {
     const { trackerUrl } = req.body;
@@ -418,7 +420,7 @@ apiRouter.post("/match/submit-tracker", requireAuthDiscord, async (req, res) => 
     // Buscar la partida donde el usuario sea líder
     const match = await customMatchesCollection.findOne({
       status: "in_progress",
-      leaderId: userId
+      "leader.id": userId   // <-- Cambio importante aquí también
     });
 
     if (!match) {
