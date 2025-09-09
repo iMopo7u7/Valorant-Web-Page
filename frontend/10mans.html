@@ -856,7 +856,7 @@ function showLoginInterface() {
     document.getElementById('loginSection').style.display = 'block';
     document.getElementById('userCard').style.display = 'none';
     document.getElementById('lobbyContainer').classList.remove('active');
-    document.getElementById('leaderPanel').classList.remove('active');
+    document.getElementById('leaderPanel').style.display = 'none';
 }
 
 function showUserInterface() {
@@ -1014,11 +1014,10 @@ function showLobby(match) {
     document.getElementById('lobbyContainer').classList.add('active');
 
     const leaderPanel = document.getElementById('leaderPanel');
-
     if(match.leader && String(match.leader.id) === String(currentUser.id)) {
-        leaderPanel.style.display = 'block'; // 👈 fuerza que se muestre
+        leaderPanel.style.display = 'block'; // 👑 solo líder lo ve
     } else {
-        leaderPanel.style.display = 'none';  // 👈 se oculta si no es líder
+        leaderPanel.style.display = 'none'; // los demás no lo ven
     }
 
     document.getElementById('lobbyMap').textContent = match.map || getRandomMap();
@@ -1030,7 +1029,7 @@ function showLobby(match) {
 function hideLobby() {
     document.getElementById('userCard').style.display='block';
     document.getElementById('lobbyContainer').classList.remove('active');
-    document.getElementById('leaderPanel').classList.remove('active');
+    document.getElementById('leaderPanel').style.display='none';
 }
 
 function renderTeam(containerId, players) {
