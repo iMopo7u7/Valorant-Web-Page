@@ -420,16 +420,28 @@ apiRouter.post("/match/submit-tracker", requireAuthDiscord, async (req, res) => 
     // Buscar la partida donde el usuario sea líder
     const match = await customMatchesCollection.findOne({
       status: "in_progress",
-      "leader.id": userId   // <-- Cambio importante aquí también
+      "leader.id": userId   // líder de la partida
     });
 
     if (!match) {
       return res.status(404).json({ error: "No se encontró partida activa para asignar trackerUrl" });
     }
 
+    // Validar si ya tiene trackerUrl
+    if (match.trackerUrl) {
+      return res.status(403).json({ error: "El tracker ya fue enviado y no se puede cambiar" });
+    }
+
+    // Actualizar trackerUrl y estado de partida
     await customMatchesCollection.updateOne(
       { _id: match._id },
-      { $set: { trackerUrl } }
+      {
+        $set: {
+          trackerUrl,
+          status: "finished",
+          finishedAt: new Date()
+        }
+      }
     );
 
     res.json({ success: true, trackerUrl });
