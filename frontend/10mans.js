@@ -204,6 +204,16 @@ function showLobby(match){
     // Mostrar panel de líder si corresponde
     if(String(match.leader.id) === String(currentUser.discordId)){
         document.getElementById('leaderPanel').style.display = 'block';
+        // Si ya envió room code o tracker, bloquear inputs
+        const roomInput = document.getElementById('roomCodeInput');
+        const roomBtn = document.getElementById('roomCodeBtn');
+        roomInput.disabled = !!match.roomCode;
+        roomBtn.disabled = !!match.roomCode;
+
+        const trackerInput = document.getElementById('trackerUrlInput');
+        const trackerBtn = document.getElementById('trackerUrlBtn');
+        trackerInput.disabled = !!match.trackerUrl;
+        trackerBtn.disabled = !!match.trackerUrl;
     } else {
         document.getElementById('leaderPanel').style.display = 'none';
     }
@@ -232,8 +242,12 @@ function getRandomMap(){
 // PANEL DE LÍDER
 // =========================
 async function submitRoomCode(){
-    const val = document.getElementById('roomCodeInput').value.trim();
-    if(!val){ alert('Ingresa código'); return; }
+    const val = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+    const regex = /^[A-Z]{3}[0-9]{3}$/;
+    if(!regex.test(val)){
+        alert('Formato inválido: 3 letras mayúsculas + 3 números (ej: WLG419)');
+        return;
+    }
     try{
         const res = await fetch(`${API_BASE}/api/match/submit-room`, {
             method:'POST',
@@ -242,14 +256,24 @@ async function submitRoomCode(){
             body: JSON.stringify({ roomCode: val })
         });
         const data = await res.json();
-        if(res.ok){ alert('Código de sala enviado'); }
-        else alert(data.error || 'Error al enviar código');
+        if(res.ok){
+            alert('Código de sala enviado');
+            document.getElementById('roomCodeInput').disabled = true;
+            document.getElementById('roomCodeBtn').disabled = true;
+            currentMatch.roomCode = val;
+        } else {
+            alert(data.error || 'Error al enviar código');
+        }
     } catch(e){ console.error(e); }
 }
 
 async function submitTrackerUrl(){
     const val = document.getElementById('trackerUrlInput').value.trim();
-    if(!val){ alert('Ingresa URL'); return; }
+    const regex = /^https:\/\/tracker\.gg\/valorant\/match\/[a-z0-9-]+$/i;
+    if(!regex.test(val)){
+        alert('URL inválida: debe tener formato https://tracker.gg/valorant/match/xxxxx');
+        return;
+    }
     try{
         const res = await fetch(`${API_BASE}/api/match/submit-tracker`, {
             method:'POST',
@@ -260,6 +284,7 @@ async function submitTrackerUrl(){
         const data = await res.json();
         if(res.ok){ 
             alert('Tracker subido, partida finalizada');
+            currentMatch.trackerUrl = val;
             hideLobby();
             currentMatch = null;
             showUserInterface();
