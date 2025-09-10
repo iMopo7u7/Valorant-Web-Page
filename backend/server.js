@@ -280,7 +280,7 @@ apiRouter.post("/users/update-riot", requireAuthDiscord, async (req, res) => {
 // ==========================
 // Queue & Matches
 // ==========================
-const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze"];
+const MAPS=["Ascent","Bind","Haven","Icebox","Breeze","split","Fracture","Pearl","Lotus","Sunset","Abyss","Corrode"]; 
 const SIDES = ["Attacker", "Defender"];
 
 // Función para unir jugador a la cola global y crear partida automáticamente
