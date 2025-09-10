@@ -303,10 +303,9 @@ async function joinGlobalQueue(userId) {
 
   const queue = queueDoc.players;
 
-  // Crear partida si hay al menos 2 jugadores
-  if (queue.length >= 2) {
-    const maxPlayers = Math.min(queue.length, 10); // máximo 10 jugadores
-    const playersForMatch = queue.slice(0, maxPlayers);
+  // Crear partida solo si hay exactamente 10 jugadores
+  if (queue.length === 10) {
+    const playersForMatch = queue.slice(0, 10);
 
     // Sacar jugadores de la cola
     await customMatchesCollection.updateOne(
@@ -317,11 +316,10 @@ async function joinGlobalQueue(userId) {
     // Elegir mapa aleatorio
     const map = MAPS[Math.floor(Math.random() * MAPS.length)];
 
-    // Mezclar jugadores y dividir en equipos
+    // Mezclar jugadores y dividir en equipos de 5
     const shuffled = [...playersForMatch].sort(() => 0.5 - Math.random());
-    const mid = Math.ceil(shuffled.length / 2);
-    const teamAIds = shuffled.slice(0, mid);
-    const teamBIds = shuffled.slice(mid);
+    const teamAIds = shuffled.slice(0, 5);
+    const teamBIds = shuffled.slice(5, 10);
 
     // Obtener objetos completos de usuario
     const fetchUsers = async (ids) => {
@@ -341,7 +339,7 @@ async function joinGlobalQueue(userId) {
     const teamA = await fetchUsers(teamAIds);
     const teamB = await fetchUsers(teamBIds);
 
-    // Elegir líder aleatorio
+    // Elegir líder aleatorio de entre los 10 jugadores
     const leaderId = playersForMatch[Math.floor(Math.random() * playersForMatch.length)];
     const leaderUser = await usersCollection.findOne({ discordId: leaderId });
     const leader = {
@@ -352,7 +350,7 @@ async function joinGlobalQueue(userId) {
       cardBackground: leaderUser.cardBackground || null
     };
 
-    // Asignar lados
+    // Asignar lados aleatorios
     const sideA = SIDES[Math.floor(Math.random() * SIDES.length)];
     const sideB = sideA === "Attacker" ? "Defender" : "Attacker";
 
@@ -372,7 +370,7 @@ async function joinGlobalQueue(userId) {
     return newMatch; // Devuelve partida lista para frontend
   }
 
-  return null; // No hay suficientes jugadores para crear partida
+  return null; // No hay 10 jugadores todavía
 }
 
 // Endpoint para enviar el código de la sala
