@@ -43,7 +43,7 @@ app.use(express.json());
 const sessionStore = MongoStore.create({
   mongoUrl: process.env.MONGODB_URI,
   collectionName: "sessions",
-  ttl: 60 * 60,
+  ttl: 7 * 24 * 60 * 60,
 });
 
 app.use(session({
@@ -55,7 +55,7 @@ app.use(session({
     httpOnly: true,
     secure: true,
     sameSite: "none",
-    maxAge: 60 * 60 * 1000
+    maxAge: 7 * 24 * 60 * 60
   }
 }));
 
