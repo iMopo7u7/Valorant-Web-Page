@@ -4,68 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Valorant 10-Mans</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="10mans.css">
 </head>
+
 <body>
-    <!-- Login Section -->
-    <div id="loginSection">
-        <h1>Bienvenido a los 10-Mans</h1>
-        <p>Inicia sesión con Discord para unirte a las partidas competitivas</p>
-        <button onclick="loginWithDiscord()">Iniciar sesión con Discord</button>
-    </div>
-
-    <!-- User Card -->
-    <div id="userCard" style="display: none;">
-        <img id="userAvatar" src="" alt="Avatar" width="80">
-        <h2 id="userName"></h2>
-        <p id="userStatus">Listo para jugar</p>
-
-        <div>
-            <label for="riotIdInput">Riot ID:</label>
-            <input type="text" id="riotIdInput" placeholder="Ej: Player#LAN">
-            <button id="riotIdBtn" onclick="handleRiotIdChange()">Guardar</button>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <a href="#" class="logo">VALORANT <span class="accent">10-MANS</span></a>
+            <nav class="nav-tabs">
+                <button class="nav-tab active" onclick="showSection('10mans')">10 Mans</button>
+                <button class="nav-tab" onclick="showSection('leaderboard')">Leaderboard</button>
+                <button class="nav-tab" onclick="showSection('matches')">Matches</button>
+            </nav>
         </div>
+    </header>
 
-        <button id="playButton" onclick="toggleQueue()">🎮 PLAY</button>
-        <div id="queueTimer" style="display: none;">
-            Tiempo en cola: <span id="timerValue">00:00</span>
-        </div>
-    </div>
-
-    <!-- Lobby -->
-    <div id="lobbyContainer" style="display: none;">
-        <h1>🎮 LOBBY DE PARTIDA</h1>
-        <p>Mapa: <span id="lobbyMap"></span> | Líder: <span id="lobbyLeader"></span></p>
-
-        <div id="teamsContainer">
-            <div>
-                <h3>TEAM A</h3>
-                <div id="teamAPlayers"></div>
+    <main class="main-content">
+        <div class="container">
+            <!-- Login Section -->
+            <div id="loginSection">
+                <h1>Bienvenido a los <span class="accent">10-Mans</span></h1>
+                <p>Inicia sesión con Discord para unirte a las partidas competitivas</p>
+                <button onclick="loginWithDiscord()">Iniciar sesión con Discord</button>
             </div>
-            <div>
-                <h3>TEAM B</h3>
-                <div id="teamBPlayers"></div>
+
+        <!-- User Card -->
+        <div id="userCard" style="display: none;">
+            <img id="userAvatar" src="" alt="Avatar" width="80">
+            <h2 id="userName"></h2>
+            <p id="userStatus">Listo para jugar</p>
+
+            <div class="input-group">
+                <label for="riotIdInput">Riot ID:</label>
+                <input type="text" id="riotIdInput" placeholder="Ej: Player#LAN">
+                <button id="riotIdBtn" onclick="handleRiotIdChange()">Guardar</button>
+            </div>
+
+            <button id="playButton" onclick="toggleQueue()">🎮 PLAY</button>
+            <div id="queueTimer" style="display: none;">
+                Tiempo en cola: <span id="timerValue">00:00</span>
             </div>
         </div>
 
-        <!-- Leader Panel -->
-        <div id="leaderPanel" style="display: none;">
-            <h3>👑 Panel del Líder</h3>
+        <!-- Lobby -->
+        <div id="lobbyContainer" style="display: none;">
+            <h1>🎮 LOBBY DE PARTIDA</h1>
+            <p>Mapa: <span id="lobbyMap"></span> | Líder: <span id="lobbyLeader"></span></p>
 
-            <div>
-                <label for="roomCodeInput">Código de sala:</label>
-                <input type="text" id="roomCodeInput" placeholder="VALORANT123">
-                <button onclick="submitRoomCode()">Enviar</button>
+            <div id="teamsContainer">
+                <div>
+                    <h3>TEAM A</h3>
+                    <div id="teamAPlayers"></div>
+                </div>
+                <div>
+                    <h3>TEAM B</h3>
+                    <div id="teamBPlayers"></div>
+                </div>
             </div>
 
-            <div>
-                <label for="trackerUrlInput">URL Tracker:</label>
-                <input type="text" id="trackerUrlInput" placeholder="https://tracker.gg/...">
-                <button onclick="submitTrackerUrl()">Subir</button>
+            <!-- Leader Panel -->
+            <div id="leaderPanel" style="display: none;">
+                <h3>👑 Panel del Líder</h3>
+
+                <div>
+                    <label for="roomCodeInput">Código de sala:</label>
+                    <input type="text" id="roomCodeInput" placeholder="VALORANT123">
+                    <button onclick="submitRoomCode()">Enviar</button>
+                </div>
+
+                <div>
+                    <label for="trackerUrlInput">URL Tracker:</label>
+                    <input type="text" id="trackerUrlInput" placeholder="https://tracker.gg/...">
+                    <button onclick="submitTrackerUrl()">Subir</button>
+                </div>
             </div>
         </div>
-    </div>
-
+    </main>
+    
     <script src="10mans.js"></script>
 </body>
 </html>
