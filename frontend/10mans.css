@@ -101,15 +101,36 @@
         }
 
         .nav-tab.active {
-            background: var(--valorant-red);
-            color: var(--text-primary);
+            background: linear-gradient(135deg, rgba(255, 70, 85, 0.1), rgba(255, 70, 85, 0.05));
             border-color: var(--valorant-red);
-            box-shadow: 0 0 20px rgba(255, 70, 85, 0.4);
+            color: var(--valorant-red);
+            box-shadow: 0 0 20px rgba(255, 70, 85, 0.3);
         }
 
         /* Main Content */
         .main-content {
             padding: 2rem 0;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Login Section */
