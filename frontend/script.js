@@ -1,9 +1,13 @@
-// API Configuration
+// ==============================
+// 🌐 API Configuration
+// ==============================
 const API_BASE_URL = window.location.origin.includes('localhost') 
     ? 'http://localhost:3000/api' 
     : 'https://valorant-10-mans.onrender.com/api';
 
-// Global State Management
+// ==============================
+// 🎮 Global State Management
+// ==============================
 const AppState = {
     user: null,
     currentSection: 'public',
@@ -15,11 +19,9 @@ const AppState = {
     queues: { public: [], elite: [] },
     leaderboard: [],
     userMatches: { public: [], elite: [] },
-    
-    // User states for backend integration
     userStates: {
         IDLE: 'idle',
-        IN_QUEUE: 'in_queue', 
+        IN_QUEUE: 'in_queue',
         IN_MATCH: 'in_match',
         MATCH_LEADER: 'match_leader',
         WAITING_ROOM_CODE: 'waiting_room_code',
@@ -27,7 +29,9 @@ const AppState = {
     }
 };
 
-// DOM Elements
+// ==============================
+// 🖼️ DOM Elements
+// ==============================
 const elements = {
     loadingScreen: document.getElementById('loadingScreen'),
     loginScreen: document.getElementById('loginScreen'),
@@ -72,7 +76,9 @@ const elements = {
     toastContainer: document.getElementById('toastContainer')
 };
 
-// Functions
+// ==============================
+// 📺 UI Helpers
+// ==============================
 const showScreen = (screenId) => {
     elements.loginScreen.classList.add('hidden');
     elements.setupPanel.classList.add('hidden');
@@ -85,36 +91,36 @@ const showToast = (message, type = 'success') => {
     const toast = document.createElement('div');
     toast.className = `p-4 rounded-lg shadow-xl text-white fade-in max-w-xs`;
     
-    if (type === 'success') {
-        toast.classList.add('bg-green-600');
-    } else if (type === 'error') {
-        toast.classList.add('bg-red-600');
-    } else if (type === 'info') {
-        toast.classList.add('bg-blue-600');
-    }
+    if (type === 'success') toast.classList.add('bg-green-600');
+    else if (type === 'error') toast.classList.add('bg-red-600');
+    else if (type === 'info') toast.classList.add('bg-blue-600');
     
     toast.textContent = message;
     elements.toastContainer.appendChild(toast);
     
     setTimeout(() => {
         toast.classList.remove('fade-in');
-        toast.classList.add('fade-out'); // You'd need a fade-out animation
+        toast.classList.add('fade-out');
         toast.remove();
     }, 5000);
 };
 
-// Initial setup and routing
+// ==============================
+// 🔑 Auth & App Init
+// ==============================
+const fetchUser = async () => {
+    const response = await fetch(`${API_BASE_URL}/auth/user`, {
+        credentials: "include" // 👈 cookie en cada request
+    });
+    if (!response.ok) throw new Error('No autenticado');
+    return response.json();
+};
+
 const initializeApp = async () => {
     showScreen('loadingScreen');
-    const token = localStorage.getItem('discordToken');
-
-    if (!token) {
-        showScreen('loginScreen');
-        return;
-    }
 
     try {
-        const user = await fetchUser(token);
+        const user = await fetchUser();
         AppState.user = user;
         updateUIWithUser(user);
 
@@ -127,29 +133,38 @@ const initializeApp = async () => {
         }
     } catch (error) {
         console.error("Error al iniciar la aplicación:", error);
-        localStorage.removeItem('discordToken');
         showScreen('loginScreen');
         showToast('Sesión caducada. Por favor, inicia sesión de nuevo.', 'error');
     }
 };
 
-const fetchUser = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/auth/user`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!response.ok) {
-        throw new Error('Error al obtener los datos del usuario.');
-    }
-    return response.json();
-};
+elements.discordLoginBtn.addEventListener('click', () => {
+    window.location.href = `${API_BASE_URL}/auth/discord`;
+});
 
+elements.logoutBtn.addEventListener('click', async () => {
+    try {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
+            method: "POST",
+            credentials: "include"
+        });
+    } catch (err) {
+        console.error("Logout error:", err);
+    }
+    showScreen('loginScreen');
+    showToast('Sesión cerrada correctamente.');
+});
+
+// ==============================
+// 📊 Dashboard Data
+// ==============================
 const fetchDashboardData = async () => {
     try {
         const [publicStats, premierStats, queues, leaderboard] = await Promise.all([
-            fetch(`${API_BASE_URL}/stats/public`),
-            fetch(`${API_BASE_URL}/stats/premier`),
-            fetch(`${API_BASE_URL}/queues`),
-            fetch(`${API_BASE_URL}/leaderboard`)
+            fetch(`${API_BASE_URL}/stats/public`, { credentials: "include" }),
+            fetch(`${API_BASE_URL}/stats/premier`, { credentials: "include" }),
+            fetch(`${API_BASE_URL}/queues`, { credentials: "include" }),
+            fetch(`${API_BASE_URL}/leaderboard`, { credentials: "include" })
         ]);
 
         const publicStatsData = await publicStats.json();
@@ -169,266 +184,23 @@ const fetchDashboardData = async () => {
     }
 };
 
-const updateUIWithUser = (user) => {
-    elements.userAvatar.src = user.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png';
-    elements.profileAvatar.src = user.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png';
-    elements.usernameDisplay.textContent = user.discordTag;
-    elements.profileUsername.textContent = user.discordTag;
-    
-    if (user.riotId) {
-        elements.profileRiotId.textContent = user.riotId;
-        elements.updateRiotName.value = user.riotId.split('#')[0];
-        elements.updateRiotTag.value = user.riotId.split('#')[1];
-    }
-
-    if (user.memberSince) {
-        const date = new Date(user.memberSince);
-        elements.memberSince.textContent = date.toLocaleDateString('es-ES');
-    }
-
-    elements.profileRoles.innerHTML = '';
-    if (user.roles && user.roles.length > 0) {
-        user.roles.forEach(role => {
-            const roleTag = document.createElement('span');
-            roleTag.className = `role-tag role-${role}`;
-            roleTag.textContent = role.charAt(0).toUpperCase() + role.slice(1);
-            elements.profileRoles.appendChild(roleTag);
-        });
-    }
-
-    if (user.isElite) {
-        elements.premierStatusBadge.classList.remove('bg-gray-700', 'text-gray-300');
-        elements.premierStatusBadge.classList.add('bg-yellow-600', 'text-black');
-        elements.premierStatusBadge.innerHTML = '<i class="fas fa-crown mr-1"></i> Elite: Verificado';
-    } else {
-        elements.premierStatusBadge.classList.remove('bg-yellow-600', 'text-black');
-        elements.premierStatusBadge.classList.add('bg-gray-700', 'text-gray-300');
-        elements.premierStatusBadge.innerHTML = '<i class="fas fa-crown mr-1"></i> Elite: Pendiente';
-    }
-
-    if (user.isAdmin) {
-        elements.adminStatusBadge.classList.remove('hidden');
-    } else {
-        elements.adminStatusBadge.classList.add('hidden');
-    }
-};
-
-const updateStats = (data, type) => {
-    const isPublic = type === 'public';
-    const activePlayersEl = isPublic ? elements.publicActivePlayers : document.getElementById('eliteActivePlayers');
-    const matchesTodayEl = isPublic ? elements.publicMatchesToday : document.getElementById('eliteMatchesToday');
-    const userRatingEl = isPublic ? elements.publicUserRating : document.getElementById('eliteUserRating');
-    const userRankEl = isPublic ? elements.publicUserRank : document.getElementById('eliteUserRank');
-    const userStatsContainer = isPublic ? elements.publicStats : elements.eliteStats;
-
-    if (data.activePlayers) activePlayersEl.textContent = data.activePlayers;
-    if (data.matchesToday) matchesTodayEl.textContent = data.matchesToday;
-    if (data.userRating) userRatingEl.textContent = Math.round(data.userRating);
-    if (data.userRank) userRankEl.textContent = `#${data.userRank}`;
-
-    userStatsContainer.innerHTML = `
-        <div class="flex justify-between">
-            <span>Rating</span>
-            <span class="font-semibold">${Math.round(data.userRating || 0)}</span>
-        </div>
-        <div class="flex justify-between">
-            <span>Ranking</span>
-            <span class="font-semibold">#${data.userRank || 'N/A'}</span>
-        </div>
-        <div class="flex justify-between">
-            <span>Partidas jugadas</span>
-            <span class="font-semibold">${data.matchesPlayed || 0}</span>
-        </div>
-        <div class="flex justify-between">
-            <span>Victorias</span>
-            <span class="font-semibold">${data.wins || 0}</span>
-        </div>
-        <div class="flex justify-between">
-            <span>Porcentaje de victorias</span>
-            <span class="font-semibold">${data.winRate ? (data.winRate * 100).toFixed(1) : 0}%</span>
-        </div>
-    `;
-};
-
-const renderQueue = () => {
-    const queueContent = AppState.isEliteQueue ? elements.premierQueueContent : elements.publicQueueContent;
-    const currentQueue = AppState.isEliteQueue ? AppState.queues.elite : AppState.queues.public;
-
-    queueContent.innerHTML = '';
-    
-    // Header
-    const queueHeader = document.createElement('div');
-    queueHeader.className = 'flex items-center justify-between mb-4';
-    queueHeader.innerHTML = `
-        <h3 class="text-xl md:text-2xl font-bold">Cola de Partidas <span class="text-primary">(${currentQueue.length}/10)</span></h3>
-        <button id="queueBtn" class="btn-primary px-6 py-3 rounded-lg font-semibold">
-            ${AppState.userState === AppState.userStates.IN_QUEUE ? 'Abandonar Cola' : 'Unirse a la Cola'}
-        </button>
-    `;
-    queueContent.appendChild(queueHeader);
-
-    // Current Queue
-    const queueGrid = document.createElement('div');
-    queueGrid.className = 'grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6';
-    
-    currentQueue.forEach(player => {
-        const playerCard = document.createElement('div');
-        playerCard.className = 'card p-4 text-center fade-in';
-        playerCard.innerHTML = `
-            <img src="${player.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="Avatar" class="w-16 h-16 rounded-full mx-auto mb-2">
-            <h4 class="font-semibold text-sm truncate">${player.discordUsername}</h4>
-            <p class="text-xs text-gray-400 truncate">${player.riotId}</p>
-        `;
-        queueGrid.appendChild(playerCard);
-    });
-
-    // Empty spots
-    for (let i = currentQueue.length; i < 10; i++) {
-        const emptyCard = document.createElement('div');
-        emptyCard.className = 'card p-4 text-center opacity-50';
-        emptyCard.innerHTML = `
-            <div class="w-16 h-16 rounded-full mx-auto mb-2 bg-gray-700 flex items-center justify-center">
-                <i class="fas fa-plus text-2xl text-gray-500"></i>
-            </div>
-            <h4 class="font-semibold text-sm text-gray-400">Esperando...</h4>
-            <p class="text-xs text-gray-500">Espacio disponible</p>
-        `;
-        queueGrid.appendChild(emptyCard);
-    }
-
-    queueContent.appendChild(queueGrid);
-
-    // Event listener for queue button
-    document.getElementById('queueBtn').addEventListener('click', () => {
-        if (AppState.userState === AppState.userStates.IN_QUEUE) {
-            leaveQueue();
-        } else {
-            joinQueue();
-        }
-    });
-};
-
-const joinQueue = async () => {
-    if (!AppState.user.riotId || AppState.user.roles.length === 0) {
-        showToast('Debes completar tu perfil antes de unirte a la cola.', 'error');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/queues/${AppState.isEliteQueue ? 'elite' : 'public'}/join`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('discordToken')}`
-            }
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Error al unirse a la cola.');
-        }
-
-        const result = await response.json();
-        AppState.userState = AppState.userStates.IN_QUEUE;
-        showToast(result.message);
-        // Polling will update the queue UI
-    } catch (error) {
-        console.error("Error joining queue:", error);
-        showToast(error.message, 'error');
-    }
-};
-
-const leaveQueue = async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/queues/${AppState.isEliteQueue ? 'elite' : 'public'}/leave`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('discordToken')}`
-            }
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Error al abandonar la cola.');
-        }
-
-        const result = await response.json();
-        AppState.userState = AppState.userStates.IDLE;
-        showToast(result.message);
-        // Polling will update the queue UI
-    } catch (error) {
-        console.error("Error leaving queue:", error);
-        showToast(error.message, 'error');
-    }
-};
-
-const startPolling = () => {
-    setInterval(async () => {
-        if (AppState.userState !== AppState.userStates.IN_MATCH) {
-            await fetchDashboardData();
-        }
-    }, 5000);
-};
-
-// Event Listeners
-document.addEventListener('DOMContentLoaded', initializeApp);
-
-elements.discordLoginBtn.addEventListener('click', () => {
-    window.location.href = `${API_BASE_URL}/auth/discord`;
-});
-
-elements.logoutBtn.addEventListener('click', () => {
-    localStorage.removeItem('discordToken');
-    showScreen('loginScreen');
-    showToast('Sesión cerrada correctamente.');
-});
-
-elements.roleCards.forEach(card => {
-    card.addEventListener('click', () => {
-        const role = card.dataset.role;
-        const index = AppState.selectedRoles.indexOf(role);
-        if (index > -1) {
-            AppState.selectedRoles.splice(index, 1);
-            card.classList.remove('border-2', 'border-primary');
-        } else if (AppState.selectedRoles.length < 2) {
-            AppState.selectedRoles.push(role);
-            card.classList.add('border-2', 'border-primary');
-        } else {
-            showToast('Solo puedes seleccionar un máximo de 2 roles.', 'warning');
-        }
-    });
-});
-
+// ==============================
+// 📝 Setup Usuario
+// ==============================
 elements.completeSetupBtn.addEventListener('click', async () => {
     const riotId = elements.riotIdInput.value.trim();
-    if (!riotId) {
-        showToast('Por favor, ingresa tu Riot ID.', 'error');
-        return;
-    }
-    if (AppState.selectedRoles.length === 0) {
-        showToast('Por favor, selecciona al menos un rol.', 'error');
-        return;
-    }
+    if (!riotId) return showToast('Por favor, ingresa tu Riot ID.', 'error');
+    if (AppState.selectedRoles.length === 0) return showToast('Selecciona al menos un rol.', 'error');
 
     try {
         const response = await fetch(`${API_BASE_URL}/users/setup`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('discordToken')}`
-            },
-            body: JSON.stringify({
-                riotId,
-                roles: AppState.selectedRoles
-            })
+            credentials: "include",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ riotId, roles: AppState.selectedRoles })
         });
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Error al guardar la configuración.');
-        }
-
+        if (!response.ok) throw new Error("Error en setup");
         const user = await response.json();
         AppState.user = user;
         updateUIWithUser(user);
@@ -441,32 +213,55 @@ elements.completeSetupBtn.addEventListener('click', async () => {
     }
 });
 
-elements.navItems.forEach(item => {
-    item.addEventListener('click', () => {
-        const section = item.dataset.section;
-        AppState.currentSection = section;
+// ==============================
+// 🎮 Queue Handling
+// ==============================
+const joinQueue = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/queues/${AppState.isEliteQueue ? 'elite' : 'public'}/join`, {
+            method: 'POST',
+            credentials: "include",
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) throw new Error("Error al unirse a la cola");
+        const result = await response.json();
+        AppState.userState = AppState.userStates.IN_QUEUE;
+        showToast(result.message);
+    } catch (error) {
+        console.error("Join queue error:", error);
+        showToast(error.message, 'error');
+    }
+};
 
-        // Hide all sections
-        elements.sections.forEach(s => s.classList.add('hidden'));
-        // Show the selected section
-        document.getElementById(`${section}Section`).classList.remove('hidden');
+const leaveQueue = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/queues/${AppState.isEliteQueue ? 'elite' : 'public'}/leave`, {
+            method: 'POST',
+            credentials: "include",
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) throw new Error("Error al salir de la cola");
+        const result = await response.json();
+        AppState.userState = AppState.userStates.IDLE;
+        showToast(result.message);
+    } catch (error) {
+        console.error("Leave queue error:", error);
+        showToast(error.message, 'error');
+    }
+};
 
-        // Update active nav item
-        elements.navItems.forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-
-        // Check if Elite section is selected
-        AppState.isEliteQueue = section === 'premier';
-        
-        // Re-render based on new section
-        if (section === 'public' || section === 'premier') {
-            renderQueue();
-            // This is a simple implementation. In a real app, you would
-            // also need to fetch and render the other tabs (matches, leaderboard)
-            // when the user navigates to them.
-        } else if (section === 'profile') {
-            // Re-render profile data
-            updateUIWithUser(AppState.user);
+// ==============================
+// 🔄 Polling
+// ==============================
+const startPolling = () => {
+    setInterval(async () => {
+        if (AppState.userState !== AppState.userStates.IN_MATCH) {
+            await fetchDashboardData();
         }
-    });
-});
+    }, 5000);
+};
+
+// ==============================
+// 🚀 Init
+// ==============================
+document.addEventListener('DOMContentLoaded', initializeApp);
