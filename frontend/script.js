@@ -109,7 +109,7 @@ const showToast = (message, type = 'success') => {
 // 🔑 Auth & App Init
 // ==============================
 const fetchUser = async () => {
-    const response = await fetch(`${API_BASE_URL}/auth/user`, {
+    const response = await fetch(`${API_BASE_URL}/users/me`, {
         credentials: "include" // 👈 cookie en cada request
     });
     if (!response.ok) throw new Error('No autenticado');
