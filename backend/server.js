@@ -802,6 +802,86 @@ app.post("/logout", (req, res) => {
   });
 });
 
+
+// ==============================
+// 📑 Rutas de documentación
+// ==============================
+app.get("/api/docs", (req, res) => {
+    const routes = [
+        // ==== USERS ====
+        { method: "GET", path: "/api/users/me", auth: "requireAuth", desc: "Obtiene perfil del usuario actual" },
+        { method: "PUT", path: "/api/users/setup", auth: "requireAuth", desc: "Configura rol y Riot ID en el registro" },
+        { method: "PUT", path: "/api/users/riotid", auth: "requireAuth", desc: "Actualiza Riot ID" },
+        { method: "GET", path: "/api/users", auth: "admin", desc: "Lista todos los usuarios" },
+
+        // ==== QUEUES ====
+        { method: "POST", path: "/api/queue/join", auth: "requireAuth", desc: "Unirse a la cola" },
+        { method: "POST", path: "/api/queue/leave", auth: "requireAuth", desc: "Salir de la cola" },
+        { method: "GET", path: "/api/queue/status", auth: "requireAuth", desc: "Ver estado de la cola del usuario" },
+        { method: "GET", path: "/api/queue", auth: "public", desc: "Lista jugadores en cola" },
+
+        // ==== MATCHES ====
+        { method: "GET", path: "/api/matches", auth: "requireAuth", desc: "Lista todas las partidas" },
+        { method: "GET", path: "/api/matches/:id", auth: "requireAuth", desc: "Obtener partida por ID" },
+        { method: "POST", path: "/api/matches/:id/room", auth: "requireAuth", desc: "Enviar link de sala personalizada" },
+        { method: "POST", path: "/api/matches/:id/tracker", auth: "requireAuth", desc: "Enviar link de tracker" },
+        { method: "POST", path: "/api/matches/:id/stats", auth: "requireAuth", desc: "Subir estadísticas finales de la partida" },
+
+        // ==== STATS ====
+        { method: "GET", path: "/api/stats/public", auth: "public", desc: "Estadísticas públicas de los jugadores" },
+        { method: "GET", path: "/api/stats/premier", auth: "public", desc: "Estadísticas de Premier (élite)" },
+
+        // ==== ADMIN ====
+        { method: "GET", path: "/api/admin/users", auth: "admin", desc: "Lista todos los usuarios (admin)" },
+        { method: "PUT", path: "/api/admin/users/:id/permissions", auth: "admin", desc: "Actualizar permisos de un usuario" },
+        { method: "DELETE", path: "/api/admin/users/:id", auth: "admin", desc: "Eliminar un usuario" },
+
+        // ==== AUTH ====
+        { method: "GET", path: "/api/auth/discord", auth: "public", desc: "Login con Discord OAuth2" },
+        { method: "GET", path: "/api/auth/discord/callback", auth: "public", desc: "Callback de Discord OAuth2" },
+        { method: "POST", path: "/api/auth/logout", auth: "requireAuth", desc: "Cerrar sesión" },
+    ];
+
+    // Render simple HTML
+    const html = `
+        <html>
+            <head>
+                <title>📑 API Docs</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; }
+                    table { border-collapse: collapse; width: 100%; }
+                    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+                    th { background: #f2f2f2; }
+                </style>
+            </head>
+            <body>
+                <h1>📑 Documentación de la API</h1>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Método</th>
+                            <th>Ruta</th>
+                            <th>Auth</th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${routes.map(r => `
+                            <tr>
+                                <td><b>${r.method}</b></td>
+                                <td>${r.path}</td>
+                                <td>${r.auth}</td>
+                                <td>${r.desc}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            </body>
+        </html>
+    `;
+    res.send(html);
+});
+
 // ==========================
 // Manejo de errores global y servidor
 // ==========================
