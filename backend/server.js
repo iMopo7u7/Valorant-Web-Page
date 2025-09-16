@@ -343,6 +343,37 @@ apiRouter.get("/users/all", async (req, res) => {
   }
 });
 
+apiRouter.post("/users/setup", requireAuth, async (req, res) => {
+    try {
+        const { riotId, roles } = req.body;
+        const userId = req.session.userId;
+
+        if (!riotId || !roles || roles.length === 0) {
+            return res.status(400).json({ error: "Riot ID y roles son requeridos" });
+        }
+
+        // Actualiza el usuario
+        await usersCollection.updateOne(
+            { discordId: userId },
+            {
+                $set: {
+                    riotId,
+                    name: riotId.split('#')[0],
+                    tag: riotId.split('#')[1],
+                    roles,
+                    updatedAt: new Date()
+                }
+            }
+        );
+
+        const user = await usersCollection.findOne({ discordId: userId });
+        res.json(user);
+    } catch (err) {
+        console.error("Error en /users/setup:", err);
+        res.status(500).json({ error: "Error del servidor" });
+    }
+});
+
 // Rutas de Queues
 const MAPS = ["Ascent", "Bind", "Haven", "Icebox", "Breeze", "split", "Fracture", "Pearl", "Lotus", "Sunset", "Abyss", "Corrode"];
 const SIDES = ["Attacker", "Defender"];
