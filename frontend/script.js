@@ -110,10 +110,54 @@ const showToast = (message, type = 'success') => {
 // ==============================
 const fetchUser = async () => {
     const response = await fetch(`${API_BASE_URL}/users/me`, {
-        credentials: "include" // 👈 cookie en cada request
+        credentials: "include"
     });
     if (!response.ok) throw new Error('No autenticado');
     return response.json();
+};
+
+const updateUIWithUser = (user) => {
+    elements.userAvatar.src = user.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png';
+    elements.profileAvatar.src = user.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png';
+    elements.usernameDisplay.textContent = user.discordTag;
+    elements.profileUsername.textContent = user.discordTag;
+    
+    if (user.riotId) {
+        elements.profileRiotId.textContent = user.riotId;
+        elements.updateRiotName.value = user.riotId.split('#')[0];
+        elements.updateRiotTag.value = user.riotId.split('#')[1];
+    }
+
+    if (user.memberSince) {
+        const date = new Date(user.memberSince);
+        elements.memberSince.textContent = date.toLocaleDateString('es-ES');
+    }
+
+    elements.profileRoles.innerHTML = '';
+    if (user.roles && user.roles.length > 0) {
+        user.roles.forEach(role => {
+            const roleTag = document.createElement('span');
+            roleTag.className = `role-tag role-${role}`;
+            roleTag.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+            elements.profileRoles.appendChild(roleTag);
+        });
+    }
+
+    if (user.isElite) {
+        elements.premierStatusBadge.classList.remove('bg-gray-700', 'text-gray-300');
+        elements.premierStatusBadge.classList.add('bg-yellow-600', 'text-black');
+        elements.premierStatusBadge.innerHTML = '<i class="fas fa-crown mr-1"></i> Elite: Verificado';
+    } else {
+        elements.premierStatusBadge.classList.remove('bg-yellow-600', 'text-black');
+        elements.premierStatusBadge.classList.add('bg-gray-700', 'text-gray-300');
+        elements.premierStatusBadge.innerHTML = '<i class="fas fa-crown mr-1"></i> Elite: Pendiente';
+    }
+
+    if (user.isAdmin) {
+        elements.adminStatusBadge.classList.remove('hidden');
+    } else {
+        elements.adminStatusBadge.classList.add('hidden');
+    }
 };
 
 const initializeApp = async () => {
@@ -137,23 +181,6 @@ const initializeApp = async () => {
         showToast('Sesión caducada. Por favor, inicia sesión de nuevo.', 'error');
     }
 };
-
-elements.discordLoginBtn.addEventListener('click', () => {
-    window.location.href = `${API_BASE_URL}/auth/discord`;
-});
-
-elements.logoutBtn.addEventListener('click', async () => {
-    try {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
-            method: "POST",
-            credentials: "include"
-        });
-    } catch (err) {
-        console.error("Logout error:", err);
-    }
-    showScreen('loginScreen');
-    showToast('Sesión cerrada correctamente.');
-});
 
 // ==============================
 // 📊 Dashboard Data
@@ -216,6 +243,57 @@ elements.completeSetupBtn.addEventListener('click', async () => {
 // ==============================
 // 🎮 Queue Handling
 // ==============================
+const renderQueue = () => {
+    const queueContent = AppState.isEliteQueue ? elements.premierQueueContent : elements.publicQueueContent;
+    const currentQueue = AppState.isEliteQueue ? AppState.queues.elite : AppState.queues.public;
+
+    queueContent.innerHTML = '';
+
+    const queueHeader = document.createElement('div');
+    queueHeader.className = 'flex items-center justify-between mb-4';
+    queueHeader.innerHTML = `
+        <h3 class="text-xl md:text-2xl font-bold">Cola de Partidas <span class="text-primary">(${currentQueue.length}/10)</span></h3>
+        <button id="queueBtn" class="btn-primary px-6 py-3 rounded-lg font-semibold">
+            ${AppState.userState === AppState.userStates.IN_QUEUE ? 'Abandonar Cola' : 'Unirse a la Cola'}
+        </button>
+    `;
+    queueContent.appendChild(queueHeader);
+
+    const queueGrid = document.createElement('div');
+    queueGrid.className = 'grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6';
+    
+    currentQueue.forEach(player => {
+        const playerCard = document.createElement('div');
+        playerCard.className = 'card p-4 text-center fade-in';
+        playerCard.innerHTML = `
+            <img src="${player.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="Avatar" class="w-16 h-16 rounded-full mx-auto mb-2">
+            <h4 class="font-semibold text-sm truncate">${player.discordUsername}</h4>
+            <p class="text-xs text-gray-400 truncate">${player.riotId}</p>
+        `;
+        queueGrid.appendChild(playerCard);
+    });
+
+    for (let i = currentQueue.length; i < 10; i++) {
+        const emptyCard = document.createElement('div');
+        emptyCard.className = 'card p-4 text-center opacity-50';
+        emptyCard.innerHTML = `
+            <div class="w-16 h-16 rounded-full mx-auto mb-2 bg-gray-700 flex items-center justify-center">
+                <i class="fas fa-plus text-2xl text-gray-500"></i>
+            </div>
+            <h4 class="font-semibold text-sm text-gray-400">Esperando...</h4>
+            <p class="text-xs text-gray-500">Espacio disponible</p>
+        `;
+        queueGrid.appendChild(emptyCard);
+    }
+
+    queueContent.appendChild(queueGrid);
+
+    document.getElementById('queueBtn').addEventListener('click', () => {
+        if (AppState.userState === AppState.userStates.IN_QUEUE) leaveQueue();
+        else joinQueue();
+    });
+};
+
 const joinQueue = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/queues/${AppState.isEliteQueue ? 'elite' : 'public'}/join`, {
@@ -251,6 +329,46 @@ const leaveQueue = async () => {
 };
 
 // ==============================
+// 📈 Stats Helper
+// ==============================
+const updateStats = (data, type) => {
+    const isPublic = type === 'public';
+    const activePlayersEl = isPublic ? elements.publicActivePlayers : document.getElementById('eliteActivePlayers');
+    const matchesTodayEl = isPublic ? elements.publicMatchesToday : document.getElementById('eliteMatchesToday');
+    const userRatingEl = isPublic ? elements.publicUserRating : document.getElementById('eliteUserRating');
+    const userRankEl = isPublic ? elements.publicUserRank : document.getElementById('eliteUserRank');
+    const userStatsContainer = isPublic ? elements.publicStats : elements.eliteStats;
+
+    if (data.activePlayers) activePlayersEl.textContent = data.activePlayers;
+    if (data.matchesToday) matchesTodayEl.textContent = data.matchesToday;
+    if (data.userRating) userRatingEl.textContent = Math.round(data.userRating);
+    if (data.userRank) userRankEl.textContent = `#${data.userRank}`;
+
+    userStatsContainer.innerHTML = `
+        <div class="flex justify-between">
+            <span>Rating</span>
+            <span class="font-semibold">${Math.round(data.userRating || 0)}</span>
+        </div>
+        <div class="flex justify-between">
+            <span>Ranking</span>
+            <span class="font-semibold">#${data.userRank || 'N/A'}</span>
+        </div>
+        <div class="flex justify-between">
+            <span>Partidas jugadas</span>
+            <span class="font-semibold">${data.matchesPlayed || 0}</span>
+        </div>
+        <div class="flex justify-between">
+            <span>Victorias</span>
+            <span class="font-semibold">${data.wins || 0}</span>
+        </div>
+        <div class="flex justify-between">
+            <span>Porcentaje de victorias</span>
+            <span class="font-semibold">${data.winRate ? (data.winRate * 100).toFixed(1) : 0}%</span>
+        </div>
+    `;
+};
+
+// ==============================
 // 🔄 Polling
 // ==============================
 const startPolling = () => {
@@ -262,6 +380,56 @@ const startPolling = () => {
 };
 
 // ==============================
-// 🚀 Init
+// 🛠️ Event Listeners
 // ==============================
 document.addEventListener('DOMContentLoaded', initializeApp);
+
+elements.discordLoginBtn.addEventListener('click', () => {
+    window.location.href = `${API_BASE_URL}/auth/discord`;
+});
+
+elements.logoutBtn.addEventListener('click', async () => {
+    try {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
+            method: "POST",
+            credentials: "include"
+        });
+    } catch (err) {
+        console.error("Logout error:", err);
+    }
+    showScreen('loginScreen');
+    showToast('Sesión cerrada correctamente.');
+});
+
+elements.roleCards.forEach(card => {
+    card.addEventListener('click', () => {
+        const role = card.dataset.role;
+        const index = AppState.selectedRoles.indexOf(role);
+        if (index > -1) {
+            AppState.selectedRoles.splice(index, 1);
+            card.classList.remove('border-2', 'border-primary');
+        } else if (AppState.selectedRoles.length < 2) {
+            AppState.selectedRoles.push(role);
+            card.classList.add('border-2', 'border-primary');
+        } else {
+            showToast('Solo puedes seleccionar un máximo de 2 roles.', 'warning');
+        }
+    });
+});
+
+elements.navItems.forEach(item => {
+    item.addEventListener('click', () => {
+        const section = item.dataset.section;
+        AppState.currentSection = section;
+
+        elements.sections.forEach(s => s.classList.add('hidden'));
+        document.getElementById(`${section}Section`).classList.remove('hidden');
+
+        elements.navItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+
+        AppState.isEliteQueue = section === 'premier';
+        if (section === 'public' || section === 'premier') renderQueue();
+        else if (section === 'profile') updateUIWithUser(AppState.user);
+    });
+});
