@@ -7,235 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #ec4899;
-            --dark: #0f172a;
-            --darker: #0a0e1a;
-            --light: #f1f5f9;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --elite: #fbbf24;
-        }
-        
-        body {
-            font-family: 'Roboto', sans-serif;
-            background: var(--darker);
-            color: var(--light);
-            min-height: 100vh;
-        }
-        
-        .font-heading {
-            font-family: 'Oxanium', cursive;
-        }
-        
-        .gradient-bg {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-        }
-        
-        .gradient-text {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .card {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            transition: all 0.3s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
-        }
-        
-        .btn-elite {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: #000;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-elite:hover {
-            background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);
-        }
-        
-        .discord-btn {
-            background: #5865F2;
-            transition: all 0.3s ease;
-        }
-        
-        .discord-btn:hover {
-            background: #4752C4;
-            transform: scale(1.05);
-        }
-        
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        
-        .stream-indicator {
-            animation: streamPulse 1.5s infinite;
-        }
-        
-        @keyframes streamPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .loading-spinner {
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 3px solid #fff;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .role-tag {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .role-duelista {
-            background: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-            border: 1px solid #ef4444;
-        }
-        
-        .role-iniciador {
-            background: rgba(59, 130, 246, 0.2);
-            color: #3b82f6;
-            border: 1px solid #3b82f6;
-        }
-        
-        .role-controlador {
-            background: rgba(139, 92, 246, 0.2);
-            color: #8b5cf6;
-            border: 1px solid #8b5cf6;
-        }
-        
-        .role-centinela {
-            background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
-            border: 1px solid #10b981;
-        }
-        
-        .nav-item {
-            position: relative;
-            padding: 12px 20px;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-        
-        .nav-item.active {
-            background: rgba(99, 102, 241, 0.2);
-            color: #6366f1;
-        }
-        
-        .nav-item.active::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #6366f1;
-        }
-        
-        .stats-card {
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stats-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .container {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        @media (max-width: 640px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .role-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="min-h-screen bg-darker">
-    <!-- Loading Screen -->
     <div id="loadingScreen" class="fixed inset-0 bg-darker flex items-center justify-center z-50">
         <div class="text-center">
             <div class="loading-spinner mx-auto mb-4"></div>
@@ -243,7 +17,6 @@
         </div>
     </div>
 
-    <!-- Login Screen -->
     <div id="loginScreen" class="min-h-screen gradient-bg flex items-center justify-center p-4">
         <div class="card p-8 max-w-md w-full fade-in">
             <div class="text-center mb-8">
@@ -264,7 +37,6 @@
         </div>
     </div>
 
-    <!-- Setup Panel for New Users -->
     <div id="setupPanel" class="hidden min-h-screen gradient-bg flex items-center justify-center p-4">
         <div class="card p-8 max-w-2xl w-full">
             <div class="text-center mb-8">
@@ -274,7 +46,6 @@
             </div>
             
             <div class="space-y-6">
-                <!-- Riot ID Input -->
                 <div>
                     <label class="block text-sm font-semibold mb-2">Riot ID</label>
                     <input type="text" id="riotId" placeholder="NombreUsuario#TAG" 
@@ -282,7 +53,6 @@
                     <p class="text-xs text-gray-400 mt-1">Ejemplo: ProGamer#1234</p>
                 </div>
                 
-                <!-- Role Selection -->
                 <div>
                     <label class="block text-sm font-semibold mb-4">Roles en Valorant (máximo 2)</label>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 role-grid">
@@ -325,9 +95,7 @@
         </div>
     </div>
 
-    <!-- Main Dashboard -->
     <div id="dashboard" class="hidden">
-        <!-- Header -->
         <header class="bg-gray-800 border-b border-gray-700 px-4 md:px-6 py-4 sticky top-0 z-40">
             <div class="flex items-center justify-between max-w-7xl mx-auto">
                 <div class="flex items-center gap-3">
@@ -351,7 +119,6 @@
             </div>
         </header>
 
-        <!-- Navigation -->
         <nav class="bg-gray-800 px-4 md:px-6 py-3 border-b border-gray-700 sticky top-16 z-30">
             <div class="max-w-7xl mx-auto flex gap-4 md:gap-8 overflow-x-auto hide-scrollbar">
                 <button data-section="public" class="nav-item flex items-center gap-2 whitespace-nowrap active">
@@ -372,16 +139,13 @@
             </div>
         </nav>
 
-        <!-- Main Content -->
         <main class="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-            <!-- Public 10 Mans Section -->
             <div id="publicSection" class="section space-y-8">
                 <div>
                     <h2 class="text-2xl md:text-3xl font-heading font-bold mb-2">10 Mans Públicos</h2>
                     <p class="text-gray-400">Partidas abiertas para toda la comunidad</p>
                 </div>
 
-                <!-- Quick Stats -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 stats-grid">
                     <div class="stats-card card p-4 md:p-6">
                         <div class="flex items-center justify-between">
@@ -421,7 +185,6 @@
                     </div>
                 </div>
 
-                <!-- Sub Navigation -->
                 <div class="flex gap-2 md:gap-4 mb-6 overflow-x-auto hide-scrollbar">
                     <button data-tab="queue" class="tab-btn bg-primary text-white px-4 md:px-6 py-2 rounded-lg whitespace-nowrap">
                         <i class="fas fa-clock mr-2"></i>Cola
@@ -437,25 +200,20 @@
                     </button>
                 </div>
 
-                <!-- Tab Contents -->
                 <div id="publicQueue" class="tab-content active">
                     <div id="publicQueueContent"></div>
                 </div>
 
                 <div id="publicMatches" class="tab-content hidden">
-                    <!-- Content will be loaded dynamically -->
-                </div>
+                    </div>
 
                 <div id="publicLeaderboard" class="tab-content hidden">
-                    <!-- Content will be loaded dynamically -->
-                </div>
+                    </div>
 
                 <div id="publicMymatches" class="tab-content hidden">
-                    <!-- Content will be loaded dynamically -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Elite 10 Mans Section -->
             <div id="premierSection" class="section hidden space-y-8">
                 <div>
                     <div class="flex items-center gap-4 mb-2">
@@ -467,7 +225,6 @@
                     <p class="text-gray-400">Partidas exclusivas para jugadores verificados por el staff</p>
                 </div>
 
-                <!-- Premier Stats -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 stats-grid">
                     <div class="stats-card card p-4 md:p-6 bg-gradient-to-r from-purple-900/30 to-blue-900/30">
                         <div class="flex items-center justify-between">
@@ -507,7 +264,6 @@
                     </div>
                 </div>
 
-                <!-- Premier Navigation -->
                 <div class="flex gap-2 md:gap-4 mb-6 overflow-x-auto hide-scrollbar">
                     <button data-tab="queue" class="tab-btn bg-purple-600 text-white px-4 md:px-6 py-2 rounded-lg whitespace-nowrap">
                         <i class="fas fa-clock mr-2"></i>Cola Elite
@@ -523,25 +279,20 @@
                     </button>
                 </div>
 
-                <!-- Premier Tab Contents -->
                 <div id="premierQueue" class="tab-content">
                     <div id="premierQueueContent"></div>
                 </div>
 
                 <div id="premierMatches" class="tab-content hidden">
-                    <!-- Content will be loaded dynamically -->
-                </div>
+                    </div>
 
                 <div id="premierLeaderboard" class="tab-content hidden">
-                    <!-- Content will be loaded dynamically -->
-                </div>
+                    </div>
 
                 <div id="premierMymatches" class="tab-content hidden">
-                    <!-- Content will be loaded dynamically -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Profile Section -->
             <div id="profileSection" class="section hidden space-y-8">
                 <div>
                     <h2 class="text-2xl md:text-3xl font-heading font-bold mb-2">Mi Perfil</h2>
@@ -626,14 +377,12 @@
                                 <div class="bg-gray-800/50 p-4 rounded-lg">
                                     <h4 class="font-semibold text-center mb-2 text-blue-400">Público</h4>
                                     <div class="space-y-1 text-sm" id="publicStats">
-                                        <!-- Will be populated dynamically -->
-                                    </div>
+                                        </div>
                                 </div>
                                 <div class="bg-purple-900/30 p-4 rounded-lg border border-purple-700/30">
                                     <h4 class="font-semibold text-center mb-2 text-yellow-400">Elite</h4>
                                     <div class="space-y-1 text-sm" id="eliteStats">
-                                        <!-- Will be populated dynamically -->
-                                    </div>
+                                        </div>
                                 </div>
                             </div>
                         </div>
@@ -643,791 +392,8 @@
         </main>
     </div>
 
-    <!-- Toast Notifications -->
     <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-    <script>
-        // API Configuration
-        const API_BASE_URL = window.location.origin.includes('localhost') 
-            ? 'http://localhost:3000/api' 
-            : 'https://valorant-10-mans.onrender.com/api';
-        
-        // Global State Management
-        const AppState = {
-            user: null,
-            currentSection: 'public',
-            currentTab: { public: 'queue', premier: 'queue', profile: 'overview' },
-            selectedRoles: [],
-            userState: 'idle',
-            currentMatch: null,
-            isEliteQueue: false,
-            queues: { public: [], elite: [] },
-            leaderboard: [],
-            userMatches: { public: [], elite: [] },
-            
-            // User states for backend integration
-            userStates: {
-                IDLE: 'idle',
-                IN_QUEUE: 'in_queue', 
-                IN_MATCH: 'in_match',
-                MATCH_LEADER: 'match_leader',
-                WAITING_ROOM_CODE: 'waiting_room_code',
-                WAITING_MATCH_URL: 'waiting_match_url'
-            }
-        };
-
-        // DOM Elements
-        const elements = {
-            loadingScreen: document.getElementById('loadingScreen'),
-            loginScreen: document.getElementById('loginScreen'),
-            setupPanel: document.getElementById('setupPanel'),
-            dashboard: document.getElementById('dashboard'),
-            discordLoginBtn: document.getElementById('discordLoginBtn'),
-            completeSetupBtn: document.getElementById('completeSetupBtn'),
-            logoutBtn: document.getElementById('logoutBtn'),
-            updateProfileBtn: document.getElementById('updateProfileBtn'),
-            username: document.getElementById('username'),
-            userAvatar: document.getElementById('userAvatar'),
-            profileAvatar: document.getElementById('profileAvatar'),
-            profileUsername: document.getElementById('profileUsername'),
-            profileRiotId: document.getElementById('profileRiotId'),
-            profileRoles: document.getElementById('profileRoles'),
-            memberSince: document.getElementById('memberSince'),
-            totalMatches: document.getElementById('totalMatches'),
-            winRate: document.getElementById('winRate'),
-            premierStatusBadge: document.getElementById('premierStatusBadge'),
-            adminStatusBadge: document.getElementById('adminStatusBadge'),
-            publicStats: document.getElementById('publicStats'),
-            eliteStats: document.getElementById('eliteStats'),
-            updateRiotName: document.getElementById('updateRiotName'),
-            updateRiotTag: document.getElementById('updateRiotTag'),
-            toastContainer: document.getElementById('toastContainer')
-        };
-
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            initEventListeners();
-            checkAuthStatus();
-        });
-
-        // Event Listeners
-        function initEventListeners() {
-            // Navigation
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    const section = this.getAttribute('data-section');
-                    showSection(section);
-                });
-            });
-
-            // Tabs
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const tab = this.getAttribute('data-tab');
-                    showTab(tab);
-                });
-            });
-
-            // Role selection in setup
-            document.querySelectorAll('.role-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    const role = this.getAttribute('data-role');
-                    toggleRole(role, this);
-                });
-            });
-
-            // Role selection in profile
-            document.querySelectorAll('.role-select-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const role = this.getAttribute('data-role');
-                    toggleRoleSelection(role, this);
-                });
-            });
-
-            // Buttons
-            elements.discordLoginBtn.addEventListener('click', loginWithDiscord);
-            elements.completeSetupBtn.addEventListener('click', completeSetup);
-            elements.logoutBtn.addEventListener('click', logout);
-            elements.updateProfileBtn.addEventListener('click', updateProfile);
-        }
-
-        // Authentication Functions
-        async function checkAuthStatus() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/users/me`, {
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const userData = await response.json();
-                    AppState.user = userData;
-                    
-                    // Check if user has completed setup
-                    if (!userData.riotId) {
-                        showSetupPanel();
-                    } else {
-                        showDashboard();
-                        loadUserData();
-                    }
-                } else {
-                    showLoginScreen();
-                }
-            } catch (error) {
-                console.error('Error checking auth status:', error);
-                showLoginScreen();
-            } finally {
-                elements.loadingScreen.classList.add('hidden');
-            }
-        }
-
-        function loginWithDiscord() {
-            window.location.href = `${API_BASE_URL}/auth/discord`;
-        }
-
-        function showSetupPanel() {
-            elements.loginScreen.classList.add('hidden');
-            elements.setupPanel.classList.remove('hidden');
-            elements.dashboard.classList.add('hidden');
-        }
-
-        function showDashboard() {
-            elements.loginScreen.classList.add('hidden');
-            elements.setupPanel.classList.add('hidden');
-            elements.dashboard.classList.remove('hidden');
-            
-            // Update user info
-            if (AppState.user) {
-                elements.username.textContent = AppState.user.username;
-                if (AppState.user.avatarURL) {
-                    elements.userAvatar.src = AppState.user.avatarURL;
-                    elements.profileAvatar.src = AppState.user.avatarURL;
-                }
-            }
-            
-            // Load initial data
-            loadQueues();
-            loadLeaderboard();
-            updateQueueContent();
-        }
-
-        function showLoginScreen() {
-            elements.loginScreen.classList.remove('hidden');
-            elements.setupPanel.classList.add('hidden');
-            elements.dashboard.classList.add('hidden');
-        }
-
-        async function logout() {
-            try {
-                await fetch(`${API_BASE_URL}/logout`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-            } catch (error) {
-                console.error('Error during logout:', error);
-            } finally {
-                AppState.user = null;
-                showLoginScreen();
-            }
-        }
-
-        // Role Selection
-        function toggleRole(role, element) {
-            if (AppState.selectedRoles.includes(role)) {
-                AppState.selectedRoles = AppState.selectedRoles.filter(r => r !== role);
-                element.classList.remove('bg-primary', 'border-primary');
-                element.classList.add('card');
-            } else if (AppState.selectedRoles.length < 2) {
-                AppState.selectedRoles.push(role);
-                element.classList.remove('card');
-                element.classList.add('bg-primary', 'border-primary');
-            } else {
-                showToast('Solo puedes seleccionar máximo 2 roles', 'warning');
-            }
-        }
-
-        function toggleRoleSelection(role, element) {
-            if (AppState.selectedRoles.includes(role)) {
-                AppState.selectedRoles = AppState.selectedRoles.filter(r => r !== role);
-                element.classList.remove('bg-primary', 'text-white');
-                element.classList.add('border-gray-600');
-            } else if (AppState.selectedRoles.length < 2) {
-                AppState.selectedRoles.push(role);
-                element.classList.remove('border-gray-600');
-                element.classList.add('bg-primary', 'text-white');
-            } else {
-                showToast('Solo puedes seleccionar máximo 2 roles', 'warning');
-            }
-        }
-
-        // Setup Completion
-        async function completeSetup() {
-            const riotIdInput = document.getElementById('riotId');
-            const riotId = riotIdInput.value.trim();
-            
-            if (!riotId) {
-                showToast('Por favor ingresa tu Riot ID', 'error');
-                return;
-            }
-            
-            if (AppState.selectedRoles.length === 0) {
-                showToast('Por favor selecciona al menos un rol', 'error');
-                return;
-            }
-            
-            // Validate Riot ID format (name#tag)
-            const riotIdParts = riotId.split('#');
-            if (riotIdParts.length !== 2 || !riotIdParts[0] || !riotIdParts[1]) {
-                showToast('Formato de Riot ID incorrecto. Usa: Nombre#TAG', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/users/update-riot`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        riotId: riotId,
-                        name: riotIdParts[0],
-                        tag: riotIdParts[1]
-                    }),
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    // Update user roles (this would need a separate endpoint)
-                    AppState.user.riotId = riotId;
-                    AppState.user.roles = AppState.selectedRoles;
-                    
-                    showDashboard();
-                    showToast('Perfil configurado correctamente', 'success');
-                } else {
-                    const error = await response.json();
-                    showToast(error.error || 'Error al configurar el perfil', 'error');
-                }
-            } catch (error) {
-                console.error('Error completing setup:', error);
-                showToast('Error de conexión', 'error');
-            }
-        }
-
-        // Profile Update
-        async function updateProfile() {
-            const name = elements.updateRiotName.value.trim();
-            const tag = elements.updateRiotTag.value.trim();
-            
-            if (!name || !tag) {
-                showToast('Por favor completa ambos campos de Riot ID', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/users/update-riot`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        riotId: `${name}#${tag}`,
-                        name: name,
-                        tag: tag
-                    }),
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    AppState.user.riotId = `${name}#${tag}`;
-                    // Update roles would need another endpoint
-                    
-                    showToast('Perfil actualizado correctamente', 'success');
-                    loadUserData();
-                } else {
-                    const error = await response.json();
-                    showToast(error.error || 'Error al actualizar el perfil', 'error');
-                }
-            } catch (error) {
-                console.error('Error updating profile:', error);
-                showToast('Error de conexión', 'error');
-            }
-        }
-
-        // Section Navigation
-        function showSection(section) {
-            // Update UI
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            document.querySelector(`.nav-item[data-section="${section}"]`).classList.add('active');
-            
-            // Hide all sections
-            document.querySelectorAll('.section').forEach(sec => {
-                sec.classList.add('hidden');
-            });
-            
-            // Show selected section
-            document.getElementById(`${section}Section`).classList.remove('hidden');
-            
-            // Update state
-            AppState.currentSection = section;
-            
-            // Load section-specific data
-            if (section === 'public' || section === 'premier') {
-                updateQueueContent();
-            } else if (section === 'profile') {
-                loadUserData();
-            }
-        }
-
-        function showTab(tab) {
-            const section = AppState.currentSection;
-            
-            // Update UI
-            document.querySelectorAll(`#${section}Section .tab-btn`).forEach(btn => {
-                btn.classList.remove('bg-primary', 'bg-purple-600', 'text-white');
-                btn.classList.add('text-gray-300', 'hover:text-white', 'hover:bg-gray-700');
-            });
-            
-            const activeBtn = document.querySelector(`#${section}Section .tab-btn[data-tab="${tab}"]`);
-            if (section === 'premier') {
-                activeBtn.classList.add('bg-purple-600', 'text-white');
-            } else {
-                activeBtn.classList.add('bg-primary', 'text-white');
-            }
-            activeBtn.classList.remove('text-gray-300', 'hover:text-white', 'hover:bg-gray-700');
-            
-            // Hide all tab contents
-            document.querySelectorAll(`#${section}Section .tab-content`).forEach(content => {
-                content.classList.add('hidden');
-            });
-            
-            // Show selected tab content
-            document.getElementById(`${section}${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.remove('hidden');
-            
-            // Update state
-            AppState.currentTab[section] = tab;
-            
-            // Load tab-specific data
-            if (tab === 'queue') {
-                updateQueueContent();
-            } else if (tab === 'leaderboard') {
-                loadLeaderboard();
-            } else if (tab === 'mymatches') {
-                loadUserMatches();
-            } else if (tab === 'matches') {
-                loadMatches();
-            }
-        }
-
-        // Data Loading Functions
-        async function loadUserData() {
-            if (!AppState.user) return;
-            
-            // Update profile info
-            elements.profileUsername.textContent = AppState.user.username;
-            elements.profileRiotId.textContent = AppState.user.riotId || 'No configurado';
-            
-            // Update roles
-            elements.profileRoles.innerHTML = '';
-            if (AppState.user.roles && AppState.user.roles.length > 0) {
-                AppState.user.roles.forEach(role => {
-                    const roleElement = document.createElement('span');
-                    roleElement.className = `role-tag role-${role}`;
-                    roleElement.textContent = role.charAt(0).toUpperCase() + role.slice(1);
-                    elements.profileRoles.appendChild(roleElement);
-                });
-                
-                // Also update the role selection buttons
-                document.querySelectorAll('.role-select-btn').forEach(btn => {
-                    const role = btn.getAttribute('data-role');
-                    if (AppState.user.roles.includes(role)) {
-                        btn.classList.add('bg-primary', 'text-white');
-                        btn.classList.remove('border-gray-600');
-                    } else {
-                        btn.classList.remove('bg-primary', 'text-white');
-                        btn.classList.add('border-gray-600');
-                    }
-                });
-            }
-            
-            // Update status badges
-            if (AppState.user.isAuthorized) {
-                elements.premierStatusBadge.innerHTML = '<i class="fas fa-crown mr-1"></i> Elite: Verificado';
-                elements.premierStatusBadge.classList.remove('bg-gray-700', 'text-gray-300');
-                elements.premierStatusBadge.classList.add('bg-yellow-500', 'text-black');
-            }
-            
-            if (AppState.user.isAdmin) {
-                elements.adminStatusBadge.classList.remove('hidden');
-                elements.adminStatusBadge.innerHTML = '<i class="fas fa-shield-alt mr-1"></i> Administrador';
-                elements.adminStatusBadge.classList.remove('bg-gray-700', 'text-gray-300');
-                elements.adminStatusBadge.classList.add('bg-blue-500', 'text-white');
-            }
-            
-            // Update member since date
-            if (AppState.user.createdAt) {
-                const joinDate = new Date(AppState.user.createdAt);
-                elements.memberSince.textContent = joinDate.toLocaleDateString();
-            }
-            
-            // Update Riot ID fields
-            if (AppState.user.riotId) {
-                const [name, tag] = AppState.user.riotId.split('#');
-                elements.updateRiotName.value = name || '';
-                elements.updateRiotTag.value = tag || '';
-            }
-            
-            // Load stats
-            await loadUserStats();
-        }
-
-        async function loadUserStats() {
-            try {
-                // This would use your backend API to get user stats
-                // For now, we'll use mock data or data from AppState.user.stats
-                
-                const publicStats = AppState.user.stats?.public || {};
-                const eliteStats = AppState.user.stats?.elite || {};
-                
-                // Calculate totals
-                const totalPublicMatches = publicStats.matchesPlayed || 0;
-                const totalEliteMatches = eliteStats.matchesPlayed || 0;
-                const totalMatches = totalPublicMatches + totalEliteMatches;
-                
-                const publicWins = publicStats.wins || 0;
-                const eliteWins = eliteStats.wins || 0;
-                const totalWins = publicWins + eliteWins;
-                
-                const winRate = totalMatches > 0 ? Math.round((totalWins / totalMatches) * 100) : 0;
-                
-                // Update UI
-                elements.totalMatches.textContent = totalMatches;
-                elements.winRate.textContent = `${winRate}%`;
-                
-                // Update detailed stats
-                elements.publicStats.innerHTML = `
-                    <div class="flex justify-between"><span>Partidas:</span><span>${totalPublicMatches}</span></div>
-                    <div class="flex justify-between"><span>Victorias:</span><span>${publicWins}</span></div>
-                    <div class="flex justify-between"><span>K/D Ratio:</span><span>${publicStats.totalKills && publicStats.totalDeaths ? (publicStats.totalKills / publicStats.totalDeaths).toFixed(2) : '0.00'}</span></div>
-                    <div class="flex justify-between"><span>ACS:</span><span>${totalPublicMatches ? Math.round(publicStats.totalACS / totalPublicMatches) : 0}</span></div>
-                    <div class="flex justify-between"><span>ADR:</span><span>${totalPublicMatches ? Math.round(publicStats.totalADR / totalPublicMatches) : 0}</span></div>
-                `;
-                
-                elements.eliteStats.innerHTML = `
-                    <div class="flex justify-between"><span>Partidas:</span><span>${totalEliteMatches}</span></div>
-                    <div class="flex justify-between"><span>Victorias:</span><span>${eliteWins}</span></div>
-                    <div class="flex justify-between"><span>K/D Ratio:</span><span>${eliteStats.totalKills && eliteStats.totalDeaths ? (eliteStats.totalKills / eliteStats.totalDeaths).toFixed(2) : '0.00'}</span></div>
-                    <div class="flex justify-between"><span>ACS:</span><span>${totalEliteMatches ? Math.round(eliteStats.totalACS / totalEliteMatches) : 0}</span></div>
-                    <div class="flex justify-between"><span>ADR:</span><span>${totalEliteMatches ? Math.round(eliteStats.totalADR / totalEliteMatches) : 0}</span></div>
-                `;
-                
-            } catch (error) {
-                console.error('Error loading user stats:', error);
-            }
-        }
-
-        async function loadQueues() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/queues`, {
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const queues = await response.json();
-                    AppState.queues = queues;
-                    
-                    // Update queue counts
-                    document.getElementById('publicActivePlayers').textContent = queues.public.length;
-                    document.getElementById('eliteActivePlayers').textContent = queues.elite.length;
-                }
-            } catch (error) {
-                console.error('Error loading queues:', error);
-            }
-        }
-
-        async function loadLeaderboard() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/leaderboard`, {
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const leaderboard = await response.json();
-                    AppState.leaderboard = leaderboard;
-                    
-                    // Update user rank
-                    const userIndex = leaderboard.findIndex(user => user.discordId === AppState.user.discordId);
-                    if (userIndex !== -1) {
-                        document.getElementById('publicUserRank').textContent = `#${userIndex + 1}`;
-                        document.getElementById('publicUserRating').textContent = leaderboard[userIndex].stats?.public?.score || 0;
-                        
-                        // For elite, we'd need to filter by elite stats
-                        const eliteLeaderboard = leaderboard.filter(user => user.stats?.elite?.score > 0)
-                                                            .sort((a, b) => (b.stats.elite.score || 0) - (a.stats.elite.score || 0));
-                        const eliteUserIndex = eliteLeaderboard.findIndex(user => user.discordId === AppState.user.discordId);
-                        
-                        if (eliteUserIndex !== -1) {
-                            document.getElementById('eliteUserRank').textContent = `#${eliteUserIndex + 1}`;
-                            document.getElementById('eliteUserRating').textContent = eliteLeaderboard[eliteUserIndex].stats?.elite?.score || 0;
-                        }
-                    }
-                    
-                    // Render leaderboard tables if needed
-                    if (AppState.currentTab[AppState.currentSection] === 'leaderboard') {
-                        renderLeaderboard();
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading leaderboard:', error);
-            }
-        }
-
-        async function loadUserMatches() {
-            // This would use your backend API to get user matches
-            // For now, we'll use mock data
-        }
-
-        async function loadMatches() {
-            // This would use your backend API to get matches
-            // For now, we'll use mock data
-        }
-
-        // Queue Management
-        async function joinQueue(isElite = false) {
-            if (AppState.userState !== AppState.userStates.IDLE) {
-                showToast('Ya estás en una cola o partida', 'warning');
-                return;
-            }
-
-            if (isElite && (!AppState.user || !AppState.user.isAuthorized)) {
-                showToast('Necesitas verificación del staff para acceder a partidas Elite', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/queue/join`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        matchType: isElite ? 'elite' : 'public'
-                    }),
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    AppState.isEliteQueue = isElite;
-                    AppState.userState = AppState.userStates.IN_QUEUE;
-                    updateQueueContent();
-                    showToast('Te has unido a la cola', 'success');
-                    
-                    // Start polling for queue status
-                    pollQueueStatus();
-                } else {
-                    const error = await response.json();
-                    showToast(error.error || 'Error al unirse a la cola', 'error');
-                }
-            } catch (error) {
-                console.error('Error joining queue:', error);
-                showToast('Error de conexión', 'error');
-            }
-        }
-
-        async function leaveQueue() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/queue/leave`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    AppState.userState = AppState.userStates.IDLE;
-                    updateQueueContent();
-                    showToast('Has salido de la cola', 'info');
-                } else {
-                    const error = await response.json();
-                    showToast(error.error || 'Error al salir de la cola', 'error');
-                }
-            } catch (error) {
-                console.error('Error leaving queue:', error);
-                showToast('Error de conexión', 'error');
-            }
-        }
-
-        async function pollQueueStatus() {
-            // This would periodically check the queue status
-            // and update the UI accordingly
-        }
-
-        // UI Update Functions
-        function updateQueueContent() {
-            const isElite = AppState.currentSection === 'premier';
-            const contentId = isElite ? 'premierQueueContent' : 'publicQueueContent';
-            const contentElement = document.getElementById(contentId);
-            
-            if (!contentElement) return;
-
-            let content = '';
-            
-            switch (AppState.userState) {
-                case AppState.userStates.IDLE:
-                    content = renderIdleState(isElite);
-                    break;
-                case AppState.userStates.IN_QUEUE:
-                    content = renderInQueueState(isElite);
-                    break;
-                case AppState.userStates.IN_MATCH:
-                    content = renderInMatchState(isElite, AppState.currentMatch);
-                    break;
-                case AppState.userStates.WAITING_ROOM_CODE:
-                    content = renderWaitingRoomCodeState(isElite, AppState.currentMatch);
-                    break;
-                case AppState.userStates.WAITING_MATCH_URL:
-                    content = renderWaitingMatchUrlState(isElite, AppState.currentMatch);
-                    break;
-                default:
-                    content = renderIdleState(isElite);
-            }
-            
-            contentElement.innerHTML = content;
-            
-            // Add event listeners to dynamically created buttons
-            if (AppState.userState === AppState.userStates.IDLE) {
-                const joinBtn = contentElement.querySelector('.join-queue-btn');
-                if (joinBtn) {
-                    joinBtn.addEventListener('click', () => joinQueue(isElite));
-                }
-            } else if (AppState.userState === AppState.userStates.IN_QUEUE) {
-                const leaveBtn = contentElement.querySelector('.leave-queue-btn');
-                if (leaveBtn) {
-                    leaveBtn.addEventListener('click', leaveQueue);
-                }
-            }
-        }
-
-        function renderIdleState(isElite) {
-            const queueType = isElite ? 'Elite' : 'Públicos';
-            const buttonClass = isElite ? 'btn-elite' : 'btn-primary';
-            const buttonText = isElite ? 'Unirse a Cola Elite' : 'Unirse a Cola';
-            const buttonIcon = isElite ? 'fas fa-crown' : 'fas fa-play';
-            const playersInQueue = isElite ? AppState.queues.elite.length : AppState.queues.public.length;
-            
-            return `
-                <div class="max-w-2xl mx-auto">
-                    <div class="card p-6 md:p-8 text-center">
-                        <div class="text-5xl mb-6">${isElite ? '👑' : '🎯'}</div>
-                        <h3 class="text-2xl font-heading font-bold mb-4">${isElite ? 'Bienvenido a Elite' : '¿Listo para la batalla?'}</h3>
-                        <p class="text-gray-300 mb-6">${isElite ? 'Compite contra los mejores jugadores en partidas de élite. Solo para los más hábiles.' : 'Únete a la cola y encuentra oponentes de tu nivel. ¡La próxima partida épica te está esperando!'}</p>
-                        
-                        <button class="join-queue-btn w-full ${buttonClass} py-4 px-8 rounded-xl font-bold text-lg mb-6">
-                            <i class="${buttonIcon} mr-3"></i>${buttonText}
-                        </button>
-                        
-                        <div class="grid grid-cols-3 gap-4 text-center text-sm">
-                            <div class="bg-white/10 rounded-lg p-3">
-                                <div class="text-lg font-bold ${isElite ? 'text-yellow-400' : 'text-green-400'}">${playersInQueue}</div>
-                                <div class="text-gray-300">${isElite ? 'Elite en Cola' : 'En Cola'}</div>
-                            </div>
-                            <div class="bg-white/10 rounded-lg p-3">
-                                <div class="text-lg font-bold ${isElite ? 'text-orange-400' : 'text-yellow-400'}">${isElite ? '~5 min' : '~3 min'}</div>
-                                <div class="text-gray-300">Tiempo Est.</div>
-                            </div>
-                            <div class="bg-white/10 rounded-lg p-3">
-                                <div class="text-lg font-bold ${isElite ? 'text-purple-400' : 'text-purple-400'}">${isElite ? '1' : '2'}</div>
-                                <div class="text-gray-300">Formándose</div>
-                            </div>
-                        </div>
-                        
-                        ${isElite ? `
-                        <div class="bg-purple-900/30 rounded-lg p-4 mt-6 border border-purple-500/30">
-                            <div class="flex items-center justify-center gap-2 text-sm text-purple-200">
-                                <i class="fas fa-info-circle text-yellow-400"></i>
-                                <span>Acceso Elite requiere verificación del staff</span>
-                            </div>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderInQueueState(isElite) {
-            const queueType = isElite ? 'Elite' : 'Pública';
-            
-            return `
-                <div class="max-w-2xl mx-auto">
-                    <div class="card p-6 md:p-8">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-xl font-bold">En Cola ${queueType}</h3>
-                            <span class="bg-blue-600 px-3 py-1 rounded-full text-sm font-bold pulse">BUSCANDO</span>
-                        </div>
-                        
-                        <div class="text-center space-y-4">
-                            <div class="text-4xl mb-4">⏳</div>
-                            <p class="text-lg">Buscando jugadores...</p>
-                            <p class="text-sm text-gray-300">Tiempo estimado: ~2 minutos</p>
-                            
-                            <button class="leave-queue-btn bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-lg font-bold transition-all">
-                                <i class="fas fa-times mr-2"></i>Salir de Cola
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderInMatchState(isElite, matchData) {
-            // Implementation for in-match state
-            return `<div>In Match State</div>`;
-        }
-
-        function renderWaitingRoomCodeState(isElite, matchData) {
-            // Implementation for waiting room code state
-            return `<div>Waiting Room Code State</div>`;
-        }
-
-        function renderWaitingMatchUrlState(isElite, matchData) {
-            // Implementation for waiting match URL state
-            return `<div>Waiting Match URL State</div>`;
-        }
-
-        function renderLeaderboard() {
-            // Implementation for rendering leaderboard
-        }
-
-        // Utility Functions
-        function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = `toast card p-4 flex items-center gap-3 fade-in ${type === 'error' ? 'border-l-4 border-red-500' : type === 'success' ? 'border-l-4 border-green-500' : type === 'warning' ? 'border-l-4 border-yellow-500' : ''}`;
-            
-            let icon = 'fas fa-info-circle';
-            if (type === 'success') icon = 'fas fa-check-circle';
-            if (type === 'error') icon = 'fas fa-exclamation-circle';
-            if (type === 'warning') icon = 'fas fa-exclamation-triangle';
-            
-            toast.innerHTML = `
-                <i class="${icon} ${type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : type === 'warning' ? 'text-yellow-400' : 'text-blue-400'}"></i>
-                <span>${message}</span>
-            `;
-            
-            elements.toastContainer.appendChild(toast);
-            
-            // Remove toast after 5 seconds
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                setTimeout(() => {
-                    toast.remove();
-                }, 300);
-            }, 5000);
-        }
-
-        // Additional helper functions would be added here for:
-        // - Room code validation
-        // - Match URL submission
-        // - Player stats display
-        // - And other specific functionalities
-
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
