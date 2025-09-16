@@ -534,6 +534,57 @@ apiRouter.get("/queues", async (req, res) => {
   }
 });
 
+// Rutas de Stats
+apiRouter.get("/stats/public", async (req, res) => {
+  try {
+    const users = await usersCollection.find({}, { projection: { discordSession: 0 } }).toArray();
+    const stats = users.map(u => {
+      const s = u.stats?.public || {};
+      return {
+        id: u.discordId,
+        username: u.username,
+        riotId: u.riotId || "",
+        matches: s.matchesPlayed || 0,
+        wins: s.wins || 0,
+        score: s.score || 0,
+        avgACS: s.matchesPlayed ? (s.totalACS / s.matchesPlayed) : 0,
+        avgADR: s.matchesPlayed ? (s.totalADR / s.matchesPlayed) : 0,
+        avgKAST: s.matchesPlayed ? (s.totalKAST / s.matchesPlayed) : 0,
+        hsPercent: s.totalKills ? (s.totalHeadshotKills / s.totalKills * 100) : 0,
+      };
+    });
+    res.json(stats);
+  } catch (err) {
+    console.error("Error en /stats/public:", err);
+    res.status(500).json({ error: "Error generando estadísticas públicas" });
+  }
+});
+
+apiRouter.get("/stats/premier", async (req, res) => {
+  try {
+    const users = await usersCollection.find({}, { projection: { discordSession: 0 } }).toArray();
+    const stats = users.map(u => {
+      const s = u.stats?.elite || {}; // premier = cola élite
+      return {
+        id: u.discordId,
+        username: u.username,
+        riotId: u.riotId || "",
+        matches: s.matchesPlayed || 0,
+        wins: s.wins || 0,
+        score: s.score || 0,
+        avgACS: s.matchesPlayed ? (s.totalACS / s.matchesPlayed) : 0,
+        avgADR: s.matchesPlayed ? (s.totalADR / s.matchesPlayed) : 0,
+        avgKAST: s.matchesPlayed ? (s.totalKAST / s.matchesPlayed) : 0,
+        hsPercent: s.totalKills ? (s.totalHeadshotKills / s.totalKills * 100) : 0,
+      };
+    });
+    res.json(stats);
+  } catch (err) {
+    console.error("Error en /stats/premier:", err);
+    res.status(500).json({ error: "Error generando estadísticas premier" });
+  }
+});
+
 // Rutas de Matches
 apiRouter.get("/matches", async (req, res) => {
   try {
