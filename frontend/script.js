@@ -1,13 +1,13 @@
-// ==============================
-// 🌐 API Configuration
-// ==============================
-const API_BASE_URL = window.location.origin.includes('localhost') 
-    ? 'http://localhost:3000/api' 
+// ==========================================================
+// CONFIGURACIÓN E INICIALIZACIÓN
+// ==========================================================
+
+// API Configuration
+const API_BASE_URL = window.location.origin.includes('localhost')
+    ? 'http://localhost:3000/api'
     : 'https://valorant-10-mans.onrender.com/api';
 
-// ==============================
-// 🎮 Global State Management
-// ==============================
+// Global State Management
 const AppState = {
     user: null,
     currentSection: 'public',
@@ -17,419 +17,473 @@ const AppState = {
     currentMatch: null,
     isEliteQueue: false,
     queues: { public: [], elite: [] },
-    leaderboard: [],
+    leaderboard: { public: [], elite: [] },
+    matches: { public: [], elite: [] },
     userMatches: { public: [], elite: [] },
+    
+    // User states for backend integration
     userStates: {
         IDLE: 'idle',
         IN_QUEUE: 'in_queue',
         IN_MATCH: 'in_match',
         MATCH_LEADER: 'match_leader',
         WAITING_ROOM_CODE: 'waiting_room_code',
-        WAITING_MATCH_URL: 'waiting_match_url'
+        WAITING_MATCH_END: 'waiting_match_end',
     }
 };
 
-// ==============================
-// 🖼️ DOM Elements
-// ==============================
-const elements = {
-    loadingScreen: document.getElementById('loadingScreen'),
-    loginScreen: document.getElementById('loginScreen'),
-    setupPanel: document.getElementById('setupPanel'),
-    dashboard: document.getElementById('dashboard'),
-    discordLoginBtn: document.getElementById('discordLoginBtn'),
-    riotIdInput: document.getElementById('riotId'),
-    roleCards: document.querySelectorAll('.role-card'),
-    completeSetupBtn: document.getElementById('completeSetupBtn'),
-    userAvatar: document.getElementById('userAvatar'),
-    usernameDisplay: document.getElementById('username'),
-    logoutBtn: document.getElementById('logoutBtn'),
-    navItems: document.querySelectorAll('.nav-item'),
-    sections: document.querySelectorAll('.section'),
-    publicSection: document.getElementById('publicSection'),
-    premierSection: document.getElementById('premierSection'),
-    profileSection: document.getElementById('profileSection'),
-    publicActivePlayers: document.getElementById('publicActivePlayers'),
-    publicMatchesToday: document.getElementById('publicMatchesToday'),
-    publicUserRating: document.getElementById('publicUserRating'),
-    publicUserRank: document.getElementById('publicUserRank'),
-    tabButtons: document.querySelectorAll('.tab-btn'),
-    publicQueueContent: document.getElementById('publicQueueContent'),
-    publicMatchesContent: document.getElementById('publicMatches'),
-    publicLeaderboardContent: document.getElementById('publicLeaderboard'),
-    publicMymatchesContent: document.getElementById('publicMymatches'),
-    profileAvatar: document.getElementById('profileAvatar'),
-    profileUsername: document.getElementById('profileUsername'),
-    profileRiotId: document.getElementById('profileRiotId'),
-    profileRoles: document.getElementById('profileRoles'),
-    premierStatusBadge: document.getElementById('premierStatusBadge'),
-    adminStatusBadge: document.getElementById('adminStatusBadge'),
-    memberSince: document.getElementById('memberSince'),
-    totalMatches: document.getElementById('totalMatches'),
-    winRate: document.getElementById('winRate'),
-    updateRiotName: document.getElementById('updateRiotName'),
-    updateRiotTag: document.getElementById('updateRiotTag'),
-    roleSelectBtns: document.querySelectorAll('.role-select-btn'),
-    updateProfileBtn: document.getElementById('updateProfileBtn'),
-    publicStats: document.getElementById('publicStats'),
-    eliteStats: document.getElementById('eliteStats'),
-    toastContainer: document.getElementById('toastContainer')
-};
+// DOM Elements
+const loadingScreen = document.getElementById('loadingScreen');
+const loginScreen = document.getElementById('loginScreen');
+const setupPanel = document.getElementById('setupPanel');
+const dashboard = document.getElementById('dashboard');
+const discordLoginBtn = document.getElementById('discordLoginBtn');
+const completeSetupBtn = document.getElementById('completeSetupBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const navItems = document.querySelectorAll('.nav-item');
+const publicSection = document.getElementById('publicSection');
+const premierSection = document.getElementById('premierSection');
+const profileSection = document.getElementById('profileSection');
+const roleCards = document.querySelectorAll('.role-card');
+const profileRiotId = document.getElementById('profileRiotId');
+const profileRoles = document.getElementById('profileRoles');
+const updateProfileBtn = document.getElementById('updateProfileBtn');
+const updateRiotName = document.getElementById('updateRiotName');
+const updateRiotTag = document.getElementById('updateRiotTag');
+const roleSelectBtns = document.querySelectorAll('.role-select-btn');
+const toastContainer = document.getElementById('toastContainer');
+const publicTabButtons = publicSection.querySelectorAll('.tab-btn');
+const premierTabButtons = premierSection.querySelectorAll('.tab-btn');
 
-// ==============================
-// 📺 UI Helpers
-// ==============================
-const showScreen = (screenId) => {
-    elements.loginScreen.classList.add('hidden');
-    elements.setupPanel.classList.add('hidden');
-    elements.dashboard.classList.add('hidden');
-    elements.loadingScreen.classList.add('hidden');
-    document.getElementById(screenId).classList.remove('hidden');
-};
+// Queue Buttons
+const joinPublicQueueBtn = document.getElementById('joinPublicQueueBtn');
+const leavePublicQueueBtn = document.getElementById('leavePublicQueueBtn');
+const publicQueueContainer = document.getElementById('publicQueueContainer');
+const publicLeaderboardContainer = document.getElementById('publicLeaderboardContainer');
+const publicMatchesContainer = document.getElementById('publicMatchesContainer');
+const publicPlayerCount = document.getElementById('publicPlayerCount');
+
+// Profile Page Elements
+const myMatchesContainer = document.getElementById('myMatchesContainer');
+const profileInfoContainer = document.getElementById('profileInfoContainer');
+const myMatchesPlayerCount = document.getElementById('myMatchesPlayerCount');
+
+// ==========================================================
+// FUNCIONES DE UTILIDAD
+// ==========================================================
 
 const showToast = (message, type = 'success') => {
     const toast = document.createElement('div');
-    toast.className = `p-4 rounded-lg shadow-xl text-white fade-in max-w-xs`;
-    
-    if (type === 'success') toast.classList.add('bg-green-600');
-    else if (type === 'error') toast.classList.add('bg-red-600');
-    else if (type === 'info') toast.classList.add('bg-blue-600');
-    
+    toast.className = `p-4 rounded-lg shadow-xl text-white fade-in transform transition-all duration-300 ${
+        type === 'success' ? 'bg-green-500' :
+        type === 'error' ? 'bg-red-500' :
+        'bg-gray-700'
+    }`;
     toast.textContent = message;
-    elements.toastContainer.appendChild(toast);
-    
+    toastContainer.appendChild(toast);
     setTimeout(() => {
         toast.classList.remove('fade-in');
         toast.classList.add('fade-out');
-        toast.remove();
+        toast.addEventListener('transitionend', () => toast.remove());
     }, 5000);
 };
 
-// ==============================
-// 🔑 Auth & App Init
-// ==============================
-const fetchUser = async () => {
-    const response = await fetch(`${API_BASE_URL}/users/me`, {
-        credentials: "include"
+const updateTabContent = (parent, buttons, activeTab) => {
+    parent.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+        content.classList.remove('active');
     });
-    if (!response.ok) throw new Error('No autenticado');
-    return response.json();
-};
+    parent.querySelector(`#${parent.id.replace('Section', '')}-${activeTab}`).classList.remove('hidden');
+    parent.querySelector(`#${parent.id.replace('Section', '')}-${activeTab}`).classList.add('active');
 
-const updateUIWithUser = (user) => {
-    elements.userAvatar.src = user.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png';
-    elements.profileAvatar.src = user.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png';
-    elements.usernameDisplay.textContent = user.discordTag;
-    elements.profileUsername.textContent = user.discordTag;
-    
-    if (user.riotId) {
-        elements.profileRiotId.textContent = user.riotId;
-        elements.updateRiotName.value = user.riotId.split('#')[0];
-        elements.updateRiotTag.value = user.riotId.split('#')[1];
-    }
-
-    if (user.memberSince) {
-        const date = new Date(user.memberSince);
-        elements.memberSince.textContent = date.toLocaleDateString('es-ES');
-    }
-
-    elements.profileRoles.innerHTML = '';
-    if (user.roles && user.roles.length > 0) {
-        user.roles.forEach(role => {
-            const roleTag = document.createElement('span');
-            roleTag.className = `role-tag role-${role}`;
-            roleTag.textContent = role.charAt(0).toUpperCase() + role.slice(1);
-            elements.profileRoles.appendChild(roleTag);
-        });
-    }
-
-    if (user.isElite) {
-        elements.premierStatusBadge.classList.remove('bg-gray-700', 'text-gray-300');
-        elements.premierStatusBadge.classList.add('bg-yellow-600', 'text-black');
-        elements.premierStatusBadge.innerHTML = '<i class="fas fa-crown mr-1"></i> Elite: Verificado';
-    } else {
-        elements.premierStatusBadge.classList.remove('bg-yellow-600', 'text-black');
-        elements.premierStatusBadge.classList.add('bg-gray-700', 'text-gray-300');
-        elements.premierStatusBadge.innerHTML = '<i class="fas fa-crown mr-1"></i> Elite: Pendiente';
-    }
-
-    if (user.isAdmin) {
-        elements.adminStatusBadge.classList.remove('hidden');
-    } else {
-        elements.adminStatusBadge.classList.add('hidden');
-    }
-};
-
-const initializeApp = async () => {
-    showScreen('loadingScreen');
-
-    try {
-        const user = await fetchUser();
-        AppState.user = user;
-        updateUIWithUser(user);
-
-        if (!user.riotId || !user.roles || user.roles.length === 0) {
-            showScreen('setupPanel');
-        } else {
-            showScreen('dashboard');
-            await fetchDashboardData();
-            startPolling();
-        }
-    } catch (error) {
-        console.error("Error al iniciar la aplicación:", error);
-        showScreen('loginScreen');
-        showToast('Sesión caducada. Por favor, inicia sesión de nuevo.', 'error');
-    }
-};
-
-// ==============================
-// 📊 Dashboard Data
-// ==============================
-const fetchDashboardData = async () => {
-    try {
-        const [publicStats, premierStats, queues, leaderboard] = await Promise.all([
-            fetch(`${API_BASE_URL}/stats/public`, { credentials: "include" }),
-            fetch(`${API_BASE_URL}/stats/premier`, { credentials: "include" }),
-            fetch(`${API_BASE_URL}/queues`, { credentials: "include" }),
-            fetch(`${API_BASE_URL}/leaderboard`, { credentials: "include" })
-        ]);
-
-        const publicStatsData = await publicStats.json();
-        const premierStatsData = await premierStats.json();
-        const queuesData = await queues.json();
-        const leaderboardData = await leaderboard.json();
-
-        updateStats(publicStatsData, 'public');
-        updateStats(premierStatsData, 'elite');
-        AppState.queues = queuesData;
-        AppState.leaderboard = leaderboardData;
-
-        renderQueue();
-    } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        showToast('Error al cargar los datos del dashboard.', 'error');
-    }
-};
-
-// ==============================
-// 📝 Setup Usuario
-// ==============================
-elements.completeSetupBtn.addEventListener('click', async () => {
-    const riotId = elements.riotIdInput.value.trim();
-    if (!riotId) return showToast('Por favor, ingresa tu Riot ID.', 'error');
-    if (AppState.selectedRoles.length === 0) return showToast('Selecciona al menos un rol.', 'error');
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/users/setup`, {
-            method: 'POST',
-            credentials: "include",
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ riotId, roles: AppState.selectedRoles })
-        });
-
-        if (!response.ok) throw new Error("Error en setup");
-        const user = await response.json();
-        AppState.user = user;
-        updateUIWithUser(user);
-        showScreen('dashboard');
-        showToast('¡Configuración completada con éxito!');
-        await fetchDashboardData();
-    } catch (error) {
-        console.error("Setup error:", error);
-        showToast(error.message, 'error');
-    }
-});
-
-// ==============================
-// 🎮 Queue Handling
-// ==============================
-const renderQueue = () => {
-    const queueContent = AppState.isEliteQueue ? elements.premierQueueContent : elements.publicQueueContent;
-    const currentQueue = AppState.isEliteQueue ? AppState.queues.elite : AppState.queues.public;
-
-    queueContent.innerHTML = '';
-
-    const queueHeader = document.createElement('div');
-    queueHeader.className = 'flex items-center justify-between mb-4';
-    queueHeader.innerHTML = `
-        <h3 class="text-xl md:text-2xl font-bold">Cola de Partidas <span class="text-primary">(${currentQueue.length}/10)</span></h3>
-        <button id="queueBtn" class="btn-primary px-6 py-3 rounded-lg font-semibold">
-            ${AppState.userState === AppState.userStates.IN_QUEUE ? 'Abandonar Cola' : 'Unirse a la Cola'}
-        </button>
-    `;
-    queueContent.appendChild(queueHeader);
-
-    const queueGrid = document.createElement('div');
-    queueGrid.className = 'grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6';
-    
-    currentQueue.forEach(player => {
-        const playerCard = document.createElement('div');
-        playerCard.className = 'card p-4 text-center fade-in';
-        playerCard.innerHTML = `
-            <img src="${player.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="Avatar" class="w-16 h-16 rounded-full mx-auto mb-2">
-            <h4 class="font-semibold text-sm truncate">${player.discordUsername}</h4>
-            <p class="text-xs text-gray-400 truncate">${player.riotId}</p>
-        `;
-        queueGrid.appendChild(playerCard);
+    buttons.forEach(btn => {
+        btn.classList.remove('bg-primary', 'text-white', 'hover:bg-gray-700');
+        btn.classList.add('text-gray-300', 'hover:text-white', 'hover:bg-gray-700');
     });
 
-    for (let i = currentQueue.length; i < 10; i++) {
-        const emptyCard = document.createElement('div');
-        emptyCard.className = 'card p-4 text-center opacity-50';
-        emptyCard.innerHTML = `
-            <div class="w-16 h-16 rounded-full mx-auto mb-2 bg-gray-700 flex items-center justify-center">
-                <i class="fas fa-plus text-2xl text-gray-500"></i>
+    const activeBtn = parent.querySelector(`.tab-btn[data-tab="${activeTab}"]`);
+    activeBtn.classList.add('bg-primary', 'text-white');
+    activeBtn.classList.remove('text-gray-300');
+};
+
+// ==========================================================
+// FUNCIONES DE RENDERIZADO DE LA INTERFAZ
+// ==========================================================
+
+const renderPlayerCard = (player) => {
+    return `
+    <div class="p-4 bg-gray-800 rounded-lg flex items-center justify-between">
+        <div class="flex items-center">
+            <img src="${player.avatarURL || 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="Avatar" class="w-10 h-10 rounded-full mr-4">
+            <div>
+                <p class="text-white font-semibold">${player.username}</p>
+                <p class="text-gray-400 text-sm">${player.roles.join(', ')}</p>
             </div>
-            <h4 class="font-semibold text-sm text-gray-400">Esperando...</h4>
-            <p class="text-xs text-gray-500">Espacio disponible</p>
-        `;
-        queueGrid.appendChild(emptyCard);
-    }
-
-    queueContent.appendChild(queueGrid);
-
-    document.getElementById('queueBtn').addEventListener('click', () => {
-        if (AppState.userState === AppState.userStates.IN_QUEUE) leaveQueue();
-        else joinQueue();
-    });
-};
-
-const joinQueue = async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/queues/${AppState.isEliteQueue ? 'elite' : 'public'}/join`, {
-            method: 'POST',
-            credentials: "include",
-            headers: { 'Content-Type': 'application/json' }
-        });
-        if (!response.ok) throw new Error("Error al unirse a la cola");
-        const result = await response.json();
-        AppState.userState = AppState.userStates.IN_QUEUE;
-        showToast(result.message);
-    } catch (error) {
-        console.error("Join queue error:", error);
-        showToast(error.message, 'error');
-    }
-};
-
-const leaveQueue = async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/queues/${AppState.isEliteQueue ? 'elite' : 'public'}/leave`, {
-            method: 'POST',
-            credentials: "include",
-            headers: { 'Content-Type': 'application/json' }
-        });
-        if (!response.ok) throw new Error("Error al salir de la cola");
-        const result = await response.json();
-        AppState.userState = AppState.userStates.IDLE;
-        showToast(result.message);
-    } catch (error) {
-        console.error("Leave queue error:", error);
-        showToast(error.message, 'error');
-    }
-};
-
-// ==============================
-// 📈 Stats Helper
-// ==============================
-const updateStats = (data, type) => {
-    const isPublic = type === 'public';
-    const activePlayersEl = isPublic ? elements.publicActivePlayers : document.getElementById('eliteActivePlayers');
-    const matchesTodayEl = isPublic ? elements.publicMatchesToday : document.getElementById('eliteMatchesToday');
-    const userRatingEl = isPublic ? elements.publicUserRating : document.getElementById('eliteUserRating');
-    const userRankEl = isPublic ? elements.publicUserRank : document.getElementById('eliteUserRank');
-    const userStatsContainer = isPublic ? elements.publicStats : elements.eliteStats;
-
-    if (data.activePlayers) activePlayersEl.textContent = data.activePlayers;
-    if (data.matchesToday) matchesTodayEl.textContent = data.matchesToday;
-    if (data.userRating) userRatingEl.textContent = Math.round(data.userRating);
-    if (data.userRank) userRankEl.textContent = `#${data.userRank}`;
-
-    userStatsContainer.innerHTML = `
-        <div class="flex justify-between">
-            <span>Rating</span>
-            <span class="font-semibold">${Math.round(data.userRating || 0)}</span>
         </div>
-        <div class="flex justify-between">
-            <span>Ranking</span>
-            <span class="font-semibold">#${data.userRank || 'N/A'}</span>
-        </div>
-        <div class="flex justify-between">
-            <span>Partidas jugadas</span>
-            <span class="font-semibold">${data.matchesPlayed || 0}</span>
-        </div>
-        <div class="flex justify-between">
-            <span>Victorias</span>
-            <span class="font-semibold">${data.wins || 0}</span>
-        </div>
-        <div class="flex justify-between">
-            <span>Porcentaje de victorias</span>
-            <span class="font-semibold">${data.winRate ? (data.winRate * 100).toFixed(1) : 0}%</span>
-        </div>
+    </div>
     `;
 };
 
-// ==============================
-// 🔄 Polling
-// ==============================
-const startPolling = () => {
-    setInterval(async () => {
-        if (AppState.userState !== AppState.userStates.IN_MATCH) {
-            await fetchDashboardData();
-        }
-    }, 5000);
+const renderQueue = (queue) => {
+    const queueHtml = queue.map(player => renderPlayerCard(player)).join('');
+    publicQueueContainer.innerHTML = queueHtml;
+    publicPlayerCount.textContent = `${queue.length}/10 jugadores`;
+    
+    // Botones de cola
+    if (AppState.userState === AppState.userStates.IN_QUEUE) {
+        joinPublicQueueBtn.classList.add('hidden');
+        leavePublicQueueBtn.classList.remove('hidden');
+    } else {
+        joinPublicQueueBtn.classList.remove('hidden');
+        leavePublicQueueBtn.classList.add('hidden');
+    }
 };
 
-// ==============================
-// 🛠️ Event Listeners
-// ==============================
-document.addEventListener('DOMContentLoaded', initializeApp);
+const renderLeaderboard = (leaderboard) => {
+    const leaderboardHtml = leaderboard.map((player, index) => `
+    <div class="p-4 bg-gray-800 rounded-lg flex items-center justify-between">
+        <div class="flex items-center">
+            <span class="text-lg font-bold text-gray-400 mr-4 w-6 text-center">${index + 1}</span>
+            <img src="${player.avatarURL || 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="Avatar" class="w-10 h-10 rounded-full mr-4">
+            <div>
+                <p class="text-white font-semibold">${player.username} <span class="text-gray-400 text-sm">#${player.riotId?.split('#')[1]}</span></p>
+                <p class="text-gray-400 text-sm">${player.roles.join(', ')}</p>
+            </div>
+        </div>
+        <span class="text-lg font-bold text-primary">${player.score}</span>
+    </div>
+    `).join('');
+    publicLeaderboardContainer.innerHTML = leaderboardHtml;
+};
 
-elements.discordLoginBtn.addEventListener('click', () => {
+const renderMatches = (matches, container) => {
+    const matchesHtml = matches.map(match => `
+    <div class="p-4 bg-gray-800 rounded-lg shadow-md mb-4">
+        <h3 class="text-white text-lg font-bold mb-2">Partida de 10 mans - ${match.map}</h3>
+        <p class="text-gray-400 text-sm mb-4">Finalizada: ${new Date(match.createdAt).toLocaleString()}</p>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <h4 class="text-blue-400 font-semibold mb-2">Equipo A</h4>
+                ${match.teamA.map(player => `
+                    <p class="text-white text-sm">${player.username} <span class="text-gray-400 text-xs">(${player.character})</span> - <span class="text-gray-400 text-xs">${player.kills}/${player.deaths}/${player.assists}</span></p>
+                `).join('')}
+            </div>
+            <div>
+                <h4 class="text-red-400 font-semibold mb-2">Equipo B</h4>
+                ${match.teamB.map(player => `
+                    <p class="text-white text-sm">${player.username} <span class="text-gray-400 text-xs">(${player.character})</span> - <span class="text-gray-400 text-xs">${player.kills}/${player.deaths}/${player.assists}</span></p>
+                `).join('')}
+            </div>
+        </div>
+    </div>
+    `).join('');
+    container.innerHTML = matchesHtml;
+};
+
+const renderProfileOverview = (user) => {
+    profileInfoContainer.innerHTML = `
+    <div class="bg-gray-800 rounded-lg p-6">
+        <h3 class="text-white text-xl font-bold mb-4">Estadísticas Públicas</h3>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="text-gray-400 text-sm">Puntuación Total</p>
+                <p class="text-white text-2xl font-bold">${user.stats?.public?.score || 0}</p>
+            </div>
+            <div>
+                <p class="text-gray-400 text-sm">Partidas Jugadas</p>
+                <p class="text-white text-2xl font-bold">${user.stats?.public?.matchesPlayed || 0}</p>
+            </div>
+            <div>
+                <p class="text-gray-400 text-sm">Victorias</p>
+                <p class="text-white text-2xl font-bold">${user.stats?.public?.wins || 0}</p>
+            </div>
+            <div>
+                <p class="text-gray-400 text-sm">Ratio K/D</p>
+                <p class="text-white text-2xl font-bold">${(user.stats?.public?.kills / Math.max(1, user.stats?.public?.deaths)).toFixed(2) || 'N/A'}</p>
+            </div>
+        </div>
+    </div>
+    `;
+};
+
+// ==========================================================
+// LÓGICA DE LA APLICACIÓN
+// ==========================================================
+
+const fetchAndRenderData = async () => {
+    try {
+        if (AppState.currentSection === 'public') {
+            if (AppState.currentTab.public === 'queue') {
+                const response = await fetch(`${API_BASE_URL}/public/queue`);
+                if (!response.ok) throw new Error('Error al obtener la cola pública.');
+                const queue = await response.json();
+                renderQueue(queue);
+            } else if (AppState.currentTab.public === 'leaderboard') {
+                const response = await fetch(`${API_BASE_URL}/public/leaderboard`);
+                if (!response.ok) throw new Error('Error al obtener el leaderboard.');
+                const leaderboard = await response.json();
+                renderLeaderboard(leaderboard);
+            } else if (AppState.currentTab.public === 'matches') {
+                const response = await fetch(`${API_BASE_URL}/public/matches`);
+                if (!response.ok) throw new Error('Error al obtener las partidas.');
+                const data = await response.json();
+                renderMatches(data.matches, publicMatchesContainer);
+            }
+        } else if (AppState.currentSection === 'profile') {
+            if (AppState.currentTab.profile === 'overview') {
+                // Ya se tiene el usuario en AppState.user
+                renderProfileOverview(AppState.user);
+            } else if (AppState.currentTab.profile === 'matches') {
+                const response = await fetch(`${API_BASE_URL}/public/mymatches`);
+                if (!response.ok) throw new Error('Error al obtener tus partidas.');
+                const data = await response.json();
+                renderMatches(data.matches, myMatchesContainer);
+            }
+            // Update profile edit fields
+            const riotId = AppState.user.riotId || '#';
+            updateRiotName.value = riotId.split('#')[0] || '';
+            updateRiotTag.value = riotId.split('#')[1] || '';
+        }
+        // TODO: Premier section
+        // if (AppState.currentSection === 'premier') { ... }
+    } catch (error) {
+        console.error("Fetch and render error:", error);
+        showToast(error.message, "error");
+    }
+};
+
+const renderApp = () => {
+    loadingScreen.classList.add('hidden');
+    loginScreen.classList.add('hidden');
+    setupPanel.classList.add('hidden');
+    dashboard.classList.add('hidden');
+
+    if (!AppState.user) {
+        loginScreen.classList.remove('hidden');
+    } else if (!AppState.user.riotId || !AppState.user.roles || AppState.user.roles.length === 0) {
+        setupPanel.classList.remove('hidden');
+    } else {
+        dashboard.classList.remove('hidden');
+        renderDashboard();
+    }
+};
+
+const renderDashboard = () => {
+    // Update header info
+    document.getElementById('userAvatar').src = AppState.user.avatarURL || 'https://cdn.discordapp.com/embed/avatars/0.png';
+    document.getElementById('username').textContent = AppState.user.username;
+
+    // Show/Hide sections
+    publicSection.classList.add('hidden');
+    premierSection.classList.add('hidden');
+    profileSection.classList.add('hidden');
+
+    if (AppState.currentSection === 'public') {
+        publicSection.classList.remove('hidden');
+        updateTabContent(publicSection, publicTabButtons, AppState.currentTab.public);
+    } else if (AppState.currentSection === 'premier') {
+        premierSection.classList.remove('hidden');
+        updateTabContent(premierSection, premierTabButtons, AppState.currentTab.premier);
+    } else if (AppState.currentSection === 'profile') {
+        profileSection.classList.remove('hidden');
+    }
+
+    fetchAndRenderData();
+};
+
+const checkAuthAndRender = async () => {
+    loadingScreen.classList.remove('hidden');
+    try {
+        const response = await fetch(`${API_BASE_URL}/user/me`);
+        if (response.ok) {
+            AppState.user = await response.json();
+        } else {
+            AppState.user = null; // No authenticated session
+        }
+    } catch (error) {
+        console.error("Error checking auth:", error);
+        AppState.user = null;
+    } finally {
+        renderApp();
+    }
+};
+
+// ==========================================================
+// EVENT LISTENERS
+// ==========================================================
+
+discordLoginBtn.addEventListener('click', () => {
     window.location.href = `${API_BASE_URL}/auth/discord`;
 });
 
-elements.logoutBtn.addEventListener('click', async () => {
-    try {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
-            method: "POST",
-            credentials: "include"
-        });
-    } catch (err) {
-        console.error("Logout error:", err);
+completeSetupBtn.addEventListener('click', async () => {
+    const riotIdInput = document.getElementById('riotId').value;
+    const [name, tag] = riotIdInput.split('#');
+    
+    if (!name || !tag || AppState.selectedRoles.length === 0) {
+        showToast("Por favor, introduce un Riot ID válido (ej. Name#Tag) y selecciona al menos un rol.", "error");
+        return;
     }
-    showScreen('loginScreen');
-    showToast('Sesión cerrada correctamente.');
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/user/setup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                riotId: riotIdInput,
+                roles: AppState.selectedRoles,
+            })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            AppState.user = data;
+            showToast("Perfil configurado correctamente.");
+            renderApp();
+        } else {
+            showToast(data.error || "Error al completar la configuración.", "error");
+        }
+    } catch (error) {
+        showToast("Error de red. Inténtalo de nuevo.", "error");
+    }
 });
 
-elements.roleCards.forEach(card => {
+updateProfileBtn.addEventListener('click', async () => {
+    const newName = updateRiotName.value;
+    const newTag = updateRiotTag.value;
+    const newRiotId = `${newName}#${newTag}`;
+
+    if (!newName || !newTag || AppState.selectedRoles.length === 0) {
+        showToast("Por favor, completa todos los campos para actualizar tu perfil.", "error");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/user/update`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                riotId: newRiotId,
+                roles: AppState.selectedRoles,
+            })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            AppState.user.riotId = newRiotId;
+            AppState.user.roles = AppState.selectedRoles;
+            showToast(data.message);
+            renderDashboard();
+        } else {
+            showToast(data.error || "Error al actualizar el perfil.", "error");
+        }
+    } catch (error) {
+        showToast("Error de red. Inténtalo de nuevo.", "error");
+    }
+});
+
+navItems.forEach(item => {
+    item.addEventListener('click', () => {
+        const section = item.dataset.section;
+        AppState.currentSection = section;
+        navItems.forEach(nav => nav.classList.remove('active'));
+        item.classList.add('active');
+        renderDashboard();
+    });
+});
+
+publicTabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        AppState.currentTab.public = tab;
+        updateTabContent(publicSection, publicTabButtons, tab);
+        fetchAndRenderData();
+    });
+});
+
+premierTabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        AppState.currentTab.premier = tab;
+        updateTabContent(premierSection, premierTabButtons, tab);
+        fetchAndRenderData();
+    });
+});
+
+roleCards.forEach(card => {
     card.addEventListener('click', () => {
         const role = card.dataset.role;
-        const index = AppState.selectedRoles.indexOf(role);
-        if (index > -1) {
-            AppState.selectedRoles.splice(index, 1);
-            card.classList.remove('border-2', 'border-primary');
+        if (AppState.selectedRoles.includes(role)) {
+            AppState.selectedRoles = AppState.selectedRoles.filter(r => r !== role);
+            card.classList.remove('selected', 'bg-primary', 'text-white');
         } else if (AppState.selectedRoles.length < 2) {
             AppState.selectedRoles.push(role);
-            card.classList.add('border-2', 'border-primary');
+            card.classList.add('selected', 'bg-primary', 'text-white');
         } else {
-            showToast('Solo puedes seleccionar un máximo de 2 roles.', 'warning');
+            showToast("Solo puedes seleccionar un máximo de 2 roles.", "error");
         }
     });
 });
 
-elements.navItems.forEach(item => {
-    item.addEventListener('click', () => {
-        const section = item.dataset.section;
-        AppState.currentSection = section;
+// Queue logic
+joinPublicQueueBtn.addEventListener('click', async () => {
+    if (AppState.userState === AppState.userStates.IN_QUEUE) return;
+    try {
+        const response = await fetch(`${API_BASE_URL}/queue/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ matchType: 'public' })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            AppState.userState = AppState.userStates.IN_QUEUE;
+            showToast("Te has unido a la cola pública. Esperando jugadores...");
+            renderQueue(data.queue); // Update queue list
+        } else {
+            showToast(data.error || "Error al unirte a la cola.", "error");
+        }
+    } catch (error) {
+        showToast("Error de red al unirse a la cola.", "error");
+    }
+});
 
-        elements.sections.forEach(s => s.classList.add('hidden'));
-        document.getElementById(`${section}Section`).classList.remove('hidden');
+leavePublicQueueBtn.addEventListener('click', async () => {
+    if (AppState.userState !== AppState.userStates.IN_QUEUE) return;
+    try {
+        const response = await fetch(`${API_BASE_URL}/queue/leave`, { // Assuming a /queue/leave endpoint
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ matchType: 'public' })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            AppState.userState = AppState.userStates.IDLE;
+            showToast("Has salido de la cola.");
+            renderQueue(data.queue); // Update queue list
+        } else {
+            showToast(data.error || "Error al salir de la cola.", "error");
+        }
+    } catch (error) {
+        showToast("Error de red al salir de la cola.", "error");
+    }
+});
 
-        elements.navItems.forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
+// Logout
+logoutBtn.addEventListener('click', () => {
+    // In a real app, you would also clear the session on the server
+    // For this example, we just clear the local state and redirect
+    AppState.user = null;
+    AppState.userState = AppState.userStates.IDLE;
+    window.location.reload();
+});
 
-        AppState.isEliteQueue = section === 'premier';
-        if (section === 'public' || section === 'premier') renderQueue();
-        else if (section === 'profile') updateUIWithUser(AppState.user);
-    });
+
+// ==========================================================
+// INICIALIZACIÓN
+// ==========================================================
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuthAndRender();
+    // Fetch initial queue and leaderboard data
+    fetchAndRenderData();
+    // You might also want to set up a polling or websocket connection
+    // to get real-time updates for the queue.
+    setInterval(fetchAndRenderData, 10000); // Poll every 10 seconds
 });
