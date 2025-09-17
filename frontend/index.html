@@ -6,42 +6,34 @@
     <title>AceHub - Gaming Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="min-h-screen bg-darker">
-    <div id="loadingScreen" class="fixed inset-0 bg-darker flex items-center justify-center z-50">
-        <div class="text-center">
-            <div class="loading-spinner mx-auto mb-4"></div>
-            <p class="text-gray-400">Cargando AceHub...</p>
-        </div>
-    </div>
-
-    <div id="loginScreen" class="min-h-screen gradient-bg flex items-center justify-center p-4">
-        <div class="card p-8 max-w-md w-full fade-in">
+<body class="bg-gray-900 text-white min-h-screen">
+    <div id="loginScreen" class="min-h-screen gradient-bg flex items-center justify-center">
+        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-md w-full mx-4 border border-white/20">
             <div class="text-center mb-8">
                 <div class="text-6xl mb-4">🎮</div>
-                <h1 class="text-4xl font-heading font-bold mb-2 gradient-text">AceHub</h1>
-                <p class="text-gray-200">Tu plataforma de gaming competitivo</p>
+                <h1 class="text-4xl font-bold mb-2">AceHub</h1>
+                <p class="text-gray-300">Tu plataforma de gaming competitivo</p>
             </div>
             
-            <button id="discordLoginBtn" class="discord-btn w-full py-4 px-6 rounded-xl text-white font-semibold flex items-center justify-center gap-3 mb-6 pulse">
+            <button onclick="loginWithDiscord()" class="discord-btn w-full py-4 px-6 rounded-xl text-white font-semibold flex items-center justify-center gap-3 mb-6">
                 <i class="fab fa-discord text-2xl"></i>
                 Iniciar sesión con Discord
             </button>
             
-            <div class="text-center text-sm text-gray-300">
+            <div class="text-center text-sm text-gray-400">
                 <p>Conecta tu cuenta de Discord para acceder</p>
                 <p>a todas las funciones de AceHub</p>
             </div>
         </div>
     </div>
 
-    <div id="setupPanel" class="hidden min-h-screen gradient-bg flex items-center justify-center p-4">
-        <div class="card p-8 max-w-2xl w-full">
+    <div id="setupPanel" class="hidden min-h-screen gradient-bg flex items-center justify-center">
+        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-2xl w-full mx-4 border border-white/20">
             <div class="text-center mb-8">
                 <div class="text-4xl mb-4">⚙️</div>
-                <h2 class="text-3xl font-heading font-bold mb-2 gradient-text">¡Bienvenido a AceHub!</h2>
+                <h2 class="text-3xl font-bold mb-2">¡Bienvenido a AceHub!</h2>
                 <p class="text-gray-300">Configura tu perfil para comenzar</p>
             </div>
             
@@ -49,46 +41,52 @@
                 <div>
                     <label class="block text-sm font-semibold mb-2">Riot ID</label>
                     <input type="text" id="riotId" placeholder="NombreUsuario#TAG" 
-                           class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                           class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400">
                     <p class="text-xs text-gray-400 mt-1">Ejemplo: ProGamer#1234</p>
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-semibold mb-4">Roles en Valorant (máximo 2)</label>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 role-grid">
-                        <div class="role-card card p-4 cursor-pointer transition-all" data-role="duelista">
+                    <label class="block text-sm font-semibold mb-4">Rol principal en Valorant (selecciona solo uno)</label>
+                    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div class="role-card bg-white/5 border border-white/20 rounded-lg p-4 cursor-pointer hover:bg-white/10 transition-all" data-role="duelista">
                             <div class="text-center">
                                 <div class="text-3xl mb-2">⚔️</div>
                                 <h3 class="font-semibold">Duelista</h3>
                                 <p class="text-xs text-gray-400">Entrada y eliminaciones</p>
                             </div>
                         </div>
-                        <div class="role-card card p-4 cursor-pointer transition-all" data-role="controlador">
+                        <div class="role-card bg-white/5 border border-white/20 rounded-lg p-4 cursor-pointer hover:bg-white/10 transition-all" data-role="controlador">
                             <div class="text-center">
                                 <div class="text-3xl mb-2">🛡️</div>
                                 <h3 class="font-semibold">Controlador</h3>
                                 <p class="text-xs text-gray-400">Control de mapa</p>
                             </div>
                         </div>
-                        <div class="role-card card p-4 cursor-pointer transition-all" data-role="iniciador">
+                        <div class="role-card bg-white/5 border border-white/20 rounded-lg p-4 cursor-pointer hover:bg-white/10 transition-all" data-role="iniciador">
                             <div class="text-center">
                                 <div class="text-3xl mb-2">🔍</div>
                                 <h3 class="font-semibold">Iniciador</h3>
                                 <p class="text-xs text-gray-400">Información y apoyo</p>
                             </div>
                         </div>
-                        <div class="role-card card p-4 cursor-pointer transition-all" data-role="centinela">
+                        <div class="role-card bg-white/5 border border-white/20 rounded-lg p-4 cursor-pointer hover:bg-white/10 transition-all" data-role="centinela">
                             <div class="text-center">
                                 <div class="text-3xl mb-2">🏰</div>
                                 <h3 class="font-semibold">Centinela</h3>
                                 <p class="text-xs text-gray-400">Defensa y retaguardia</p>
                             </div>
                         </div>
+                         <div class="role-card bg-white/5 border border-white/20 rounded-lg p-4 cursor-pointer hover:bg-white/10 transition-all" data-role="flex">
+                            <div class="text-center">
+                                <div class="text-3xl mb-2">✨</div>
+                                <h3 class="font-semibold">Flex</h3>
+                                <p class="text-xs text-gray-400">Juega varios roles</p>
+                            </div>
+                        </div>
                     </div>
-                    <p class="text-xs text-gray-400 mt-2">Selecciona 1 o 2 roles que prefieras jugar</p>
                 </div>
                 
-                <button id="completeSetupBtn" class="w-full btn-primary py-4 px-6 rounded-xl text-white font-semibold transition-all">
+                <button onclick="completeSetup()" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-4 px-6 rounded-xl text-white font-semibold hover:from-blue-500 hover:to-purple-500 transition-all">
                     Completar Configuración
                 </button>
             </div>
@@ -96,128 +94,158 @@
     </div>
 
     <div id="dashboard" class="hidden">
-        <header class="bg-gray-800 border-b border-gray-700 px-4 md:px-6 py-4 sticky top-0 z-40">
+        <header class="bg-gray-800 border-b border-gray-700 px-6 py-4">
             <div class="flex items-center justify-between max-w-7xl mx-auto">
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-4">
                     <div class="text-2xl">🎮</div>
-                    <h1 class="text-xl md:text-2xl font-heading font-bold gradient-text">AceHub</h1>
+                    <h1 class="text-2xl font-bold">AceHub</h1>
                 </div>
                 
-                <div class="flex items-center gap-3">
-                    <div class="hidden md:flex items-center gap-2 bg-green-600 px-3 py-1 rounded-full text-sm">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 bg-green-600 px-3 py-1 rounded-full text-sm">
                         <div class="w-2 h-2 bg-white rounded-full"></div>
                         <span>En línea</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <img id="userAvatar" src="" alt="Avatar" class="w-8 h-8 rounded-full">
-                        <span id="username" class="hidden md:block">Usuario#1234</span>
+                        <img id="avatar" src="https://via.placeholder.com/32x32/5865F2/FFFFFF?text=U" alt="Avatar" class="w-8 h-8 rounded-full">
+                        <span id="username"></span>
                     </div>
-                    <button id="logoutBtn" class="text-gray-400 hover:text-white p-2">
+                    <button onclick="logout()" class="text-gray-400 hover:text-white">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
             </div>
         </header>
 
-        <nav class="bg-gray-800 px-4 md:px-6 py-3 border-b border-gray-700 sticky top-16 z-30">
-            <div class="max-w-7xl mx-auto flex gap-4 md:gap-8 overflow-x-auto hide-scrollbar">
-                <button data-section="public" class="nav-item flex items-center gap-2 whitespace-nowrap active">
-                    <i class="fas fa-users"></i>
-                    <span class="hidden md:block">10 Mans Públicos</span>
-                    <span class="md:hidden">Públicos</span>
-                </button>
-                <button data-section="premier" class="nav-item flex items-center gap-2 whitespace-nowrap">
-                    <i class="fas fa-crown"></i>
-                    <span class="hidden md:block">10 Mans Elite</span>
-                    <span class="md:hidden">Elite</span>
-                </button>
-                <button data-section="profile" class="nav-item flex items-center gap-2 whitespace-nowrap ml-auto">
-                    <i class="fas fa-user"></i>
-                    <span class="hidden md:block">Mi Perfil</span>
-                    <span class="md:hidden">Perfil</span>
-                </button>
+        <nav class="bg-gray-800 px-6 py-2 border-b border-gray-700">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex gap-8">
+                    <button id="navPublic" onclick="showSection('public')" class="nav-btn px-4 py-2 rounded-lg bg-blue-600 text-white">
+                        <i class="fas fa-users mr-2"></i>10 Mans Públicos
+                    </button>
+                    <button id="navPremier" onclick="showSection('premier')" class="nav-btn px-4 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700">
+                        <i class="fas fa-crown mr-2"></i>10 Mans Elite
+                    </button>
+                </div>
             </div>
         </nav>
 
-        <main class="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-            <div id="publicSection" class="section space-y-8">
-                <div>
-                    <h2 class="text-2xl md:text-3xl font-heading font-bold mb-2">10 Mans Públicos</h2>
+        <main class="max-w-7xl mx-auto px-6 py-8">
+            <div id="publicSection" class="section">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold mb-2">10 Mans Públicos</h2>
                     <p class="text-gray-400">Partidas abiertas para toda la comunidad</p>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 stats-grid">
-                    <div class="stats-card card p-4 md:p-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gray-800 rounded-xl p-6 card-hover">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-400 text-sm">Jugadores Activos</p>
-                                <p class="text-xl md:text-2xl font-bold text-green-400" id="publicActivePlayers">0</p>
+                                <p id="publicPlayers" class="text-2xl font-bold text-green-400"></p>
                             </div>
-                            <i class="fas fa-users text-green-400 text-xl md:text-2xl"></i>
+                            <i class="fas fa-users text-green-400 text-2xl"></i>
                         </div>
                     </div>
-                    <div class="stats-card card p-4 md:p-6">
+                    <div class="bg-gray-800 rounded-xl p-6 card-hover">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-400 text-sm">Partidas Hoy</p>
-                                <p class="text-xl md:text-2xl font-bold text-blue-400" id="publicMatchesToday">0</p>
+                                <p id="publicMatchesToday" class="text-2xl font-bold text-blue-400"></p>
                             </div>
-                            <i class="fas fa-gamepad text-blue-400 text-xl md:text-2xl"></i>
+                            <i class="fas fa-gamepad text-blue-400 text-2xl"></i>
                         </div>
                     </div>
-                    <div class="stats-card card p-4 md:p-6">
+                    <div class="bg-gray-800 rounded-xl p-6 card-hover">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-400 text-sm">Tu Rating</p>
-                                <p class="text-xl md:text-2xl font-bold text-yellow-400" id="publicUserRating">0</p>
+                                <p id="publicUserRating" class="text-2xl font-bold text-yellow-400"></p>
                             </div>
-                            <i class="fas fa-star text-yellow-400 text-xl md:text-2xl"></i>
+                            <i class="fas fa-star text-yellow-400 text-2xl"></i>
                         </div>
                     </div>
-                    <div class="stats-card card p-4 md:p-6">
+                    <div class="bg-gray-800 rounded-xl p-6 card-hover">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-400 text-sm">Tu Ranking</p>
-                                <p class="text-xl md:text-2xl font-bold text-purple-400" id="publicUserRank">#0</p>
+                                <p id="publicUserRanking" class="text-2xl font-bold text-purple-400"></p>
                             </div>
-                            <i class="fas fa-trophy text-purple-400 text-xl md:text-2xl"></i>
+                            <i class="fas fa-trophy text-purple-400 text-2xl"></i>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex gap-2 md:gap-4 mb-6 overflow-x-auto hide-scrollbar">
-                    <button data-tab="queue" class="tab-btn bg-primary text-white px-4 md:px-6 py-2 rounded-lg whitespace-nowrap">
+                <div class="flex gap-4 mb-6">
+                    <button id="publicQueueBtn" onclick="showTab('public', 'queue')" class="tab-btn px-6 py-2 rounded-lg bg-blue-600 text-white">
                         <i class="fas fa-clock mr-2"></i>Cola
                     </button>
-                    <button data-tab="matches" class="tab-btn text-gray-300 hover:text-white px-4 md:px-6 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
+                    <button id="publicMatchesBtn" onclick="showTab('public', 'matches')" class="tab-btn px-6 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700">
                         <i class="fas fa-play mr-2"></i>Partidas
                     </button>
-                    <button data-tab="leaderboard" class="tab-btn text-gray-300 hover:text-white px-4 md:px-6 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
+                    <button id="publicLeaderboardBtn" onclick="showTab('public', 'leaderboard')" class="tab-btn px-6 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700">
                         <i class="fas fa-trophy mr-2"></i>Leaderboard
                     </button>
-                    <button data-tab="mymatches" class="tab-btn text-gray-300 hover:text-white px-4 md:px-6 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
+                    <button id="publicMymatchesBtn" onclick="showTab('public', 'mymatches')" class="tab-btn px-6 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700">
                         <i class="fas fa-user mr-2"></i>Mis Partidas
                     </button>
                 </div>
 
-                <div id="publicQueue" class="tab-content active">
+                <div id="publicQueue" class="tab-content">
                     <div id="publicQueueContent"></div>
                 </div>
-
                 <div id="publicMatches" class="tab-content hidden">
+                    <div class="mb-6 flex justify-between items-center">
+                        <h3 class="text-xl font-bold">Partidas En Vivo</h3>
+                        <div class="text-sm text-gray-400">
+                            <span class="text-red-400">●</span> <span id="publicActiveMatches">0</span> partidas activas
+                        </div>
                     </div>
-
+                    <div id="publicMatchesContent" class="space-y-6"></div>
+                </div>
                 <div id="publicLeaderboard" class="tab-content hidden">
+                    <div class="bg-gray-800 rounded-xl overflow-hidden">
+                        <div class="p-6 border-b border-gray-700">
+                            <h3 class="text-xl font-bold">🏆 Top Jugadores Públicos</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-gray-700">
+                                    <tr>
+                                        <th class="px-2 py-3 text-left">#</th>
+                                        <th class="px-3 py-3 text-left">Player</th>
+                                        <th class="px-2 py-3 text-center">Matches</th>
+                                        <th class="px-2 py-3 text-center">ACS</th>
+                                        <th class="px-2 py-3 text-center">KDA</th>
+                                        <th class="px-2 py-3 text-center">HS%</th>
+                                        <th class="px-2 py-3 text-center">FK</th>
+                                        <th class="px-2 py-3 text-center">KAST%</th>
+                                        <th class="px-2 py-3 text-center">ADR</th>
+                                        <th class="px-2 py-3 text-center">DDΔ</th>
+                                        <th class="px-2 py-3 text-center">Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="publicLeaderboardBody" class="divide-y divide-gray-700">
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-
+                </div>
                 <div id="publicMymatches" class="tab-content hidden">
+                    <div class="mb-4 flex justify-between items-center">
+                        <h3 class="text-xl font-bold">Mis Partidas</h3>
+                        <div class="text-sm text-gray-400">
+                            <span id="publicMyWinRate"></span>
+                        </div>
                     </div>
+                    <div id="publicMymatchesContent" class="space-y-4"></div>
+                </div>
             </div>
 
-            <div id="premierSection" class="section hidden space-y-8">
-                <div>
-                    <div class="flex items-center gap-4 mb-2">
-                        <h2 class="text-2xl md:text-3xl font-heading font-bold">10 Mans Elite</h2>
+            <div id="premierSection" class="section hidden">
+                <div class="mb-8">
+                    <div class="flex items-center gap-4 mb-4">
+                        <h2 class="text-3xl font-bold">10 Mans Elite</h2>
                         <span class="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-3 py-1 rounded-full text-sm font-bold">
                             <i class="fas fa-crown mr-1"></i>ELITE
                         </span>
@@ -225,175 +253,113 @@
                     <p class="text-gray-400">Partidas exclusivas para jugadores verificados por el staff</p>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 stats-grid">
-                    <div class="stats-card card p-4 md:p-6 bg-gradient-to-r from-purple-900/30 to-blue-900/30">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl p-6 card-hover">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-purple-200 text-sm">Jugadores Elite</p>
-                                <p class="text-xl md:text-2xl font-bold text-yellow-400" id="eliteActivePlayers">0</p>
+                                <p id="premierPlayers" class="text-2xl font-bold"></p>
                             </div>
-                            <i class="fas fa-crown text-yellow-400 text-xl md:text-2xl"></i>
+                            <i class="fas fa-crown text-yellow-400 text-2xl"></i>
                         </div>
                     </div>
-                    <div class="stats-card card p-4 md:p-6 bg-gradient-to-r from-blue-900/30 to-purple-900/30">
+                    <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 card-hover">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-blue-200 text-sm">Partidas Elite</p>
-                                <p class="text-xl md:text-2xl font-bold text-yellow-400" id="eliteMatchesToday">0</p>
+                                <p id="premierMatchesToday" class="text-2xl font-bold"></p>
                             </div>
-                            <i class="fas fa-star text-yellow-400 text-xl md:text-2xl"></i>
+                            <i class="fas fa-star text-yellow-400 text-2xl"></i>
                         </div>
                     </div>
-                    <div class="stats-card card p-4 md:p-6 bg-gradient-to-r from-green-900/30 to-emerald-900/30">
+                    <div class="bg-gradient-to-r from-green-600 to-green-700 rounded-xl p-6 card-hover">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-green-200 text-sm">Tu Rating Elite</p>
-                                <p class="text-xl md:text-2xl font-bold text-yellow-400" id="eliteUserRating">0</p>
+                                <p id="premierUserRating" class="text-2xl font-bold"></p>
                             </div>
-                            <i class="fas fa-trophy text-yellow-400 text-xl md:text-2xl"></i>
+                            <i class="fas fa-trophy text-yellow-400 text-2xl"></i>
                         </div>
                     </div>
-                    <div class="stats-card card p-4 md:p-6 bg-gradient-to-r from-red-900/30 to-pink-900/30">
+                    <div class="bg-gradient-to-r from-red-600 to-red-700 rounded-xl p-6 card-hover">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-red-200 text-sm">Ranking Elite</p>
-                                <p class="text-xl md:text-2xl font-bold text-yellow-400" id="eliteUserRank">#0</p>
+                                <p id="premierUserRanking" class="text-2xl font-bold"></p>
                             </div>
-                            <i class="fas fa-medal text-yellow-400 text-xl md:text-2xl"></i>
+                            <i class="fas fa-medal text-yellow-400 text-2xl"></i>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex gap-2 md:gap-4 mb-6 overflow-x-auto hide-scrollbar">
-                    <button data-tab="queue" class="tab-btn bg-purple-600 text-white px-4 md:px-6 py-2 rounded-lg whitespace-nowrap">
+                <div class="flex gap-4 mb-6">
+                    <button id="premierQueueBtn" onclick="showTab('premier', 'queue')" class="tab-btn px-6 py-2 rounded-lg bg-purple-600 text-white">
                         <i class="fas fa-clock mr-2"></i>Cola Elite
                     </button>
-                    <button data-tab="matches" class="tab-btn text-gray-300 hover:text-white px-4 md:px-6 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
+                    <button id="premierMatchesBtn" onclick="showTab('premier', 'matches')" class="tab-btn px-6 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700">
                         <i class="fas fa-play mr-2"></i>Partidas Elite
                     </button>
-                    <button data-tab="leaderboard" class="tab-btn text-gray-300 hover:text-white px-4 md:px-6 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
+                    <button id="premierLeaderboardBtn" onclick="showTab('premier', 'leaderboard')" class="tab-btn px-6 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700">
                         <i class="fas fa-crown mr-2"></i>Elite Leaderboard
                     </button>
-                    <button data-tab="mymatches" class="tab-btn text-gray-300 hover:text-white px-4 md:px-6 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
+                    <button id="premierMymatchesBtn" onclick="showTab('premier', 'mymatches')" class="tab-btn px-6 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700">
                         <i class="fas fa-user mr-2"></i>Mis Elite
                     </button>
                 </div>
-
+                
                 <div id="premierQueue" class="tab-content">
                     <div id="premierQueueContent"></div>
                 </div>
-
                 <div id="premierMatches" class="tab-content hidden">
+                    <div class="mb-6 flex justify-between items-center">
+                        <h3 class="text-xl font-bold">Partidas Elite En Vivo</h3>
+                        <div class="text-sm text-purple-400">
+                            <span class="text-red-400">●</span> <span id="premierActiveMatches">0</span> partidas elite activas
+                        </div>
                     </div>
-
-                <div id="premierLeaderboard" class="tab-content hidden">
-                    </div>
-
-                <div id="premierMymatches" class="tab-content hidden">
-                    </div>
-            </div>
-
-            <div id="profileSection" class="section hidden space-y-8">
-                <div>
-                    <h2 class="text-2xl md:text-3xl font-heading font-bold mb-2">Mi Perfil</h2>
-                    <p class="text-gray-400">Gestiona tu información y estadísticas</p>
+                    <div id="premierMatchesContent" class="space-y-6"></div>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="card p-6 md:col-span-1">
-                        <div class="text-center mb-6">
-                            <img id="profileAvatar" src="" alt="Avatar" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-primary">
-                            <h3 id="profileUsername" class="text-xl font-bold"></h3>
-                            <p id="profileRiotId" class="text-gray-400"></p>
-                            <div id="profileRoles" class="flex flex-wrap gap-2 justify-center mt-3"></div>
+                <div id="premierLeaderboard" class="tab-content hidden">
+                    <div class="bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-purple-500">
+                        <div class="p-6 border-b border-purple-500 bg-gradient-to-r from-purple-600 to-blue-600">
+                            <h3 class="text-xl font-bold">👑 Elite Leaderboard</h3>
                         </div>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <h4 class="font-semibold mb-2">Estado de cuenta</h4>
-                                <div class="flex items-center gap-2">
-                                    <div id="premierStatusBadge" class="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm">
-                                        <i class="fas fa-crown mr-1"></i> Elite: Pendiente
-                                    </div>
-                                    <div id="adminStatusBadge" class="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm hidden">
-                                        <i class="fas fa-shield-alt mr-1"></i> Administrador
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <h4 class="font-semibold mb-2">Estadísticas generales</h4>
-                                <div class="space-y-2 text-sm">
-                                    <div class="flex justify-between">
-                                        <span>Miembro desde</span>
-                                        <span id="memberSince"></span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span>Partidas jugadas</span>
-                                        <span id="totalMatches">0</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span>Porcentaje de victorias</span>
-                                        <span id="winRate">0%</span>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-purple-900">
+                                    <tr>
+                                        <th class="px-2 py-3 text-left">#</th>
+                                        <th class="px-3 py-3 text-left">Player</th>
+                                        <th class="px-2 py-3 text-center">Matches</th>
+                                        <th class="px-2 py-3 text-center">ACS</th>
+                                        <th class="px-2 py-3 text-center">KDA</th>
+                                        <th class="px-2 py-3 text-center">HS%</th>
+                                        <th class="px-2 py-3 text-center">FK</th>
+                                        <th class="px-2 py-3 text-center">KAST%</th>
+                                        <th class="px-2 py-3 text-center">ADR</th>
+                                        <th class="px-2 py-3 text-center">DDΔ</th>
+                                        <th class="px-2 py-3 text-center">Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="eliteLeaderboardBody" class="divide-y divide-purple-800">
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    
-                    <div class="card p-6 md:col-span-2">
-                        <h3 class="text-xl font-bold mb-4">Actualizar información</h3>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-semibold mb-2">Riot ID</label>
-                                <div class="flex gap-2">
-                                    <input type="text" id="updateRiotName" placeholder="Nombre" 
-                                           class="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                                    <span class="self-center">#</span>
-                                    <input type="text" id="updateRiotTag" placeholder="TAG" 
-                                           class="w-20 px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-semibold mb-2">Roles preferidos (máximo 2)</label>
-                                <div class="flex flex-wrap gap-2">
-                                    <button data-role="duelista" class="role-select-btn px-3 py-2 rounded-lg border border-gray-600 text-sm">⚔️ Duelista</button>
-                                    <button data-role="iniciador" class="role-select-btn px-3 py-2 rounded-lg border border-gray-600 text-sm">🔍 Iniciador</button>
-                                    <button data-role="controlador" class="role-select-btn px-3 py-2 rounded-lg border border-gray-600 text-sm">🛡️ Controlador</button>
-                                    <button data-role="centinela" class="role-select-btn px-3 py-2 rounded-lg border border-gray-600 text-sm">🏰 Centinela</button>
-                                </div>
-                            </div>
-                            
-                            <button id="updateProfileBtn" class="w-full btn-primary py-3 px-6 rounded-lg text-white font-semibold">
-                                Actualizar Perfil
-                            </button>
-                        </div>
-                        
-                        <div class="mt-8 pt-6 border-t border-gray-700">
-                            <h3 class="text-xl font-bold mb-4">Estadísticas detalladas</h3>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="bg-gray-800/50 p-4 rounded-lg">
-                                    <h4 class="font-semibold text-center mb-2 text-blue-400">Público</h4>
-                                    <div class="space-y-1 text-sm" id="publicStats">
-                                        </div>
-                                </div>
-                                <div class="bg-purple-900/30 p-4 rounded-lg border border-purple-700/30">
-                                    <h4 class="font-semibold text-center mb-2 text-yellow-400">Elite</h4>
-                                    <div class="space-y-1 text-sm" id="eliteStats">
-                                        </div>
-                                </div>
-                            </div>
+                </div>
+                <div id="premierMymatches" class="tab-content hidden">
+                    <div class="mb-4 flex justify-between items-center">
+                        <h3 class="text-xl font-bold">Mis Partidas Elite</h3>
+                        <div class="text-sm text-purple-300">
+                             <span id="premierMyWinRate"></span>
                         </div>
                     </div>
+                    <div id="premierMymatchesContent" class="space-y-4"></div>
                 </div>
             </div>
         </main>
     </div>
 
-    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
-
-    <script src="script.js"></script>
+    <script src="js/script.js"></script>
 </body>
 </html>
