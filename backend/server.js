@@ -15,7 +15,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ==========================
-// CORS - Configuración
+// CORS
 // ==========================
 const allowedOrigins = [
   "https://valorant-10-mans-frontend.onrender.com",
@@ -43,7 +43,7 @@ app.use(express.json());
 const sessionStore = MongoStore.create({
   mongoUrl: process.env.MONGODB_URI,
   collectionName: "sessions",
-  ttl: 7 * 24 * 60 * 60, // 7 días
+  ttl: 7 * 24 * 60 * 60,
 });
 
 app.use(session({
@@ -63,29 +63,24 @@ app.use(session({
 // Conexión MongoDB
 // ==========================
 if (!process.env.MONGODB_URI) {
-  console.error("❌ ERROR: MONGODB_URI no está definido.");
+  console.error("❌ MONGODB_URI no está definido");
   process.exit(1);
 }
 
 let db, matchesCollection, usersCollection, queuesCollection;
 
 async function connectDB() {
-  try {
-    const client = new MongoClient(process.env.MONGODB_URI);
-    await client.connect();
-    db = client.db("AceHubDB");
-    matchesCollection = db.collection("matches");
-    usersCollection = db.collection("users");
-    queuesCollection = db.collection("queues");
-    console.log("✅ MongoDB conectado a AceHubDB");
-  } catch (err) {
-    console.error("❌ Error conectando a MongoDB:", err);
-    process.exit(1);
-  }
+  const client = new MongoClient(process.env.MONGODB_URI);
+  await client.connect();
+  db = client.db("AceHubDB");
+  usersCollection = db.collection("users");
+  matchesCollection = db.collection("matches");
+  queuesCollection = db.collection("queues");
+  console.log("✅ MongoDB conectado a AceHubDB");
 }
 
 // ==========================
-// Middlewares de Autenticación
+// Middlewares
 // ==========================
 function requireAuth(req, res, next) {
   if (req.session?.userId) next();
@@ -95,13 +90,20 @@ function requireAuth(req, res, next) {
 async function requireAdmin(req, res, next) {
   if (!req.session?.userId) return res.status(401).json({ error: "No autorizado" });
   const user = await usersCollection.findOne({ discordId: req.session.userId });
-  if (user && user.isAdmin) next();
+  if (user?.isAdmin) next();
   else res.status(403).json({ error: "Acceso denegado" });
 }
 
 // ==========================
-// Función para obtener token de Discord
+// Discord OAuth
 // ==========================
+const apiRouter = express.Router();
+
+apiRouter.get("/auth/discord", (req, res) => {
+  const discordUrl = `https://discord.com/api/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.DISCORD_REDIRECT_URI)}&response_type=code&scope=identify`;
+  res.redirect(discordUrl);
+});
+
 async function fetchDiscordToken(params, retries = 3) {
   try {
     const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
@@ -109,34 +111,17 @@ async function fetchDiscordToken(params, retries = 3) {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params
     });
-
-    if (tokenRes.status === 429) {
-      const retryAfter = parseFloat(tokenRes.headers.get("retry-after") || "1");
-      console.warn(`Rate limit hit, retrying after ${retryAfter}s`);
-      await new Promise(r => setTimeout(r, retryAfter * 1000));
-      if (retries > 0) return fetchDiscordToken(params, retries - 1);
-      throw new Error("Too many requests to Discord API");
-    }
-
-    if (!tokenRes.ok) throw new Error(`Discord token error: ${tokenRes.status}`);
+    if (!tokenRes.ok) throw new Error(`Discord token error ${tokenRes.status}`);
     return await tokenRes.json();
-  } catch (err) { throw err; }
+  } catch (err) {
+    if (retries > 0) return fetchDiscordToken(params, retries - 1);
+    throw err;
+  }
 }
 
-// ==========================
-// RUTA: Discord OAuth Callback
-// ==========================
-apiRouter.get("/auth/discord", (req, res) => {
-  const redirectUri = process.env.DISCORD_REDIRECT_URI;
-  const clientId = process.env.DISCORD_CLIENT_ID;
-  const scope = "identify";
-  const discordUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}`;
-  res.redirect(discordUrl);
-});
-
-app.get("/auth/discord/callback", async (req, res) => {
-  const code = req.query.code;
+apiRouter.get("/auth/discord/callback", async (req, res) => {
   try {
+    const code = req.query.code;
     if (!code) return res.status(400).json({ error: "No se recibió código de Discord" });
 
     const params = new URLSearchParams();
@@ -151,85 +136,46 @@ app.get("/auth/discord/callback", async (req, res) => {
     const userRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` }
     });
-
-    if (!userRes.ok) throw new Error(`Discord user fetch failed: ${userRes.status}`);
     const discordUser = await userRes.json();
 
-    const existingUser = await usersCollection.findOne({ discordId: discordUser.id });
-
     const defaultStats = {
-      matchesPlayed: 0,
-      wins: 0,
-      totalKills: 0,
-      totalDeaths: 0,
-      totalAssists: 0,
-      totalACS: 0,
-      totalADR: 0,
-      totalDDDelta: 0,
-      totalHeadshotKills: 0,
-      totalKAST: 0,
-      totalFK: 0,
-      totalFD: 0,
-      totalMK: 0,
-      score: 0
+      matchesPlayed: 0, wins: 0, totalKills: 0, totalDeaths: 0, totalAssists: 0,
+      totalACS: 0, totalADR: 0, totalDDDelta: 0, totalHeadshotKills: 0,
+      totalKAST: 0, totalFK: 0, totalFD: 0, totalMK: 0, score: 0
     };
 
-    let userUpdate;
-    if (existingUser) {
-      userUpdate = {
-        $set: {
-          username: discordUser.username,
-          avatarURL: discordUser.avatar ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png` : null,
-          discordSession: {
-            accessToken: tokenData.access_token,
-            refreshToken: tokenData.refresh_token,
-            expiresAt: Date.now() + (tokenData.expires_in * 1000),
-          },
-          updatedAt: new Date(),
-        }
-      };
-    } else {
-      userUpdate = {
-        $set: {
-          discordId: discordUser.id,
-          username: discordUser.username,
-          avatarURL: discordUser.avatar ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png` : null,
-          isAdmin: false,
-          isAuthorized: false,
-          roles: [],
-          riotId: null,
-          region: "LAS",
-          stats: {
-            public: { ...defaultStats },
-            elite: { ...defaultStats }
-          },
-          discordSession: {
-            accessToken: tokenData.access_token,
-            refreshToken: tokenData.refresh_token,
-            expiresAt: Date.now() + (tokenData.expires_in * 1000),
-          },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-      };
-    }
+    const updateDoc = {
+      $set: {
+        discordId: discordUser.id,
+        username: discordUser.username,
+        avatarURL: discordUser.avatar ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png` : null,
+        isAdmin: false,
+        isAuthorized: false,
+        roles: [],
+        riotId: null,
+        region: "LAS",
+        stats: { public: { ...defaultStats }, elite: { ...defaultStats } },
+        discordSession: {
+          accessToken: tokenData.access_token,
+          refreshToken: tokenData.refresh_token,
+          expiresAt: Date.now() + tokenData.expires_in * 1000
+        },
+        updatedAt: new Date(),
+        createdAt: new Date()
+      }
+    };
 
-    await usersCollection.updateOne({ discordId: discordUser.id }, userUpdate, { upsert: true });
+    await usersCollection.updateOne({ discordId: discordUser.id }, updateDoc, { upsert: true });
     req.session.userId = discordUser.id;
     req.session.save(err => {
-      if (err) return res.status(500).send("Error en login");
-      res.redirect("https://valorant-10-mans-frontend.onrender.com");
+      if (err) return res.status(500).send("Error en login Discord");
+      res.redirect(process.env.FRONTEND_URL || "https://valorant-10-mans-frontend.onrender.com");
     });
   } catch (err) {
-    console.error("Error en Discord callback:", err);
+    console.error(err);
     res.status(500).json({ error: "Error en login Discord" });
   }
 });
-
-// ==========================
-// RUTAS DE COLAS Y MATCHES
-// ==========================
-const apiRouter = express.Router();
 
 // ----- COLAS -----
 apiRouter.get("/queue/:type/:region", async (req, res) => {
