@@ -1,1 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AceHub - Setup</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .card {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    h1 {
+      font-size: 22px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-size: 14px;
+      color: #cbd5e1;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: none;
+      margin-top: 5px;
+      background: #334155;
+      color: white;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      margin-top: 20px;
+      background: #6366f1;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #4f46e5;
+    }
+    .error {
+      color: #f87171;
+      margin-top: 10px;
+      text-align: center;
+      font-size: 14px;
+    }
+    .success {
+      color: #4ade80;
+      margin-top: 10px;
+      text-align: center;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Completa tu perfil</h1>
+    <form id="setupForm">
+      <label for="riotId">Riot ID (ejemplo: nombre#TAG)</label>
+      <input type="text" id="riotId" name="riotId" required />
 
+      <label for="roles">Rol principal</label>
+      <select id="roles" name="roles" required>
+        <option value="">Selecciona un rol</option>
+        <option value="duelist">Duelista</option>
+        <option value="initiator">Iniciador</option>
+        <option value="controller">Controlador</option>
+        <option value="sentinel">Centinela</option>
+        <option value="flex">Flex</option>
+      </select>
+
+      <label for="region">Región</label>
+      <select id="region" name="region" required>
+        <option value="">Selecciona una región</option>
+        <option value="LAN">LAN</option>
+        <option value="LAS">LAS</option>
+      </select>
+
+      <button type="submit">Guardar</button>
+      <p id="msg"></p>
+    </form>
+  </div>
+
+  <script>
+    const API_URL = "https://valorant-10-mans.onrender.com";
+
+    async function checkUser() {
+      try {
+        const res = await fetch(`${API_URL}/api/me`, { credentials: "include" });
+        if (!res.ok) {
+          window.location.href = "/index.html";
+          return;
+        }
+        const data = await res.json();
+
+        if (!data) {
+          window.location.href = "/index.html";
+          return;
+        }
+
+        if (!data.needsSetup) {
+          // Ya tiene datos → dashboard
+          window.location.href = "/dashboard.html";
+        }
+      } catch (err) {
+        console.error(err);
+        window.location.href = "/index.html";
+      }
+    }
+
+    checkUser();
+
+    document.getElementById("setupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const riotId = document.getElementById("riotId").value.trim();
+      const role = document.getElementById("roles").value;
+      const region = document.getElementById("region").value;
+
+      const msg = document.getElementById("msg");
+
+      if (!riotId || !role || !region) {
+        msg.textContent = "Todos los campos son obligatorios.";
+        msg.className = "error";
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/api/me/setup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            riotId,
+            roles: [role],
+            region
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          msg.textContent = "Perfil guardado correctamente. Redirigiendo...";
+          msg.className = "success";
+          setTimeout(() => {
+            window.location.href = "/dashboard.html";
+          }, 1200);
+        } else {
+          msg.textContent = data.error || "Error al guardar.";
+          msg.className = "error";
+        }
+      } catch (err) {
+        console.error(err);
+        msg.textContent = "Error de conexión.";
+        msg.className = "error";
+      }
+    });
+  </script>
+</body>
+</html>
