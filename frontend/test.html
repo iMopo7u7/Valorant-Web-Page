@@ -2,148 +2,231 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Valorant 10-mans Test Frontend</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AceHub 10-Mans</title>
 <style>
-body { font-family: sans-serif; background: #1b1b2f; color: #eee; margin: 20px; }
-button { margin: 5px; padding: 8px 12px; cursor: pointer; }
-input, select { margin: 5px; padding: 5px; }
-section { margin-bottom: 30px; border-bottom: 1px solid #444; padding-bottom: 20px; }
-pre { background: #111; padding: 10px; overflow-x: auto; max-height: 300px; }
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #1c1c1c;
+    color: #eee;
+    margin: 0;
+    padding: 0;
+  }
+  header {
+    background-color: #2c2c2c;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  button {
+    background-color: #5865F2;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  button:hover {
+    background-color: #4752c4;
+  }
+  .hidden {
+    display: none;
+  }
+  #user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #user-profile img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+  }
+  #queues-container, #match-info {
+    margin-top: 10px;
+  }
+  .queue-item {
+    background-color: #2c2c2c;
+    padding: 8px;
+    margin-bottom: 6px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+  }
 </style>
 </head>
 <body>
+<header>
+  <h1>AceHub 10-Mans</h1>
+  <div id="user-info">
+    <button id="login-btn">Login con Discord</button>
+    <div id="user-profile" class="hidden">
+      <img id="avatar" src="" alt="Avatar">
+      <span id="username"></span>
+      <button id="logout-btn">Cerrar sesión</button>
+    </div>
+  </div>
+</header>
 
-<h1>Valorant 10-mans Test Frontend</h1>
+<main>
+  <section id="queues-section" class="hidden">
+    <h2>Colas disponibles</h2>
+    <div id="queues-container"></div>
+  </section>
 
-<section id="login">
-  <h2>Login Discord</h2>
-  <button onclick="loginDiscord()">Login con Discord</button>
-</section>
-
-<section id="queue">
-  <h2>Cola</h2>
-  <label>Tipo: <select id="queueType"><option value="public">Public</option><option value="elite">Elite</option></select></label>
-  <label>Región: <select id="queueRegion"><option value="LAN">LAN</option><option value="LAS">LAS</option></select></label>
-  <button onclick="joinQueue()">Unirse a Cola</button>
-  <button onclick="leaveQueue()">Salir de Cola</button>
-  <button onclick="fetchQueue()">Ver Cola</button>
-  <pre id="queueOutput">Aquí se verá la cola...</pre>
-</section>
-
-<section id="match">
-  <h2>Match</h2>
-  <button onclick="createMatch()">Crear Match</button>
-  <button onclick="fetchMatches()">Ver Matches</button>
-  <pre id="matchOutput">Aquí se verán los matches...</pre>
-</section>
-
-<section id="admin">
-  <h2>Admin: Subir Stats</h2>
-  <input type="text" id="matchId" placeholder="Match ID"/>
-  <input type="text" id="winnerTeam" placeholder="Winner Team (A/B)"/>
-  <button onclick="submitStats()">Subir Stats Simulados</button>
-</section>
+  <section id="match-section" class="hidden">
+    <h2>Partida actual</h2>
+    <div id="match-info"></div>
+    <button id="confirm-match-btn">Confirmar participación</button>
+  </section>
+</main>
 
 <script>
-const API_URL = 'https://valorant-10-mans.onrender.com/api'; // Cambiar si el backend no está local
+const API_BASE = "https://valorant-10-mans.onrender.com/api";
+const DISCORD_OAUTH_URL = "https://discord.com/api/oauth2/authorize?client_id=TU_CLIENT_ID&redirect_uri=https%3A%2F%2Fvalorant-10-mans-frontend.onrender.com%2F&response_type=code&scope=identify";
 
-// -------- LOGIN DISCORD --------
-function loginDiscord() {
-  window.location.href = 'https://discord.com/api/oauth2/authorize?client_id=TU_CLIENT_ID&redirect_uri=TU_REDIRECT_URI&response_type=code&scope=identify';
-}
+const loginBtn = document.getElementById("login-btn");
+const logoutBtn = document.getElementById("logout-btn");
+const userProfile = document.getElementById("user-profile");
+const avatarImg = document.getElementById("avatar");
+const usernameSpan = document.getElementById("username");
 
-// -------- COLAS --------
-async function joinQueue() {
-  const type = document.getElementById('queueType').value;
-  const region = document.getElementById('queueRegion').value;
-  const userId = prompt("Ingresa tu Discord ID (simulado)"); 
-  const res = await fetch(`${API_URL}/queue/join`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, type, region })
-  });
-  const data = await res.json();
-  alert(JSON.stringify(data));
-}
+const queuesSection = document.getElementById("queues-section");
+const queuesContainer = document.getElementById("queues-container");
 
-async function leaveQueue() {
-  const type = document.getElementById('queueType').value;
-  const region = document.getElementById('queueRegion').value;
-  const userId = prompt("Ingresa tu Discord ID (simulado)");
-  const res = await fetch(`${API_URL}/queue/leave`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, type, region })
-  });
-  const data = await res.json();
-  alert(JSON.stringify(data));
-}
+const matchSection = document.getElementById("match-section");
+const matchInfo = document.getElementById("match-info");
+const confirmMatchBtn = document.getElementById("confirm-match-btn");
 
-async function fetchQueue() {
-  const type = document.getElementById('queueType').value;
-  const region = document.getElementById('queueRegion').value;
-  const res = await fetch(`${API_URL}/queue/${type}/${region}`, { credentials: 'include' });
-  const data = await res.json();
-  document.getElementById('queueOutput').textContent = JSON.stringify(data, null, 2);
-}
+let currentUser = null;
 
-// -------- MATCHES --------
-async function createMatch() {
-  const type = document.getElementById('queueType').value;
-  const region = document.getElementById('queueRegion').value;
-  const res = await fetch(`${API_URL}/match/create`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, region })
-  });
-  const data = await res.json();
-  alert(JSON.stringify(data));
-}
+// ----------------- LOGIN -----------------
+loginBtn.addEventListener("click", () => {
+  window.location.href = DISCORD_OAUTH_URL;
+});
 
-async function fetchMatches() {
-  const res = await fetch(`${API_URL}/match/list`, { credentials: 'include' });
-  const data = await res.json();
-  document.getElementById('matchOutput').textContent = JSON.stringify(data, null, 2);
-}
+logoutBtn.addEventListener("click", async () => {
+  await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
+  currentUser = null;
+  updateUI();
+});
 
-// -------- ADMIN SIMULADO --------
-async function submitStats() {
-  const matchId = document.getElementById('matchId').value;
-  const winnerTeam = document.getElementById('winnerTeam').value;
-
-  // Generar stats fake para los 10 jugadores
-  const playerStats = [];
-  for(let i=1;i<=10;i++){
-    playerStats.push({
-      id: `fakeUser${i}`,
-      character: 'Jett',
-      kills: Math.floor(Math.random()*30),
-      deaths: Math.floor(Math.random()*30),
-      assists: Math.floor(Math.random()*20),
-      ACS: Math.floor(Math.random()*300),
-      KAST: Math.floor(Math.random()*100),
-      ADR: Math.floor(Math.random()*300),
-      DDDelta: Math.floor(Math.random()*50),
-      FK: Math.floor(Math.random()*10),
-      FD: Math.floor(Math.random()*10),
-      MK: Math.floor(Math.random()*10),
-      hsPercent: Math.floor(Math.random()*100)
-    });
+// ----------------- CHECK SESSION -----------------
+async function fetchUser() {
+  try {
+    const res = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
+    if (res.ok) {
+      currentUser = await res.json();
+    } else {
+      currentUser = null;
+    }
+    updateUI();
+  } catch (err) {
+    console.error(err);
   }
+}
 
-  const res = await fetch(`${API_URL}/admin/matches/submit-stats`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ matchId, winnerTeam, score: "13-7", playerStats })
+// ----------------- UPDATE UI -----------------
+function updateUI() {
+  if (currentUser) {
+    loginBtn.classList.add("hidden");
+    userProfile.classList.remove("hidden");
+    avatarImg.src = currentUser.avatarURL;
+    usernameSpan.textContent = currentUser.username;
+    queuesSection.classList.remove("hidden");
+    matchSection.classList.remove("hidden");
+    loadQueues();
+    loadCurrentMatch();
+  } else {
+    loginBtn.classList.remove("hidden");
+    userProfile.classList.add("hidden");
+    queuesSection.classList.add("hidden");
+    matchSection.classList.add("hidden");
+  }
+}
+
+// ----------------- QUEUES -----------------
+async function loadQueues() {
+  queuesContainer.innerHTML = "Cargando...";
+  try {
+    const res = await fetch(`${API_BASE}/queue/public/LAS`);
+    const queue = await res.json();
+    queuesContainer.innerHTML = "";
+    queue.forEach(player => {
+      const div = document.createElement("div");
+      div.className = "queue-item";
+      div.textContent = player.discordId;
+      queuesContainer.appendChild(div);
+    });
+
+    const joinBtn = document.createElement("button");
+    joinBtn.textContent = "Unirse a la cola";
+    joinBtn.addEventListener("click", () => joinQueue());
+    queuesContainer.appendChild(joinBtn);
+  } catch (err) {
+    console.error(err);
+    queuesContainer.innerHTML = "Error cargando cola.";
+  }
+}
+
+async function joinQueue() {
+  if (!currentUser) return;
+  const body = { userId: currentUser.discordId, type: "public", region: "LAS" };
+  try {
+    const res = await fetch(`${API_BASE}/queue/join`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.success) {
+      loadQueues();
+      loadCurrentMatch();
+    } else alert(data.error);
+  } catch (err) { console.error(err); }
+}
+
+// ----------------- MATCH -----------------
+async function loadCurrentMatch() {
+  try {
+    const res = await fetch(`${API_BASE}/matches/active`, { credentials: "include" });
+    if (res.ok) {
+      const match = await res.json();
+      if (match) {
+        matchInfo.innerHTML = `
+          <p>ID: ${match._id}</p>
+          <p>Mapa: ${match.map}</p>
+          <p>Tipo: ${match.type}</p>
+          <p>Jugadores: ${match.players.map(p => p.discordId).join(", ")}</p>
+        `;
+      } else matchInfo.textContent = "No hay partida activa.";
+    }
+  } catch (err) { console.error(err); }
+}
+
+confirmMatchBtn.addEventListener("click", async () => {
+  if (!currentUser) return;
+  const matchRes = await fetch(`${API_BASE}/matches/active`, { credentials: "include" });
+  const match = await matchRes.json();
+  if (!match) return alert("No hay partida activa.");
+
+  const body = { matchId: match._id, userId: currentUser.discordId, accepted: true };
+  const res = await fetch(`${API_BASE}/match/confirm`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(body)
   });
   const data = await res.json();
-  alert(JSON.stringify(data));
-}
-</script>
+  if (data.success) alert("Has confirmado tu participación");
+  loadCurrentMatch();
+});
 
+// ----------------- INIT -----------------
+fetchUser();
+</script>
 </body>
 </html>
+
