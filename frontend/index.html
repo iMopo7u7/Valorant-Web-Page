@@ -1,399 +1,82 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AceHub - Gaming Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AceHub - Inicio</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #0f172a;
+      color: white;
+    }
+    .container {
+      text-align: center;
+    }
+    .btn {
+      background: #6366f1;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: #4f46e5;
+    }
+    .loading {
+      font-size: 18px;
+      color: #94a3b8;
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-darker">
-    <div id="loadingScreen" class="fixed inset-0 bg-darker flex items-center justify-center z-50">
-        <div class="text-center">
-            <div class="loading-spinner mx-auto mb-4"></div>
-            <p class="text-gray-400">Cargando AceHub...</p>
-        </div>
-    </div>
+<body>
+  <div class="container" id="app">
+    <p class="loading">Cargando...</p>
+  </div>
 
-    <div id="loginScreen" class="min-h-screen gradient-bg flex items-center justify-center p-4">
-        <div class="card p-8 max-w-md w-full fade-in">
-            <div class="text-center mb-8">
-                <div class="text-6xl mb-4">🎮</div>
-                <h1 class="text-4xl font-heading font-bold mb-2 gradient-text">AceHub</h1>
-                <p class="text-gray-200">Tu plataforma de gaming competitivo</p>
-            </div>
-            
-            <button id="discordLoginBtn" class="discord-btn w-full py-4 px-6 rounded-xl text-white font-semibold flex items-center justify-center gap-3 mb-6 pulse">
-                <i class="fab fa-discord text-2xl"></i>
-                Iniciar sesión con Discord
-            </button>
-            
-            <div class="text-center text-sm text-gray-300">
-                <p>Conecta tu cuenta de Discord para acceder</p>
-                <p>a todas las funciones de AceHub</p>
-            </div>
-        </div>
-    </div>
+  <script>
+    async function checkUser() {
+      try {
+        const res = await fetch("/api/me", { credentials: "include" });
 
-    <div id="setupPanel" class="hidden min-h-screen gradient-bg flex items-center justify-center p-4">
-        <div class="card p-8 max-w-2xl w-full">
-            <div class="text-center mb-8">
-                <div class="text-4xl mb-4">⚙️</div>
-                <h2 class="text-3xl font-heading font-bold mb-2 gradient-text">¡Bienvenido a AceHub!</h2>
-                <p class="text-gray-300">Configura tu perfil para comenzar</p>
-            </div>
-            
-            <div class="space-y-6">
-                <div>
-                    <label class="block text-sm font-semibold mb-2">Riot ID</label>
-                    <input type="text" id="riotId" placeholder="NombreUsuario#TAG" 
-                           class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                    <p class="text-xs text-gray-400 mt-1">Ejemplo: ProGamer#1234</p>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-semibold mb-4">Roles en Valorant (máximo 2)</label>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 role-grid">
-                        <div class="role-card card p-4 cursor-pointer transition-all" data-role="duelista">
-                            <div class="text-center">
-                                <div class="text-3xl mb-2">⚔️</div>
-                                <h3 class="font-semibold">Duelista</h3>
-                                <p class="text-xs text-gray-400">Entrada y eliminaciones</p>
-                            </div>
-                        </div>
-                        <div class="role-card card p-4 cursor-pointer transition-all" data-role="controlador">
-                            <div class="text-center">
-                                <div class="text-3xl mb-2">🛡️</div>
-                                <h3 class="font-semibold">Controlador</h3>
-                                <p class="text-xs text-gray-400">Control de mapa</p>
-                            </div>
-                        </div>
-                        <div class="role-card card p-4 cursor-pointer transition-all" data-role="iniciador">
-                            <div class="text-center">
-                                <div class="text-3xl mb-2">🔍</div>
-                                <h3 class="font-semibold">Iniciador</h3>
-                                <p class="text-xs text-gray-400">Información y apoyo</p>
-                            </div>
-                        </div>
-                        <div class="role-card card p-4 cursor-pointer transition-all" data-role="centinela">
-                            <div class="text-center">
-                                <div class="text-3xl mb-2">🏰</div>
-                                <h3 class="font-semibold">Centinela</h3>
-                                <p class="text-xs text-gray-400">Defensa y retaguardia</p>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-400 mt-2">Selecciona 1 o 2 roles que prefieras jugar</p>
-                </div>
-                
-                <button id="completeSetupBtn" class="w-full btn-primary py-4 px-6 rounded-xl text-white font-semibold transition-all">
-                    Completar Configuración
-                </button>
-            </div>
-        </div>
-    </div>
+        if (!res.ok) {
+          // No logeado
+          document.getElementById("app").innerHTML = `
+            <h1>Bienvenido a AceHub</h1>
+            <p>Inicia sesión para continuar</p>
+            <a href="/auth/discord"><button class="btn">Login con Discord</button></a>
+          `;
+          return;
+        }
 
-    <div id="dashboard" class="hidden">
-        <header class="bg-gray-800 border-b border-gray-700 px-4 md:px-6 py-4 sticky top-0 z-40">
-            <div class="flex items-center justify-between max-w-7xl mx-auto">
-                <div class="flex items-center gap-3">
-                    <div class="text-2xl">🎮</div>
-                    <h1 class="text-xl md:text-2xl font-heading font-bold gradient-text">AceHub</h1>
-                </div>
-                
-                <div class="flex items-center gap-3">
-                    <div class="hidden md:flex items-center gap-2 bg-green-600 px-3 py-1 rounded-full text-sm">
-                        <div class="w-2 h-2 bg-white rounded-full"></div>
-                        <span>En línea</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <img id="userAvatar" src="" alt="Avatar" class="w-8 h-8 rounded-full">
-                        <span id="username" class="hidden md:block"></span>
-                    </div>
-                    <button id="logoutBtn" class="text-gray-400 hover:text-white p-2">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
-                </div>
-            </div>
-        </header>
+        const data = await res.json();
 
-        <nav class="bg-gray-800 px-4 md:px-6 py-3 border-b border-gray-700 sticky top-16 z-30">
-            <div class="max-w-7xl mx-auto flex gap-4 md:gap-8 overflow-x-auto hide-scrollbar">
-                <button data-section="public" class="nav-item flex items-center gap-2 whitespace-nowrap active">
-                    <i class="fas fa-users"></i>
-                    <span class="hidden md:block">10 Mans Públicos</span>
-                    <span class="md:hidden">Públicos</span>
-                </button>
-                <button data-section="premier" class="nav-item flex items-center gap-2 whitespace-nowrap">
-                    <i class="fas fa-crown"></i>
-                    <span class="hidden md:block">10 Mans Elite</span>
-                    <span class="md:hidden">Elite</span>
-                </button>
-                <button data-section="profile" class="nav-item flex items-center gap-2 whitespace-nowrap ml-auto">
-                    <i class="fas fa-user"></i>
-                    <span class="hidden md:block">Mi Perfil</span>
-                    <span class="md:hidden">Perfil</span>
-                </button>
-            </div>
-        </nav>
+        if (data.needsSetup) {
+          // Logeado pero sin datos completos
+          window.location.href = "/setup.html";
+        } else {
+          // Logeado y configurado
+          window.location.href = "/dashboard.html";
+        }
+      } catch (err) {
+        console.error("Error comprobando usuario:", err);
+        document.getElementById("app").innerHTML = `
+          <h1>Error de conexión</h1>
+          <p>No se pudo conectar con el servidor.</p>
+        `;
+      }
+    }
 
-        <main class="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-            <div id="publicSection" class="section space-y-8">
-                <div>
-                    <h2 class="text-2xl md:text-3xl font-heading font-bold mb-2">10 Mans Públicos</h2>
-                    <p class="text-gray-400">Partidas abiertas para toda la comunidad</p>
-                </div>
-
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 stats-grid">
-                    <div class="stats-card card p-4 md:p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-400 text-sm">Jugadores Activos</p>
-                                <p class="text-xl md:text-2xl font-bold text-green-400" id="publicActivePlayers">0</p>
-                            </div>
-                            <i class="fas fa-users text-green-400 text-xl md:text-2xl"></i>
-                        </div>
-                    </div>
-                    <div class="stats-card card p-4 md:p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-400 text-sm">Partidas Hoy</p>
-                                <p class="text-xl md:text-2xl font-bold text-blue-400" id="publicMatchesToday">0</p>
-                            </div>
-                            <i class="fas fa-gamepad text-blue-400 text-xl md:text-2xl"></i>
-                        </div>
-                    </div>
-                    <div class="stats-card card p-4 md:p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-400 text-sm">Tu Rating</p>
-                                <p class="text-xl md:text-2xl font-bold text-yellow-400" id="publicUserRating">0</p>
-                            </div>
-                            <i class="fas fa-star text-yellow-400 text-xl md:text-2xl"></i>
-                        </div>
-                    </div>
-                    <div class="stats-card card p-4 md:p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-400 text-sm">Tu Ranking</p>
-                                <p class="text-xl md:text-2xl font-bold text-purple-400" id="publicUserRank">#0</p>
-                            </div>
-                            <i class="fas fa-trophy text-purple-400 text-xl md:text-2xl"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex gap-2 md:gap-4 mb-6 overflow-x-auto hide-scrollbar">
-                    <button data-tab="queue" class="tab-btn bg-primary text-white px-4 md:px-6 py-2 rounded-lg whitespace-nowrap">
-                        <i class="fas fa-clock mr-2"></i>Cola
-                    </button>
-                    <button data-tab="matches" class="tab-btn text-gray-300 hover:text-white px-4 md:px-6 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
-                        <i class="fas fa-play mr-2"></i>Partidas
-                    </button>
-                    <button data-tab="leaderboard" class="tab-btn text-gray-300 hover:text-white px-4 md:px-6 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
-                        <i class="fas fa-trophy mr-2"></i>Leaderboard
-                    </button>
-                    <button data-tab="mymatches" class="tab-btn text-gray-300 hover:text-white px-4 md:px-6 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
-                        <i class="fas fa-user mr-2"></i>Mis Partidas
-                    </button>
-                </div>
-
-                <div id="publicQueue" class="tab-content active">
-                    <div id="publicQueueContent"></div>
-                </div>
-
-                <div id="publicMatches" class="tab-content hidden">
-                    </div>
-
-                <div id="publicLeaderboard" class="tab-content hidden">
-                    </div>
-
-                <div id="publicMymatches" class="tab-content hidden">
-                    </div>
-            </div>
-
-            <div id="premierSection" class="section hidden space-y-8">
-                <div>
-                    <div class="flex items-center gap-4 mb-2">
-                        <h2 class="text-2xl md:text-3xl font-heading font-bold">10 Mans Elite</h2>
-                        <span class="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-3 py-1 rounded-full text-sm font-bold">
-                            <i class="fas fa-crown mr-1"></i>ELITE
-                        </span>
-                    </div>
-                    <p class="text-gray-400">Partidas exclusivas para jugadores verificados por el staff</p>
-                </div>
-
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 stats-grid">
-                    <div class="stats-card card p-4 md:p-6 bg-gradient-to-r from-purple-900/30 to-blue-900/30">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-purple-200 text-sm">Jugadores Elite</p>
-                                <p class="text-xl md:text-2xl font-bold text-yellow-400" id="eliteActivePlayers">0</p>
-                            </div>
-                            <i class="fas fa-crown text-yellow-400 text-xl md:text-2xl"></i>
-                        </div>
-                    </div>
-                    <div class="stats-card card p-4 md:p-6 bg-gradient-to-r from-blue-900/30 to-purple-900/30">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-blue-200 text-sm">Partidas Elite</p>
-                                <p class="text-xl md:text-2xl font-bold text-yellow-400" id="eliteMatchesToday">0</p>
-                            </div>
-                            <i class="fas fa-star text-yellow-400 text-xl md:text-2xl"></i>
-                        </div>
-                    </div>
-                    <div class="stats-card card p-4 md:p-6 bg-gradient-to-r from-green-900/30 to-emerald-900/30">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-green-200 text-sm">Tu Rating Elite</p>
-                                <p class="text-xl md:text-2xl font-bold text-yellow-400" id="eliteUserRating">0</p>
-                            </div>
-                            <i class="fas fa-trophy text-yellow-400 text-xl md:text-2xl"></i>
-                        </div>
-                    </div>
-                    <div class="stats-card card p-4 md:p-6 bg-gradient-to-r from-red-900/30 to-pink-900/30">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-red-200 text-sm">Ranking Elite</p>
-                                <p class="text-xl md:text-2xl font-bold text-yellow-400" id="eliteUserRank">#0</p>
-                            </div>
-                            <i class="fas fa-medal text-yellow-400 text-xl md:text-2xl"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex gap-2 md:gap-4 mb-6 overflow-x-auto hide-scrollbar">
-                    <button data-tab="queue" class="tab-btn bg-purple-600 text-white px-4 md:px-6 py-2 rounded-lg whitespace-nowrap">
-                        <i class="fas fa-clock mr-2"></i>Cola Elite
-                    </button>
-                    <button data-tab="matches" class="tab-btn text-gray-300 hover:text-white px-4 md:px-6 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
-                        <i class="fas fa-play mr-2"></i>Partidas Elite
-                    </button>
-                    <button data-tab="leaderboard" class="tab-btn text-gray-300 hover:text-white px-4 md:px-6 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
-                        <i class="fas fa-crown mr-2"></i>Elite Leaderboard
-                    </button>
-                    <button data-tab="mymatches" class="tab-btn text-gray-300 hover:text-white px-4 md:px-6 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
-                        <i class="fas fa-user mr-2"></i>Mis Elite
-                    </button>
-                </div>
-
-                <div id="premierQueue" class="tab-content">
-                    <div id="premierQueueContent"></div>
-                </div>
-
-                <div id="premierMatches" class="tab-content hidden">
-                    </div>
-
-                <div id="premierLeaderboard" class="tab-content hidden">
-                    </div>
-
-                <div id="premierMymatches" class="tab-content hidden">
-                    </div>
-            </div>
-
-            <div id="profileSection" class="section hidden space-y-8">
-                <div>
-                    <h2 class="text-2xl md:text-3xl font-heading font-bold mb-2">Mi Perfil</h2>
-                    <p class="text-gray-400">Gestiona tu información y estadísticas</p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="card p-6 md:col-span-1">
-                        <div class="text-center mb-6">
-                            <img id="profileAvatar" src="" alt="Avatar" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-primary">
-                            <h3 id="profileUsername" class="text-xl font-bold"></h3>
-                            <p id="profileRiotId" class="text-gray-400"></p>
-                            <div id="profileRoles" class="flex flex-wrap gap-2 justify-center mt-3"></div>
-                        </div>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <h4 class="font-semibold mb-2">Estado de cuenta</h4>
-                                <div class="flex items-center gap-2">
-                                    <div id="premierStatusBadge" class="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm">
-                                        <i class="fas fa-crown mr-1"></i> Elite: Pendiente
-                                    </div>
-                                    <div id="adminStatusBadge" class="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm hidden">
-                                        <i class="fas fa-shield-alt mr-1"></i> Administrador
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <h4 class="font-semibold mb-2">Estadísticas generales</h4>
-                                <div class="space-y-2 text-sm">
-                                    <div class="flex justify-between">
-                                        <span>Miembro desde</span>
-                                        <span id="memberSince"></span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span>Partidas jugadas</span>
-                                        <span id="totalMatches">0</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span>Porcentaje de victorias</span>
-                                        <span id="winRate">0%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="card p-6 md:col-span-2">
-                        <h3 class="text-xl font-bold mb-4">Actualizar información</h3>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-semibold mb-2">Riot ID</label>
-                                <div class="flex gap-2">
-                                    <input type="text" id="updateRiotName" placeholder="Nombre" 
-                                           class="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                                    <span class="self-center">#</span>
-                                    <input type="text" id="updateRiotTag" placeholder="TAG" 
-                                           class="w-20 px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-semibold mb-2">Roles preferidos (máximo 2)</label>
-                                <div class="flex flex-wrap gap-2">
-                                    <button data-role="duelista" class="role-select-btn px-3 py-2 rounded-lg border border-gray-600 text-sm">⚔️ Duelista</button>
-                                    <button data-role="iniciador" class="role-select-btn px-3 py-2 rounded-lg border border-gray-600 text-sm">🔍 Iniciador</button>
-                                    <button data-role="controlador" class="role-select-btn px-3 py-2 rounded-lg border border-gray-600 text-sm">🛡️ Controlador</button>
-                                    <button data-role="centinela" class="role-select-btn px-3 py-2 rounded-lg border border-gray-600 text-sm">🏰 Centinela</button>
-                                </div>
-                            </div>
-                            
-                            <button id="updateProfileBtn" class="w-full btn-primary py-3 px-6 rounded-lg text-white font-semibold">
-                                Actualizar Perfil
-                            </button>
-                        </div>
-                        
-                        <div class="mt-8 pt-6 border-t border-gray-700">
-                            <h3 class="text-xl font-bold mb-4">Estadísticas detalladas</h3>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="bg-gray-800/50 p-4 rounded-lg">
-                                    <h4 class="font-semibold text-center mb-2 text-blue-400">Público</h4>
-                                    <div class="space-y-1 text-sm" id="publicStats">
-                                        </div>
-                                </div>
-                                <div class="bg-purple-900/30 p-4 rounded-lg border border-purple-700/30">
-                                    <h4 class="font-semibold text-center mb-2 text-yellow-400">Elite</h4>
-                                    <div class="space-y-1 text-sm" id="eliteStats">
-                                        </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
-    
-    <script src="script.js"></script>
+    checkUser();
+  </script>
 </body>
 </html>
