@@ -46,7 +46,7 @@
   <script>
     async function checkUser() {
       try {
-        const res = await fetch("/api/me", { credentials: "include" });
+        const res = await fetch("https://valorant-10-mans.onrender.com/api/me", { credentials: "include" });
 
         if (!res.ok) {
           // No logeado
