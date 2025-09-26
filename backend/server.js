@@ -190,10 +190,10 @@ apiRouter.get("/logout", (req, res) => {
   });
 });
 
-// Info del usuario logueado (mejorada)
-// Devuelve toda la info del usuario logueado
 apiRouter.get("/me", async (req, res) => {
-  if (!req.session?.userId) return res.json(null);
+  if (!req.session?.userId) {
+    return res.json(null); // No logeado
+  }
 
   try {
     const user = await usersCollection.findOne(
@@ -207,10 +207,50 @@ apiRouter.get("/me", async (req, res) => {
       }
     );
 
-    res.json(user);
+    if (!user) {
+      return res.json(null); // Usuario no encontrado
+    }
+
+    // Revisar si el usuario necesita completar setup
+    const needsSetup = !user.riotId || !user.roles?.length || !user.region;
+
+    res.json({
+      ...user,
+      needsSetup
+    });
   } catch (err) {
     console.error("Error fetching user:", err);
     res.status(500).json({ error: "Error obteniendo usuario" });
+  }
+});
+
+// ==========================
+// RUTA: Guardar datos iniciales RiotID, roles y región
+// ==========================
+apiRouter.post("/me/setup", requireAuth, async (req, res) => {
+  try {
+    const { riotId, roles, region } = req.body;
+
+    if (!riotId || !roles || !roles.length || !region) {
+      return res.status(400).json({ error: "Todos los campos son obligatorios" });
+    }
+
+    await usersCollection.updateOne(
+      { discordId: req.session.userId },
+      {
+        $set: {
+          riotId,
+          roles,
+          region,
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error en /api/me/setup:", err);
+    res.status(500).json({ error: "Error guardando setup" });
   }
 });
 
