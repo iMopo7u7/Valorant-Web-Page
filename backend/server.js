@@ -177,6 +177,43 @@ apiRouter.get("/auth/discord/callback", async (req, res) => {
   }
 });
 
+// -----------------
+// Rutas de usuario
+// -----------------
+
+// Logout
+apiRouter.get("/logout", (req, res) => {
+  req.session.destroy(err => {
+    if (err) return res.status(500).send("Error cerrando sesión");
+    res.clearCookie("connect.sid", { path: "/" });
+    res.redirect("/");
+  });
+});
+
+// Info del usuario logueado (mejorada)
+// Devuelve toda la info del usuario logueado
+apiRouter.get("/me", async (req, res) => {
+  if (!req.session?.userId) return res.json(null);
+
+  try {
+    const user = await usersCollection.findOne(
+      { discordId: req.session.userId },
+      {
+        projection: {
+          _id: 0, // No enviar el _id de Mongo
+          "discordSession.accessToken": 0,
+          "discordSession.refreshToken": 0
+        }
+      }
+    );
+
+    res.json(user);
+  } catch (err) {
+    console.error("Error fetching user:", err);
+    res.status(500).json({ error: "Error obteniendo usuario" });
+  }
+});
+
 // ----- COLAS -----
 apiRouter.get("/queue/:type/:region", async (req, res) => {
   const { type, region } = req.params;
