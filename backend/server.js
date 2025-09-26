@@ -102,19 +102,38 @@ async function requireAdmin(req, res, next) {
 // ==========================
 // Función para obtener token de Discord
 // ==========================
-async function fetchDiscordToken(params) {
-  const response = await fetch("https://discord.com/api/oauth2/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params
-  });
-  if (!response.ok) throw new Error("Error obteniendo token de Discord");
-  return response.json();
+async function fetchDiscordToken(params, retries = 3) {
+  try {
+    const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params
+    });
+
+    if (tokenRes.status === 429) {
+      const retryAfter = parseFloat(tokenRes.headers.get("retry-after") || "1");
+      console.warn(`Rate limit hit, retrying after ${retryAfter}s`);
+      await new Promise(r => setTimeout(r, retryAfter * 1000));
+      if (retries > 0) return fetchDiscordToken(params, retries - 1);
+      throw new Error("Too many requests to Discord API");
+    }
+
+    if (!tokenRes.ok) throw new Error(`Discord token error: ${tokenRes.status}`);
+    return await tokenRes.json();
+  } catch (err) { throw err; }
 }
 
 // ==========================
 // RUTA: Discord OAuth Callback
 // ==========================
+apiRouter.get("/auth/discord", (req, res) => {
+  const redirectUri = process.env.DISCORD_REDIRECT_URI;
+  const clientId = process.env.DISCORD_CLIENT_ID;
+  const scope = "identify";
+  const discordUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}`;
+  res.redirect(discordUrl);
+});
+
 app.get("/auth/discord/callback", async (req, res) => {
   const code = req.query.code;
   try {
