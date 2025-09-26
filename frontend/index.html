@@ -44,21 +44,33 @@
   </div>
 
   <script>
+    const API_URL = "https://valorant-10-mans.onrender.com";
+
     async function checkUser() {
       try {
-        const res = await fetch("https://valorant-10-mans.onrender.com/api/me", { credentials: "include" });
+        const res = await fetch(`${API_URL}/api/me`, { credentials: "include" });
 
         if (!res.ok) {
           // No logeado
           document.getElementById("app").innerHTML = `
             <h1>Bienvenido a AceHub</h1>
             <p>Inicia sesión para continuar</p>
-            <a href="https://valorant-10-mans.onrender.com/api/auth/discord"><button class="btn">Login con Discord</button></a>
+            <a href="${API_URL}/api/auth/discord"><button class="btn">Login con Discord</button></a>
           `;
           return;
         }
 
         const data = await res.json();
+
+        if (!data) {
+          // No logeado
+          document.getElementById("app").innerHTML = `
+            <h1>Bienvenido a AceHub</h1>
+            <p>Inicia sesión para continuar</p>
+            <a href="${API_URL}/api/auth/discord"><button class="btn">Login con Discord</button></a>
+          `;
+          return;
+        }
 
         if (data.needsSetup) {
           // Logeado pero sin datos completos
