@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Valorant 10-Mans Test Frontend</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; background: #1e1e2f; color: #fff; }
+  button { margin: 5px; padding: 5px 10px; cursor: pointer; background: #3a3a5c; color: #fff; border: none; border-radius: 5px; }
+  input { padding: 5px; margin-right: 5px; border-radius: 5px; border: none; }
+  h2 { margin-top: 30px; }
+  ul { list-style: none; padding-left: 0; }
+  li { padding: 3px 0; }
+  .container { max-width: 800px; margin: auto; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎮 Valorant 10-Mans Test Frontend</h1>
+
+  <div>
+    <h2>Cola</h2>
+    <label>Tipo: <select id="queueType">
+      <option value="public">Public</option>
+      <option value="elite">Elite</option>
+    </select></label>
+    <label>Region: <select id="queueRegion">
+      <option value="LAS">LAS</option>
+      <option value="LAN">LAN</option>
+    </select></label>
+    <button id="joinQueue">Unirse a Cola</button>
+    <button id="leaveQueue">Salir de Cola</button>
+    <ul id="queueList"></ul>
+  </div>
+
+  <div>
+    <h2>Crear Match</h2>
+    <button id="createMatch">Crear Match</button>
+  </div>
+
+  <div>
+    <h2>Confirmar Match</h2>
+    <input type="text" id="matchId" placeholder="Match ID">
+    <button id="acceptMatch">Aceptar</button>
+    <button id="rejectMatch">Rechazar</button>
+  </div>
+
+  <div>
+    <h2>Matches</h2>
+    <ul id="matchesList"></ul>
+  </div>
+</div>
+
+<script>
+  const API_URL = "http://localhost:3000/api"; // Cambia si tu backend está en otro host
+  const userId = prompt("Ingresa tu Discord ID para pruebas:");
+
+  const queueType = document.getElementById("queueType");
+  const queueRegion = document.getElementById("queueRegion");
+  const queueList = document.getElementById("queueList");
+  const matchesList = document.getElementById("matchesList");
+
+  async function fetchQueue() {
+    const type = queueType.value;
+    const region = queueRegion.value;
+    const res = await fetch(`${API_URL}/queue/${type}/${region}`);
+    const data = await res.json();
+    queueList.innerHTML = "";
+    data.forEach(p => {
+      const li = document.createElement("li");
+      li.textContent = `${p.discordId} | Roles: ${p.roles.join(", ")}`;
+      queueList.appendChild(li);
+    });
+  }
+
+  async function fetchMatches() {
+    const res = await fetch(`${API_URL}/match/list`);
+    const data = await res.json();
+    matchesList.innerHTML = "";
+    data.forEach(m => {
+      const li = document.createElement("li");
+      li.textContent = `${m._id} | ${m.type} | Status: ${m.status} | Players: ${m.players.map(p => p.discordId).join(", ")}`;
+      matchesList.appendChild(li);
+    });
+  }
+
+  document.getElementById("joinQueue").addEventListener("click", async () => {
+    await fetch(`${API_URL}/queue/join`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, type: queueType.value, region: queueRegion.value })
+    });
+    fetchQueue();
+  });
+
+  document.getElementById("leaveQueue").addEventListener("click", async () => {
+    await fetch(`${API_URL}/queue/leave`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, type: queueType.value, region: queueRegion.value })
+    });
+    fetchQueue();
+  });
+
+  document.getElementById("createMatch").addEventListener("click", async () => {
+    const res = await fetch(`${API_URL}/match/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: queueType.value, region: queueRegion.value })
+    });
+    const data = await res.json();
+    alert(JSON.stringify(data));
+    fetchQueue();
+    fetchMatches();
+  });
+
+  document.getElementById("acceptMatch").addEventListener("click", async () => {
+    const matchId = document.getElementById("matchId").value;
+    if (!matchId) return alert("Ingresa el Match ID");
+    await fetch(`${API_URL}/match/confirm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matchId, userId, accepted: true })
+    });
+    fetchQueue();
+    fetchMatches();
+  });
+
+  document.getElementById("rejectMatch").addEventListener("click", async () => {
+    const matchId = document.getElementById("matchId").value;
+    if (!matchId) return alert("Ingresa el Match ID");
+    await fetch(`${API_URL}/match/confirm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matchId, userId, accepted: false })
+    });
+    fetchQueue();
+    fetchMatches();
+  });
+
+  // Cargar inicialmente
+  fetchQueue();
+  fetchMatches();
+</script>
+</body>
+</html>
