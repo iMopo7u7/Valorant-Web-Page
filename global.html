@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global - Valorant Esports Platform</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@400;600;700&display=swap');
+        
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1e2328 50%, #0f1419 100%);
+            min-height: 100vh;
+            color: #ffffff;
+        }
+
+        .navbar {
+            background: rgba(15, 20, 25, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 70, 85, 0.2);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .logo-container {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #ff4655, #ff6b7a);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .logo-container:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(255, 70, 85, 0.4);
+        }
+
+        .logo-placeholder {
+            font-size: 0.8rem;
+            color: white;
+            text-align: center;
+            line-height: 1.2;
+            font-weight: 700;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-button {
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            border: 1px solid rgba(255, 70, 85, 0.3);
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 70, 85, 0.1);
+            border-color: #ff4655;
+            transform: translateY(-2px);
+        }
+
+        .nav-button.active {
+            background: linear-gradient(135deg, #ff4655, #ff6b7a);
+            border-color: #ff4655;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 70, 85, 0.3);
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 25px;
+            border: 1px solid rgba(255, 70, 85, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-section:hover {
+            background: rgba(255, 70, 85, 0.1);
+            border-color: #ff4655;
+            transform: translateY(-2px);
+        }
+
+        .profile-container {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff4655, #ff6b7a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: white;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .profile-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .username {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .user-status {
+            font-size: 0.7rem;
+            color: #00ff88;
+            font-weight: 500;
+        }
+
+        .content {
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: calc(100vh - 120px);
+            gap: 2rem;
+        }
+
+        .global-content {
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        .global-selector {
+            display: flex;
+            background: rgba(15, 20, 25, 0.8);
+            border-radius: 12px;
+            padding: 0.5rem;
+            border: 1px solid rgba(255, 70, 85, 0.3);
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+            align-self: center;
+        }
+
+        .mode-option {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .mode-option.active {
+            background: linear-gradient(135deg, #ff4655, #ff6b7a);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 70, 85, 0.3);
+        }
+
+        .mode-option:hover:not(.active) {
+            background: rgba(255, 70, 85, 0.1);
+            color: #ff4655;
+        }
+
+        .section-container {
+            background: rgba(15, 20, 25, 0.8);
+            border: 1px solid rgba(255, 70, 85, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 1.5rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .season-filter {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .season-select {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 70, 85, 0.3);
+            border-radius: 8px;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+
+        .season-select:focus {
+            outline: none;
+            border-color: #ff4655;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .leaderboard-table th {
+            background: rgba(255, 70, 85, 0.1);
+            color: #ffffff;
+            padding: 1rem 0.5rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(255, 70, 85, 0.3);
+        }
+
+        .leaderboard-table td {
+            padding: 1rem 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 0.9rem;
+        }
+
+        .leaderboard-table tr:hover {
+            background: rgba(255, 70, 85, 0.05);
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .player-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff4655, #ff6b7a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: white;
+            font-weight: 700;
+        }
+
+        .player-name {
+            font-weight: 600;
+        }
+
+        .rank-number {
+            font-weight: 700;
+            color: #ff4655;
+        }
+
+        .matches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .match-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 70, 85, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .match-status {
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #0f1419;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .teams-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+        }
+
+        .team {
+            flex: 1;
+        }
+
+        .team-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .team-players {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .player-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .player-row .player-avatar {
+            width: 28px;
+            height: 28px;
+            font-size: 0.6rem;
+        }
+
+        .player-stream-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .stream-indicator {
+            width: 8px;
+            height: 8px;
+            background: #ff0000;
+            border-radius: 50%;
+            animation: pulse-stream 2s infinite;
+        }
+
+        .stream-button {
+            padding: 0.25rem 0.5rem;
+            background: linear-gradient(135deg, #9146ff, #772ce8);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .stream-button:hover {
+            background: linear-gradient(135deg, #772ce8, #5c1fb8);
+            transform: translateY(-1px);
+        }
+
+        @keyframes pulse-stream {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .navbar-left {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-buttons {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .profile-section {
+                order: -1;
+            }
+
+            .content {
+                padding: 2rem 1rem;
+            }
+
+            .matches-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .teams-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <div class="logo-container">
+                <div class="logo-placeholder">VAL</div>
+            </div>
+            
+            <div class="nav-buttons">
+                <button class="nav-button" onclick="setActiveButton(this, 'home')">Home</button>
+                <button class="nav-button active" onclick="setActiveButton(this, 'global')">Global</button>
+                <button class="nav-button" onclick="setActiveButton(this, 'elite')">Elite</button>
+            </div>
+        </div>
+        
+        <div class="profile-section" onclick="goToProfile()">
+            <div class="profile-container">
+                <div>PF</div>
+            </div>
+            <div class="profile-info">
+                <div class="username">NombreUsuario</div>
+                <div class="user-status">● En línea</div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="content">
+        <div class="global-content">
+            <div class="global-selector">
+                <button class="mode-option active" onclick="selectGlobalSection(this, 'leaderboard')">Leaderboard</button>
+                <button class="mode-option" onclick="selectGlobalSection(this, 'matches')">Active Matches</button>
+            </div>
+
+            <!-- Leaderboard Section -->
+            <div class="section-container" id="leaderboardSection">
+                <div class="section-title">🏆 Leaderboard</div>
+                
+                <div class="season-filter">
+                    <label for="seasonSelect" style="color: #ffffff; font-weight: 600;">Temporada:</label>
+                    <select class="season-select" id="seasonSelect">
+                        <option value="2024-1">Temporada 2024-1</option>
+                        <option value="2023-4">Temporada 2023-4</option>
+                        <option value="2023-3">Temporada 2023-3</option>
+                        <option value="2023-2">Temporada 2023-2</option>
+                    </select>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Player</th>
+                                <th>Matches</th>
+                                <th>ACS</th>
+                                <th>KDA</th>
+                                <th>HS%</th>
+                                <th>FK</th>
+                                <th>KAST%</th>
+                                <th>ADR</th>
+                                <th>DDΔ</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="rank-number">1</td>
+                                <td>
+                                    <div class="player-info">
+                                        <div class="player-avatar">P1</div>
+                                        <span class="player-name">ProPlayer1</span>
+                                    </div>
+                                </td>
+                                <td>47</td>
+                                <td>285</td>
+                                <td>1.45</td>
+                                <td>24%</td>
+                                <td>12</td>
+                                <td>78%</td>
+                                <td>165</td>
+                                <td>+15</td>
+                                <td>2847</td>
+                            </tr>
+                            <tr>
+                                <td class="rank-number">2</td>
+                                <td>
+                                    <div class="player-info">
+                                        <div class="player-avatar">P2</div>
+                                        <span class="player-name">EliteGamer</span>
+                                    </div>
+                                </td>
+                                <td>52</td>
+                                <td>278</td>
+                                <td>1.38</td>
+                                <td>22%</td>
+                                <td>15</td>
+                                <td>75%</td>
+                                <td>158</td>
+                                <td>+12</td>
+                                <td>2756</td>
+                            </tr>
+                            <tr>
+                                <td class="rank-number">3</td>
+                                <td>
+                                    <div class="player-info">
+                                        <div class="player-avatar">P3</div>
+                                        <span class="player-name">ValorantKing</span>
+                                    </div>
+                                </td>
+                                <td>41</td>
+                                <td>272</td>
+                                <td>1.42</td>
+                                <td>26%</td>
+                                <td>9</td>
+                                <td>82%</td>
+                                <td>162</td>
+                                <td>+18</td>
+                                <td>2698</td>
+                            </tr>
+                            <tr>
+                                <td class="rank-number">4</td>
+                                <td>
+                                    <div class="player-info">
+                                        <div class="player-avatar">P4</div>
+                                        <span class="player-name">AimBot2024</span>
+                                    </div>
+                                </td>
+                                <td>38</td>
+                                <td>265</td>
+                                <td>1.35</td>
+                                <td>28%</td>
+                                <td>11</td>
+                                <td>76%</td>
+                                <td>155</td>
+                                <td>+8</td>
+                                <td>2634</td>
+                            </tr>
+                            <tr>
+                                <td class="rank-number">5</td>
+                                <td>
+                                    <div class="player-info">
+                                        <div class="player-avatar">P5</div>
+                                        <span class="player-name">RadiantAce</span>
+                                    </div>
+                                </td>
+                                <td>45</td>
+                                <td>258</td>
+                                <td>1.29</td>
+                                <td>21%</td>
+                                <td>13</td>
+                                <td>73%</td>
+                                <td>148</td>
+                                <td>+5</td>
+                                <td>2587</td>
+                            </tr>
+                            <tr>
+                                <td class="rank-number">6</td>
+                                <td>
+                                    <div class="player-info">
+                                        <div class="player-avatar">P6</div>
+                                        <span class="player-name">ShadowStrike</span>
+                                    </div>
+                                </td>
+                                <td>39</td>
+                                <td>251</td>
+                                <td>1.26</td>
+                                <td>19%</td>
+                                <td>8</td>
+                                <td>71%</td>
+                                <td>142</td>
+                                <td>+3</td>
+                                <td>2534</td>
+                            </tr>
+                            <tr>
+                                <td class="rank-number">7</td>
+                                <td>
+                                    <div class="player-info">
+                                        <div class="player-avatar">P7</div>
+                                        <span class="player-name">FlashMaster</span>
+                                    </div>
+                                </td>
+                                <td>43</td>
+                                <td>247</td>
+                                <td>1.23</td>
+                                <td>25%</td>
+                                <td>10</td>
+                                <td>69%</td>
+                                <td>138</td>
+                                <td>+1</td>
+                                <td>2489</td>
+                            </tr>
+                            <tr>
+                                <td class="rank-number">8</td>
+                                <td>
+                                    <div class="player-info">
+                                        <div class="player-avatar">P8</div>
+                                        <span class="player-name">CyberNinja</span>
+                                    </div>
+                                </td>
+                                <td>36</td>
+                                <td>243</td>
+                                <td>1.21</td>
+                                <td>23%</td>
+                                <td>7</td>
+                                <td>67%</td>
+                                <td>135</td>
+                                <td>-2</td>
+                                <td>2445</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Active Matches Section -->
+            <div class="section-container" id="matchesSection" style="display: none;">
+                <div class="section-title">🔴 Active Matches</div>
+                
+                <div class="matches-grid">
+                    <!-- Match 1 -->
+                    <div class="match-card">
+                        <div class="match-header">
+                            <h3 style="margin: 0; color: #ffffff; font-size: 1.1rem;">Match #1</h3>
+                            <div class="match-status">LIVE</div>
+                        </div>
+                        
+                        <div class="teams-container">
+                            <div class="team">
+                                <div class="team-name">Team Alpha</div>
+                                <div class="team-players">
+                                    <div class="player-row">
+                                        <div class="player-avatar">A1</div>
+                                        <div class="player-stream-info">
+                                            <span>AlphaLeader</span>
+                                            <div class="stream-indicator"></div>
+                                            <button class="stream-button" onclick="openStream('alphalead')">Stream</button>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">A2</div>
+                                        <div class="player-stream-info">
+                                            <span>AlphaSniper</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">A3</div>
+                                        <div class="player-stream-info">
+                                            <span>AlphaSupport</span>
+                                            <div class="stream-indicator"></div>
+                                            <button class="stream-button" onclick="openStream('alphasup')">Stream</button>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">A4</div>
+                                        <div class="player-stream-info">
+                                            <span>AlphaEntry</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">A5</div>
+                                        <div class="player-stream-info">
+                                            <span>AlphaIGL</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; color: #ff4655; font-size: 1.5rem; font-weight: 700;">VS</div>
+                            
+                            <div class="team">
+                                <div class="team-name">Team Beta</div>
+                                <div class="team-players">
+                                    <div class="player-row">
+                                        <div class="player-avatar">B1</div>
+                                        <div class="player-stream-info">
+                                            <span>BetaAce</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">B2</div>
+                                        <div class="player-stream-info">
+                                            <span>BetaFlash</span>
+                                            <div class="stream-indicator"></div>
+                                            <button class="stream-button" onclick="openStream('betaflash')">Stream</button>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">B3</div>
+                                        <div class="player-stream-info">
+                                            <span>BetaSmoke</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">B4</div>
+                                        <div class="player-stream-info">
+                                            <span>BetaSentinel</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">B5</div>
+                                        <div class="player-stream-info">
+                                            <span>BetaDuelist</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Match 2 -->
+                    <div class="match-card">
+                        <div class="match-header">
+                            <h3 style="margin: 0; color: #ffffff; font-size: 1.1rem;">Match #2</h3>
+                            <div class="match-status">LIVE</div>
+                        </div>
+                        
+                        <div class="teams-container">
+                            <div class="team">
+                                <div class="team-name">Team Gamma</div>
+                                <div class="team-players">
+                                    <div class="player-row">
+                                        <div class="player-avatar">G1</div>
+                                        <div class="player-stream-info">
+                                            <span>GammaStrike</span>
+                                            <div class="stream-indicator"></div>
+                                            <button class="stream-button" onclick="openStream('gammastrike')">Stream</button>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">G2</div>
+                                        <div class="player-stream-info">
+                                            <span>GammaShield</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">G3</div>
+                                        <div class="player-stream-info">
+                                            <span>GammaVision</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">G4</div>
+                                        <div class="player-stream-info">
+                                            <span>GammaHealer</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">G5</div>
+                                        <div class="player-stream-info">
+                                            <span>GammaBrain</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; color: #ff4655; font-size: 1.5rem; font-weight: 700;">VS</div>
+                            
+                            <div class="team">
+                                <div class="team-name">Team Delta</div>
+                                <div class="team-players">
+                                    <div class="player-row">
+                                        <div class="player-avatar">D1</div>
+                                        <div class="player-stream-info">
+                                            <span>DeltaForce</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">D2</div>
+                                        <div class="player-stream-info">
+                                            <span>DeltaRush</span>
+                                            <div class="stream-indicator"></div>
+                                            <button class="stream-button" onclick="openStream('deltarush')">Stream</button>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">D3</div>
+                                        <div class="player-stream-info">
+                                            <span>DeltaWall</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">D4</div>
+                                        <div class="player-stream-info">
+                                            <span>DeltaStorm</span>
+                                            <div class="stream-indicator"></div>
+                                            <button class="stream-button" onclick="openStream('deltastorm')">Stream</button>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">D5</div>
+                                        <div class="player-stream-info">
+                                            <span>DeltaPhoenix</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Match 3 -->
+                    <div class="match-card">
+                        <div class="match-header">
+                            <h3 style="margin: 0; color: #ffffff; font-size: 1.1rem;">Match #3</h3>
+                            <div class="match-status">LIVE</div>
+                        </div>
+                        
+                        <div class="teams-container">
+                            <div class="team">
+                                <div class="team-name">Team Omega</div>
+                                <div class="team-players">
+                                    <div class="player-row">
+                                        <div class="player-avatar">O1</div>
+                                        <div class="player-stream-info">
+                                            <span>OmegaPrime</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">O2</div>
+                                        <div class="player-stream-info">
+                                            <span>OmegaBlaze</span>
+                                            <div class="stream-indicator"></div>
+                                            <button class="stream-button" onclick="openStream('omegablaze')">Stream</button>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">O3</div>
+                                        <div class="player-stream-info">
+                                            <span>OmegaFrost</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">O4</div>
+                                        <div class="player-stream-info">
+                                            <span>OmegaVolt</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">O5</div>
+                                        <div class="player-stream-info">
+                                            <span>OmegaCore</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; color: #ff4655; font-size: 1.5rem; font-weight: 700;">VS</div>
+                            
+                            <div class="team">
+                                <div class="team-name">Team Sigma</div>
+                                <div class="team-players">
+                                    <div class="player-row">
+                                        <div class="player-avatar">S1</div>
+                                        <div class="player-stream-info">
+                                            <span>SigmaLead</span>
+                                            <div class="stream-indicator"></div>
+                                            <button class="stream-button" onclick="openStream('sigmalead')">Stream</button>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">S2</div>
+                                        <div class="player-stream-info">
+                                            <span>SigmaShot</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">S3</div>
+                                        <div class="player-stream-info">
+                                            <span>SigmaGuard</span>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">S4</div>
+                                        <div class="player-stream-info">
+                                            <span>SigmaFlash</span>
+                                            <div class="stream-indicator"></div>
+                                            <button class="stream-button" onclick="openStream('sigmaflash')">Stream</button>
+                                        </div>
+                                    </div>
+                                    <div class="player-row">
+                                        <div class="player-avatar">S5</div>
+                                        <div class="player-stream-info">
+                                            <span>SigmaStrat</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function setActiveButton(clickedButton, section) {
+            // Remover clase active de todos los botones del navbar
+            const buttons = document.querySelectorAll('.nav-button');
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            // Agregar clase active al botón clickeado
+            clickedButton.classList.add('active');
+            
+            console.log(`Navegando a: ${section}`);
+            
+            // Aquí puedes agregar navegación a otras páginas
+            if (section === 'home') {
+                // Redirigir a home.html o página principal
+                console.log('Redirigiendo a Home...');
+            } else if (section === 'elite') {
+                // Redirigir a elite.html
+                console.log('Redirigiendo a Elite...');
+            }
+        }
+
+        function selectGlobalSection(clickedOption, section) {
+            // Para los botones de la página Global (Leaderboard/Active Matches)
+            const globalOptions = document.querySelectorAll('.global-selector .mode-option');
+            globalOptions.forEach(option => option.classList.remove('active'));
+            
+            // Agregar clase active a la opción clickeada
+            clickedOption.classList.add('active');
+            
+            // Mostrar/ocultar secciones
+            const leaderboardSection = document.getElementById('leaderboardSection');
+            const matchesSection = document.getElementById('matchesSection');
+            
+            if (section === 'leaderboard') {
+                leaderboardSection.style.display = 'block';
+                matchesSection.style.display = 'none';
+            } else if (section === 'matches') {
+                leaderboardSection.style.display = 'none';
+                matchesSection.style.display = 'block';
+            }
+            
+            console.log(`Sección Global seleccionada: ${section}`);
+        }
+
+        function goToProfile() {
+            console.log('Navegando al perfil del usuario...');
+            // Aquí conectarás con la funcionalidad del perfil
+            alert('¡Funcionalidad del perfil lista para conectar!');
+        }
+
+        function openStream(streamId) {
+            console.log(`Abriendo stream: ${streamId}`);
+            // Aquí conectarás con la API de Twitch
+            alert(`¡Stream de ${streamId} listo para conectar con Twitch API!`);
+            // Ejemplo de lo que harías:
+            // window.open(`https://twitch.tv/${streamId}`, '_blank', 'noopener,noreferrer');
+        }
+
+        // Función para cambiar temporada del leaderboard
+        document.addEventListener('DOMContentLoaded', function() {
+            const seasonSelect = document.getElementById('seasonSelect');
+            if (seasonSelect) {
+                seasonSelect.addEventListener('change', function() {
+                    console.log(`Cambiando a temporada: ${this.value}`);
+                    // Aquí conectarás con tu API para cargar datos de la temporada
+                    alert(`¡Cargando datos de ${this.value}!`);
+                });
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9875d14c22987a65',t:'MTc1OTI1NzMwMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
