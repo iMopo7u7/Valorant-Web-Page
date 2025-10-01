@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valorant Esports Platform</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@400;600;700&display=swap');
+        
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1e2328 50%, #0f1419 100%);
+            min-height: 100vh;
+            color: #ffffff;
+        }
+
+        .navbar {
+            background: rgba(15, 20, 25, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 70, 85, 0.2);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .logo-container {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #ff4655, #ff6b7a);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .logo-container:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(255, 70, 85, 0.4);
+        }
+
+        .logo-placeholder {
+            font-size: 0.8rem;
+            color: white;
+            text-align: center;
+            line-height: 1.2;
+            font-weight: 700;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-button {
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            border: 1px solid rgba(255, 70, 85, 0.3);
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 70, 85, 0.1);
+            border-color: #ff4655;
+            transform: translateY(-2px);
+        }
+
+        .nav-button.active {
+            background: linear-gradient(135deg, #ff4655, #ff6b7a);
+            border-color: #ff4655;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 70, 85, 0.3);
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 25px;
+            border: 1px solid rgba(255, 70, 85, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-section:hover {
+            background: rgba(255, 70, 85, 0.1);
+            border-color: #ff4655;
+            transform: translateY(-2px);
+        }
+
+        .profile-container {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff4655, #ff6b7a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: white;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .profile-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .username {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .user-status {
+            font-size: 0.7rem;
+            color: #00ff88;
+            font-weight: 500;
+        }
+
+        .content {
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 120px);
+            gap: 2rem;
+        }
+
+        .mode-selector-top {
+            display: flex;
+            background: rgba(15, 20, 25, 0.8);
+            border-radius: 12px;
+            padding: 0.5rem;
+            border: 1px solid rgba(255, 70, 85, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .game-card {
+            background: rgba(15, 20, 25, 0.8);
+            border: 1px solid rgba(255, 70, 85, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .card-profile {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff4655, #ff6b7a);
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: white;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            border: 3px solid rgba(255, 70, 85, 0.5);
+        }
+
+        .card-username {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .mode-option {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .mode-option.active {
+            background: linear-gradient(135deg, #ff4655, #ff6b7a);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 70, 85, 0.3);
+        }
+
+        .mode-option:hover:not(.active) {
+            background: rgba(255, 70, 85, 0.1);
+            color: #ff4655;
+        }
+
+        .play-button {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #0f1419;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .play-button:hover:not(.in-queue) {
+            background: linear-gradient(135deg, #00cc6a, #00aa55);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .play-button.in-queue {
+            background: linear-gradient(135deg, #ffa500, #ff8c00);
+            animation: pulse-queue 2s infinite;
+            cursor: not-allowed;
+        }
+
+        @keyframes pulse-queue {
+            0% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 165, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .navbar-left {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-buttons {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .profile-section {
+                order: -1;
+            }
+
+            .content {
+                padding: 2rem 1rem;
+            }
+
+            .game-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <div class="logo-container">
+                <div class="logo-placeholder">VAL</div>
+            </div>
+            
+            <div class="nav-buttons">
+                <button class="nav-button active" onclick="setActiveButton(this, 'home')">Home</button>
+                <button class="nav-button" onclick="setActiveButton(this, 'global')">Global</button>
+                <button class="nav-button" onclick="setActiveButton(this, 'elite')">Elite</button>
+            </div>
+        </div>
+        
+        <div class="profile-section" onclick="goToProfile()">
+            <div class="profile-container">
+                <div>PF</div>
+            </div>
+            <div class="profile-info">
+                <div class="username">NombreUsuario</div>
+                <div class="user-status">● En línea</div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="content">
+        <div class="mode-selector-top">
+            <button class="mode-option active" onclick="selectMode(this, 'global')">Global</button>
+            <button class="mode-option" onclick="selectMode(this, 'elite')">Elite</button>
+        </div>
+        
+        <div class="game-card">
+            <div class="card-profile">
+                <div>PF</div>
+            </div>
+            <div class="card-username">NombreUsuario</div>
+            
+            <button class="play-button" onclick="toggleQueue(this)">
+                <span>JUGAR</span>
+            </button>
+        </div>
+    </main>
+
+    <script>
+        function setActiveButton(clickedButton, section) {
+            // Remover clase active de todos los botones del navbar
+            const buttons = document.querySelectorAll('.nav-button');
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            // Agregar clase active al botón clickeado
+            clickedButton.classList.add('active');
+            
+            console.log(`Navegando a: ${section}`);
+            
+            // Aquí puedes agregar lógica para cambiar el contenido según la sección
+            if (section !== 'home') {
+                // Ocultar la tarjeta de juego en otras secciones
+                document.querySelector('.game-card').style.display = 'none';
+            } else {
+                // Mostrar la tarjeta de juego en home
+                document.querySelector('.game-card').style.display = 'block';
+            }
+        }
+
+        function selectMode(clickedOption, mode) {
+            // Remover clase active de todas las opciones de modo
+            const options = document.querySelectorAll('.mode-option');
+            options.forEach(option => option.classList.remove('active'));
+            
+            // Agregar clase active a la opción clickeada
+            clickedOption.classList.add('active');
+            
+            console.log(`Modo seleccionado: ${mode}`);
+        }
+
+        function toggleQueue(button) {
+            const span = button.querySelector('span');
+            
+            if (button.classList.contains('in-queue')) {
+                // Salir de la cola
+                button.classList.remove('in-queue');
+                span.textContent = 'JUGAR';
+                console.log('Saliendo de la cola...');
+            } else {
+                // Entrar en cola
+                button.classList.add('in-queue');
+                span.textContent = '¡EN COLA!';
+                console.log('Entrando en cola...');
+            }
+        }
+
+        function goToProfile() {
+            console.log('Navegando al perfil del usuario...');
+            // Aquí conectarás con la funcionalidad del perfil
+            alert('¡Funcionalidad del perfil lista para conectar!');
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9875b24a15237a65',t:'MTc1OTI1NjAyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
